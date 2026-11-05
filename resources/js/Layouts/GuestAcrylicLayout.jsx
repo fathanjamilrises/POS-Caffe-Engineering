@@ -5,7 +5,15 @@ import { Store } from 'lucide-react';
  * GuestAcrylicLayout: Layout for unauthenticated visitors (Login, Public Errors).
  * Obsidian Carbon canvas (#07080D) with centered radial spotlight.
  */
-export default function GuestAcrylicLayout({ children, title = null, centered = true }) {
+export default function GuestAcrylicLayout({ children, title = null, centered = true, fullScreen = false }) {
+    if (fullScreen) {
+        return (
+            <div className="relative min-h-screen bg-[#07080D] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
+                {children}
+            </div>
+        );
+    }
+
     return (
         <div className="relative min-h-screen bg-[#06070A] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
             {/* Ambient Radial Spotlight */}

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
-import { CheckCircle2, AlertCircle, FileSpreadsheet, FileText } from 'lucide-react';
-import AdminSidebar from '@/Components/Navigation/AdminSidebar';
+import { CheckCircle2, AlertCircle, FileText, FileSpreadsheet } from 'lucide-react';
+import AdminSidebar, { SidebarContext } from '@/Components/Navigation/AdminSidebar';
 import AdminNavbar from '@/Components/Navigation/AdminNavbar';
-import SpecularButton from '@/Components/Acrylic/SpecularButton';
 
 /**
- * AdminAcrylicLayout: Minimalist, clean executive layout (Linear/Stripe style).
- * Canvas: #06070A with subtle ambient light.
+ * AdminAcrylicLayout: Main authenticated layout with collapsible sidebar.
+ * Designed for cafe/canteen staff aged 40–60:
+ *  - Large text, generous spacing
+ *  - Sidebar remembers collapsed state via localStorage
+ *  - Clean transitions, no decorative elements
  */
 export default function AdminAcrylicLayout({
     children,
-    title = 'Admin Dashboard',
+    title = 'Beranda',
     scannerStatus = 'ready',
     lastScannedBarcode = '',
     onQuickSearch = null,
@@ -19,12 +21,23 @@ export default function AdminAcrylicLayout({
     setSearchQuery = null,
     extraNavbarActions = null,
     headerRight = null,
+    showSearch = false,
 }) {
     const { flash = {} } = usePage().props;
     const [toast, setToast] = useState(null);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-    // Toast listener for flash messages
+    // Sidebar collapse state — persisted to localStorage
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('sidebar_collapsed') === 'true';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('sidebar_collapsed', String(collapsed));
+    }, [collapsed]);
+
+    // Toast for flash messages
     useEffect(() => {
         if (flash?.success) {
             setToast({ type: 'success', message: flash.success });
@@ -40,93 +53,81 @@ export default function AdminAcrylicLayout({
 
     const customActions = headerRight || extraNavbarActions;
 
-    // Consolidated Export action group in the top header
+    // Export buttons
     const adminActions = (
         <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center bg-white/[0.03] p-0.5 rounded-lg border border-white/[0.06]">
+            <div className="hidden sm:flex items-center gap-1">
                 <a href="/admin/export/pdf" target="_blank" rel="noopener noreferrer">
-                    <SpecularButton
-                        variant="ghost"
-                        size="sm"
-                        icon={FileText}
-                        title="Cetak Laporan PDF"
-                        className="text-xs text-slate-300 hover:text-white"
+                    <button
+                        type="button"
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg transition-colors"
                     >
-                        <span className="hidden sm:inline">Export PDF</span>
-                    </SpecularButton>
+                        <FileText className="w-4 h-4" />
+                        <span>PDF</span>
+                    </button>
                 </a>
-                <div className="w-px h-3.5 bg-white/[0.08]" />
                 <a href="/admin/export/excel?type=orders">
-                    <SpecularButton
-                        variant="ghost"
-                        size="sm"
-                        icon={FileSpreadsheet}
-                        title="Unduh Data Excel (.csv)"
-                        className="text-xs text-slate-300 hover:text-white"
+                    <button
+                        type="button"
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] rounded-lg transition-colors"
                     >
-                        <span className="hidden sm:inline">Export Excel</span>
-                    </SpecularButton>
+                        <FileSpreadsheet className="w-4 h-4" />
+                        <span>Excel</span>
+                    </button>
                 </a>
             </div>
             {customActions}
         </div>
     );
 
+    // Sidebar width offset for main content
+    const sidebarOffset = collapsed ? 'lg:pl-[72px]' : 'lg:pl-64';
+
     return (
-        <div className="relative min-h-screen bg-[#06070A] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
-            {/* Ambient Radial Light (Restrained Deep Indigo) */}
-            <div
-                className="pointer-events-none fixed inset-0 z-0"
-                style={{
-                    background:
-                        'radial-gradient(ellipse 80% 40% at 50% -5%, rgba(49, 46, 129, 0.14), transparent 70%)',
-                }}
-            />
+        <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+            <div className="relative min-h-screen bg-[#07080D] text-slate-100 flex flex-col font-sans antialiased overflow-x-hidden">
+                {/* Toast Notification */}
+                {toast && (
+                    <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border bg-[#0E1017] border-white/[0.1] text-white shadow-xl max-w-sm">
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                        ) : (
+                            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                        )}
+                        <span className="text-sm">{toast.message}</span>
+                        <button
+                            onClick={() => setToast(null)}
+                            className="text-slate-400 hover:text-white ml-2 text-sm"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
 
-            {/* Notification Toast */}
-            {toast && (
-                <div className="fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border backdrop-blur-xl shadow-2xl transition-all duration-200 bg-[#0E1017] border-white/[0.1] text-white">
-                    {toast.type === 'success' ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                    ) : (
-                        <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                    )}
-                    <span className="text-xs font-medium">{toast.message}</span>
-                    <button
-                        onClick={() => setToast(null)}
-                        className="text-slate-400 hover:text-white text-xs ml-2"
-                    >
-                        ✕
-                    </button>
-                </div>
-            )}
-
-            {/* Fixed Sidebar Navigation */}
-            <AdminSidebar
-                isOpenMobile={isMobileSidebarOpen}
-                onCloseMobile={() => setIsMobileSidebarOpen(false)}
-            />
-
-            {/* Main Content Area - with lg:pl-64 offset for the fixed sidebar */}
-            <div className="flex-1 flex flex-col min-w-0 lg:pl-64 relative">
-                {/* Unified Admin Navbar Component */}
-                <AdminNavbar
-                    title={title}
-                    scannerStatus={scannerStatus}
-                    lastScannedBarcode={lastScannedBarcode}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    onQuickSearch={onQuickSearch}
-                    actions={adminActions}
-                    showSearch={true}
-                    onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
+                {/* Sidebar */}
+                <AdminSidebar
+                    isOpenMobile={isMobileSidebarOpen}
+                    onCloseMobile={() => setIsMobileSidebarOpen(false)}
                 />
 
-                {/* Page Content Body */}
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-                    {children}
-                </main>
+                {/* Main Content Area */}
+                <div className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ease-in-out ${sidebarOffset} relative`}>
+                    <AdminNavbar
+                        title={title}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        onQuickSearch={onQuickSearch}
+                        actions={adminActions}
+                        showSearch={showSearch}
+                        onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
+                    />
+
+                    {/* Page Body */}
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+                        {children}
+                    </main>
+                </div>
             </div>
-        </div>
+        </SidebarContext.Provider>
     );
 }

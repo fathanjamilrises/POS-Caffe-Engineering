@@ -1,28 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
-    Package,
     Plus,
     Search,
-    Edit2,
-    Trash2,
-    SlidersHorizontal,
-    QrCode,
     ScanLine,
-    CheckCircle2,
-    AlertTriangle,
-    AlertCircle,
-    RefreshCw,
-    Check,
-    Layers,
-    X,
     FolderPlus,
-    ArrowUpDown,
-    ExternalLink,
+    RefreshCw,
+    AlertTriangle,
+    QrCode,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
-import AcrylicCard from '@/Components/Acrylic/AcrylicCard';
 import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
 import AcrylicInput from '@/Components/Acrylic/AcrylicInput';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
@@ -61,7 +49,6 @@ export default function AdminProductsIndex({
     // Selected product for edit/adjustment/delete
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quickScanInput, setQuickScanInput] = useState('');
-    const [barcodeCheckMessage, setBarcodeCheckMessage] = useState(null);
 
     // Form: Create Product
     const {
@@ -75,8 +62,8 @@ export default function AdminProductsIndex({
         category_id: categories?.[0]?.id || '',
         barcode: '',
         product_name: '',
-        cost_price: 0,
-        selling_price: 0,
+        cost_price: '',
+        selling_price: '',
         stock_qty: 10,
         requires_kitchen: false,
         is_available: true,
@@ -147,31 +134,27 @@ export default function AdminProductsIndex({
         const cleanCode = barcode.trim();
         if (!cleanCode) return;
 
-        // If create modal is already open, auto-fill the barcode field!
         if (isCreateModalOpen) {
             setCreateData('barcode', cleanCode);
             return;
         }
 
-        // If edit modal is open, fill edit barcode
         if (isEditModalOpen) {
             setEditData('barcode', cleanCode);
             return;
         }
 
-        // Otherwise check if product exists in current page or database
-        const existing = products.data.find((p) => p.barcode === cleanCode);
+        const existing = products.data?.find((p) => p.barcode === cleanCode);
         if (existing) {
             handleOpenAdjustment(existing);
         } else {
-            // Unregistered barcode: open Create Product modal with this barcode prefilled!
             resetCreate();
             setCreateData({
                 category_id: categories?.[0]?.id || '',
                 barcode: cleanCode,
                 product_name: '',
-                cost_price: 0,
-                selling_price: 0,
+                cost_price: '',
+                selling_price: '',
                 stock_qty: 10,
                 requires_kitchen: false,
                 is_available: true,
@@ -180,7 +163,7 @@ export default function AdminProductsIndex({
         }
     };
 
-    const { scannerStatus, lastScannedBarcode } = useBarcodeScanner(handleBarcodeDetected);
+    useBarcodeScanner(handleBarcodeDetected);
 
     // Open Create Modal
     const handleOpenCreate = (prefilledBarcode = '') => {
@@ -189,13 +172,12 @@ export default function AdminProductsIndex({
             category_id: categories?.[0]?.id || '',
             barcode: prefilledBarcode || '',
             product_name: '',
-            cost_price: 0,
-            selling_price: 0,
+            cost_price: '',
+            selling_price: '',
             stock_qty: 10,
             requires_kitchen: false,
             is_available: true,
         });
-        setBarcodeCheckMessage(null);
         setIsCreateModalOpen(true);
     };
 
@@ -221,8 +203,8 @@ export default function AdminProductsIndex({
         setAdjustmentData({
             product_id: product.id,
             movement_type: 'in',
-            quantity_change: 1,
-            notes: '',
+            quantity_change: 10,
+            notes: 'Penambahan stok reguler',
         });
         setIsAdjustmentModalOpen(true);
     };
@@ -301,14 +283,6 @@ export default function AdminProductsIndex({
         handleBarcodeDetected(code);
     };
 
-    // Calculate Margin Percentage
-    const calculateMargin = (cost, selling) => {
-        const c = Number(cost) || 0;
-        const s = Number(selling) || 0;
-        if (s <= 0) return 0;
-        return Math.round(((s - c) / s) * 100);
-    };
-
     // Stock adjustment preview calculation
     const previewCalculatedStock = useMemo(() => {
         if (!selectedProduct) return 0;
@@ -319,326 +293,303 @@ export default function AdminProductsIndex({
         return Math.max(0, current + change);
     }, [selectedProduct, adjustmentData.movement_type, adjustmentData.quantity_change]);
 
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        triggerFilter();
+    };
+
     return (
         <AdminAcrylicLayout
-            title="Kelola Produk & Stok"
-            scannerStatus={scannerStatus}
-            lastScannedBarcode={lastScannedBarcode}
+            title="Produk & Stok"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onQuickSearch={(q) => triggerFilter({ search: q })}
-            headerRight={
-                <div className="flex items-center gap-2">
-                    <SpecularButton
-                        variant="secondary"
-                        size="sm"
-                        icon={ScanLine}
-                        onClick={() => setIsQuickScanModalOpen(true)}
-                    >
-                        <span>Scan Barcode</span>
-                    </SpecularButton>
-                    <SpecularButton
-                        variant="primary"
-                        size="sm"
-                        icon={Plus}
-                        onClick={() => handleOpenCreate()}
-                    >
-                        <span>Tambah Produk</span>
-                    </SpecularButton>
-                </div>
-            }
         >
-            <Head title="Kelola Produk & Stok - Kasir App Admin" />
+            <Head title="Produk & Stok — Kelola Menu" />
 
             <div className="space-y-6">
-                {/* =========================================================================
-                    TOP BENTO GRID: PRODUCT SUMMARY METRICS
-                   ========================================================================= */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Total Katalog Produk</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
+                {/* ============================================================
+                    RINGKASAN METRIK STOK (4 KARTU — KONSISTEN DENGAN BERANDA)
+                ============================================================ */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Card 1: Total Menu */}
+                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div className="text-sm text-slate-400 mb-3">Total Menu</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-white">
                             {metrics.total_products}
                         </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
-                            Semua varian menu terdaftar
+                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                            <span className="text-slate-400">Katalog terdaftar</span>
+                            <span className="text-slate-200 font-mono">Semua varian</span>
                         </div>
                     </div>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Stok Aman (Tersedia)</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
+                    {/* Card 2: Stok Aman */}
+                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div className="text-sm text-slate-400 mb-3">Stok Aman</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-400">
                             {metrics.available_products}
                         </div>
-                        <div className="text-[11px] text-emerald-400 mt-0.5 font-mono">
-                            Stok &gt; 5 porsi
+                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                            <span className="text-slate-400">Tersedia</span>
+                            <span className="text-emerald-400 font-mono">&gt; 5 unit</span>
                         </div>
                     </div>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Stok Menipis (Kritis)</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
+                    {/* Card 3: Stok Menipis */}
+                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div className="text-sm text-slate-400 mb-3">Stok Menipis</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-amber-400">
                             {metrics.low_stock_products}
                         </div>
-                        <div className="text-[11px] text-amber-400 mt-0.5 font-mono">
-                            Sisa 1 s/d 5 porsi
+                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                            <span className="text-slate-400">Perlu restock</span>
+                            <span className="text-amber-400 font-mono">1 – 5 unit</span>
                         </div>
                     </div>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Produk Habis</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
+                    {/* Card 4: Stok Habis */}
+                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div className="text-sm text-slate-400 mb-3">Stok Habis</div>
+                        <div className="text-2xl font-bold font-mono tabular-nums text-rose-400">
                             {metrics.out_of_stock_products}
                         </div>
-                        <div className="text-[11px] text-rose-400 mt-0.5 font-mono">
-                            Stok 0 / Nonaktif
+                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                            <span className="text-slate-400">Habis / Nonaktif</span>
+                            <span className="text-rose-400 font-mono">0 unit</span>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                {/* =========================================================================
-                    FILTER TOOLBAR & ACTIONS
-                   ========================================================================= */}
-                <div className="p-3 bg-[#0B0D13] border border-white/[0.06] rounded-xl space-y-3">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                        {/* Search Input */}
-                        <div className="relative w-full md:w-80">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                {/* ============================================================
+                    BAR FILTER & PENCARIAN (KONSISTEN DENGAN BERANDA)
+                ============================================================ */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                    {/* Form Pencarian */}
+                    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[200px]">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                             <input
                                 type="text"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') triggerFilter({ search: e.target.value });
-                                }}
-                                placeholder="Cari nama menu atau barcode..."
-                                className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
+                                placeholder="Cari barcode atau nama menu..."
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
+                        <button
+                            type="submit"
+                            className="px-4 py-2.5 text-sm text-slate-300 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] transition-colors"
+                        >
+                            Cari
+                        </button>
+                    </form>
 
-                        {/* Category & Status Filters */}
-                        <div className="flex items-center gap-2 w-full md:w-auto flex-wrap justify-end">
-                            <select
-                                value={selectedCategory}
-                                onChange={(e) => {
-                                    setSelectedCategory(e.target.value);
-                                    triggerFilter({ category_id: e.target.value });
-                                }}
-                                className="bg-[#07080B] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-400/50"
-                            >
-                                <option value="all">Semua Kategori</option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.category_name} ({c.products_count})
-                                    </option>
-                                ))}
-                            </select>
+                    {/* Filter & Tombol Aksi */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Kategori */}
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => {
+                                setSelectedCategory(e.target.value);
+                                triggerFilter({ category_id: e.target.value });
+                            }}
+                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="all">Semua Kategori</option>
+                            {categories.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.category_name} ({c.products_count ?? 0})
+                                </option>
+                            ))}
+                        </select>
 
-                            <select
-                                value={processFilter}
-                                onChange={(e) => {
-                                    setProcessFilter(e.target.value);
-                                    triggerFilter({ requires_kitchen: e.target.value });
-                                }}
-                                className="bg-[#07080B] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-400/50"
-                            >
-                                <option value="all">Semua Proses</option>
-                                <option value="true">Dapur (KDS)</option>
-                                <option value="false">Instan (Minuman/Snack)</option>
-                            </select>
+                        {/* Tipe Proses */}
+                        <select
+                            value={processFilter}
+                            onChange={(e) => {
+                                setProcessFilter(e.target.value);
+                                triggerFilter({ requires_kitchen: e.target.value });
+                            }}
+                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="all">Semua Tipe</option>
+                            <option value="true">Perlu Dapur</option>
+                            <option value="false">Instan</option>
+                        </select>
 
-                            <select
-                                value={stockFilter}
-                                onChange={(e) => {
-                                    setStockFilter(e.target.value);
-                                    triggerFilter({ stock_status: e.target.value });
-                                }}
-                                className="bg-[#07080B] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-400/50"
-                            >
-                                <option value="all">Semua Status</option>
-                                <option value="available">Tersedia (&gt;5)</option>
-                                <option value="low_stock">Menipis (&le;5)</option>
-                                <option value="out_of_stock">Habis (0)</option>
-                            </select>
+                        {/* Status Stok */}
+                        <select
+                            value={stockFilter}
+                            onChange={(e) => {
+                                setStockFilter(e.target.value);
+                                triggerFilter({ stock_status: e.target.value });
+                            }}
+                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="all">Semua Stok</option>
+                            <option value="available">Stok Aman (&gt; 5)</option>
+                            <option value="low_stock">Menipis (1-5)</option>
+                            <option value="out_of_stock">Habis (0)</option>
+                        </select>
 
-                            <button
-                                type="button"
-                                onClick={() => setIsCategoryModalOpen(true)}
-                                className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/[0.03] hover:bg-white/[0.06] text-slate-300 hover:text-white border border-white/[0.06] flex items-center gap-1.5 transition-colors"
-                                title="Tambah Kategori Baru"
-                            >
-                                <FolderPlus className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">+ Kategori</span>
-                            </button>
+                        {/* Tombol Scan Barcode */}
+                        <button
+                            type="button"
+                            onClick={() => setIsQuickScanModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
+                        >
+                            <ScanLine className="w-4 h-4 text-indigo-400" />
+                            <span className="hidden sm:inline">Scan Barcode</span>
+                        </button>
 
-                            <SpecularButton
-                                variant="secondary"
-                                size="sm"
-                                icon={ScanLine}
-                                onClick={() => setIsQuickScanModalOpen(true)}
-                            >
-                                <span className="hidden sm:inline">Scan Barcode</span>
-                            </SpecularButton>
+                        {/* Tombol Kategori Baru */}
+                        <button
+                            type="button"
+                            onClick={() => setIsCategoryModalOpen(true)}
+                            className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
+                        >
+                            <FolderPlus className="w-4 h-4" />
+                            <span className="hidden sm:inline">Kategori Baru</span>
+                        </button>
 
-                            <SpecularButton
-                                variant="primary"
-                                size="sm"
-                                icon={Plus}
-                                onClick={() => handleOpenCreate()}
-                            >
-                                <span>+ Tambah Produk</span>
-                            </SpecularButton>
-                        </div>
+                        {/* Tombol Segarkan */}
+                        <button
+                            type="button"
+                            onClick={() => triggerFilter()}
+                            className="p-2.5 text-slate-400 hover:text-white rounded-lg border border-white/[0.08] hover:bg-white/[0.04] transition-colors"
+                            title="Segarkan data"
+                        >
+                            <RefreshCw className="w-4 h-4" />
+                        </button>
+
+                        {/* Tombol Utama Tambah Menu */}
+                        <button
+                            type="button"
+                            onClick={() => handleOpenCreate()}
+                            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-b from-[#4F46E5] to-[#3730A3] border border-indigo-400/20 rounded-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] hover:from-[#4338CA] hover:to-[#312E81] transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Tambah Menu
+                        </button>
                     </div>
                 </div>
 
-                {/* =========================================================================
-                    DENSE PRODUCTS DATA TABLE
-                   ========================================================================= */}
-                <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
+                {/* ============================================================
+                    TABEL MENU & STOK (KONSISTEN DENGAN BERANDA - ANTI TUMPANG TINDIH)
+                ============================================================ */}
+                <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr className="border-b border-white/[0.06] bg-white/[0.01] text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                                    <th className="py-3 px-4">Barcode</th>
-                                    <th className="py-3 px-4">Nama Produk</th>
-                                    <th className="py-3 px-4">Kategori</th>
-                                    <th className="py-3 px-4">Tipe Proses</th>
-                                    <th className="py-3 px-4 text-right">HPP Modal</th>
-                                    <th className="py-3 px-4 text-right">Harga Jual</th>
-                                    <th className="py-3 px-4 text-right">Margin</th>
-                                    <th className="py-3 px-4 text-center">Stok</th>
-                                    <th className="py-3 px-4">Status</th>
-                                    <th className="py-3 px-4 text-right">Aksi</th>
+                        <table className="w-full text-left text-sm text-slate-300 min-w-[950px]">
+                            <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
+                                <tr>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap w-[140px]">Barcode</th>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap min-w-[200px]">Nama Menu</th>
+                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Tipe</th>
+                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Modal</th>
+                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Harga Jual</th>
+                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[90px]">Margin</th>
+                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Stok</th>
+                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[110px]">Status</th>
+                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[140px]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.04]">
-                                {products.data.length === 0 ? (
+                                {products.data?.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} className="py-16 text-center text-slate-500">
-                                            <Package className="w-8 h-8 mx-auto text-slate-600 mb-2 opacity-50" />
-                                            <span className="block">Tidak ada produk yang sesuai dengan kriteria filter.</span>
-                                            <div className="mt-3">
-                                                <SpecularButton
-                                                    variant="primary"
-                                                    size="sm"
-                                                    icon={Plus}
-                                                    onClick={() => handleOpenCreate()}
-                                                >
-                                                    Tambah Produk Sekarang
-                                                </SpecularButton>
-                                            </div>
+                                        <td colSpan="9" className="py-12 text-center text-slate-500">
+                                            Tidak ada menu yang sesuai dengan filter.
                                         </td>
                                     </tr>
                                 ) : (
-                                    products.data.map((product) => {
-                                        const isOutOfStock = product.stock_qty <= 0 || !product.is_available;
-                                        const isLowStock = product.stock_qty > 0 && product.stock_qty <= 5;
-                                        const margin = calculateMargin(product.cost_price, product.selling_price);
+                                    products.data?.map((p) => {
+                                        const cost = Number(p.cost_price) || 0;
+                                        const selling = Number(p.selling_price) || 0;
+                                        const margin = selling > 0 ? (((selling - cost) / selling) * 100).toFixed(1) : 0;
+                                        const isOutOfStock = p.stock_qty <= 0;
+                                        const isLowStock = p.stock_qty > 0 && p.stock_qty <= 5;
 
                                         return (
-                                            <tr
-                                                key={product.id}
-                                                className="hover:bg-white/[0.02] transition-colors group"
-                                            >
+                                            <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
                                                 {/* Barcode */}
-                                                <td className="py-3 px-4 font-mono text-slate-400">
-                                                    {product.barcode || '-'}
+                                                <td className="py-3 px-4 font-mono text-xs text-indigo-300 whitespace-nowrap">
+                                                    {p.barcode || '—'}
                                                 </td>
 
-                                                {/* Name */}
-                                                <td className="py-3 px-4 font-medium text-slate-200">
-                                                    {product.product_name}
+                                                {/* Nama Menu & Kategori */}
+                                                <td className="py-3 px-4 min-w-[200px]">
+                                                    <div className="font-medium text-white">{p.product_name}</div>
+                                                    <div className="text-xs text-slate-500">{p.category?.category_name || '—'}</div>
                                                 </td>
 
-                                                {/* Category */}
-                                                <td className="py-3 px-4 text-slate-400">
-                                                    {product.category?.category_name || '-'}
-                                                </td>
-
-                                                {/* Process Type */}
-                                                <td className="py-3 px-4">
-                                                    {product.requires_kitchen ? (
-                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-300/90 border border-amber-500/20">
-                                                            Dapur / KDS
-                                                        </span>
+                                                {/* Tipe Proses */}
+                                                <td className="py-3 px-4 text-center text-xs whitespace-nowrap">
+                                                    {p.requires_kitchen ? (
+                                                        <span className="text-amber-300">Dapur</span>
                                                     ) : (
-                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/[0.04] text-slate-300 border border-white/[0.08]">
-                                                            Instan
-                                                        </span>
+                                                        <span className="text-slate-400">Instan</span>
                                                     )}
                                                 </td>
 
-                                                {/* Cost */}
-                                                <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-400">
-                                                    {formatRupiah(product.cost_price)}
+                                                {/* Modal */}
+                                                <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs whitespace-nowrap">
+                                                    {formatRupiah(p.cost_price)}
                                                 </td>
 
-                                                {/* Selling */}
-                                                <td className="py-3 px-4 text-right font-mono font-medium tabular-nums text-slate-100">
-                                                    {formatRupiah(product.selling_price)}
+                                                {/* Harga Jual */}
+                                                <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs whitespace-nowrap">
+                                                    {formatRupiah(p.selling_price)}
                                                 </td>
 
                                                 {/* Margin */}
-                                                <td className="py-3 px-4 text-right font-mono tabular-nums text-emerald-400">
-                                                    +{margin}%
+                                                <td className="py-3 px-4 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">
+                                                    {margin}%
                                                 </td>
 
-                                                {/* Stock */}
-                                                <td className="py-3 px-4 text-center font-mono tabular-nums">
-                                                    <span
-                                                        className={`font-semibold ${
-                                                            isOutOfStock
-                                                                ? 'text-rose-400'
-                                                                : isLowStock
-                                                                ? 'text-amber-400'
-                                                                : 'text-slate-300'
-                                                        }`}
-                                                    >
-                                                        {product.stock_qty}
+                                                {/* Stok */}
+                                                <td className="py-3 px-4 text-center font-mono tabular-nums whitespace-nowrap">
+                                                    <span className={
+                                                        isOutOfStock ? 'text-rose-400 font-semibold'
+                                                        : isLowStock ? 'text-amber-400 font-medium'
+                                                        : 'text-slate-300'
+                                                    }>
+                                                        {p.stock_qty}
                                                     </span>
                                                 </td>
 
-                                                {/* Status minimal 6px dot */}
-                                                <td className="py-3 px-4">
-                                                    <div className="inline-flex items-center gap-1.5 text-xs text-slate-300">
-                                                        <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${
-                                                                isOutOfStock ? 'bg-rose-500' : 'bg-emerald-400'
-                                                            }`}
-                                                        />
-                                                        <span>{isOutOfStock ? 'Habis' : 'Tersedia'}</span>
-                                                    </div>
+                                                {/* Status */}
+                                                <td className="py-3 px-4 text-center">
+                                                    <span className="inline-flex items-center gap-1.5 text-xs">
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                                            isOutOfStock || !p.is_available ? 'bg-rose-500' : 'bg-emerald-400'
+                                                        }`} />
+                                                        {isOutOfStock || !p.is_available ? 'Habis' : 'Tersedia'}
+                                                    </span>
                                                 </td>
 
-                                                {/* Actions */}
-                                                <td className="py-3 px-4 text-right">
-                                                    <div className="inline-flex items-center gap-1">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenAdjustment(product)}
-                                                            className="px-2 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] transition-colors"
-                                                            title="Sesuaikan Jumlah Stok"
-                                                        >
-                                                            Stok
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenEdit(product)}
-                                                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-                                                            title="Edit Menu"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenDelete(product)}
-                                                            className="p-1 rounded text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                                                            title="Hapus Menu"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
+                                                {/* Aksi */}
+                                                <td className="py-3 px-4 text-right whitespace-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenAdjustment(p)}
+                                                        className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors"
+                                                    >
+                                                        Stok
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenEdit(p)}
+                                                        className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOpenDelete(p)}
+                                                        className="text-xs text-slate-400 hover:text-rose-400 px-2 py-1.5 rounded hover:bg-rose-500/10 transition-colors"
+                                                    >
+                                                        Hapus
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );
@@ -648,25 +599,27 @@ export default function AdminProductsIndex({
                         </table>
                     </div>
 
-                    {/* Pagination Bar */}
+                    {/* Pagination */}
                     {products.links && products.links.length > 3 && (
-                        <div className="p-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
-                            <div>
-                                Menampilkan{' '}
-                                <span className="text-slate-200 font-mono">{products.data.length}</span> produk
-                            </div>
+                        <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between text-sm text-slate-400">
+                            <span>
+                                {products.from || 0} – {products.to || 0} dari {products.total || 0} menu
+                            </span>
                             <div className="flex items-center gap-1">
                                 {products.links.map((link, idx) => (
                                     <button
                                         key={idx}
-                                        disabled={!link.url || link.active}
-                                        onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })}
+                                        type="button"
+                                        disabled={!link.url}
+                                        onClick={() => {
+                                            if (link.url) router.get(link.url, {}, { preserveScroll: true });
+                                        }}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                         className={`px-2.5 py-1 rounded text-xs transition-colors ${
                                             link.active
-                                                ? 'bg-white/[0.08] text-white font-medium border border-white/[0.12]'
+                                                ? 'bg-indigo-600 text-white font-semibold'
                                                 : link.url
-                                                ? 'hover:bg-white/[0.04] text-slate-400 hover:text-slate-200'
+                                                ? 'hover:bg-white/[0.06] text-slate-300'
                                                 : 'text-slate-600 cursor-not-allowed'
                                         }`}
                                     />
@@ -677,189 +630,129 @@ export default function AdminProductsIndex({
                 </div>
             </div>
 
-            {/* =========================================================================
-                MODAL: TAMBAH PRODUK BARU (WITH INTEGRATED SCAN BARCODE HELPER)
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 1: PENYESUAIAN STOK (KONSISTEN DENGAN BERANDA)
+            ============================================================ */}
             <AcrylicModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                title="Tambah Produk / Menu Baru"
-                subtitle="Masukkan informasi menu untuk katalog kasir POS dan menu QR meja."
+                isOpen={isAdjustmentModalOpen}
+                onClose={() => setIsAdjustmentModalOpen(false)}
+                title="Ubah Stok Menu"
+                subtitle={selectedProduct ? `${selectedProduct.product_name} (${selectedProduct.barcode || 'Tanpa barcode'})` : ''}
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
-                            onClick={() => setIsCreateModalOpen(false)}
+                            size="md"
+                            onClick={() => setIsAdjustmentModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
-                            loading={createProcessing}
-                            onClick={handleSubmitCreate}
+                            size="md"
+                            loading={adjustmentProcessing}
+                            onClick={handleSubmitAdjustment}
                         >
-                            Simpan ke Katalog
+                            Simpan Perubahan
                         </SpecularButton>
                     </>
                 }
             >
-                <form onSubmit={handleSubmitCreate} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="sm:col-span-2">
-                            <AcrylicInput
-                                label="Nama Menu / Produk *"
-                                placeholder="Contoh: Nasi Goreng Spesial, Es Teh Manis"
-                                value={createData.product_name}
-                                onChange={(e) => setCreateData('product_name', e.target.value)}
-                                error={createErrors.product_name}
-                                required
-                            />
-                        </div>
-
-                        {/* Barcode with Quick Scan Trigger */}
-                        <div className="sm:col-span-2 space-y-1">
-                            <label className="text-xs font-medium text-slate-300 block">
-                                Barcode Produk (Scan atau Ketik Manual)
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <div className="relative flex-1">
-                                    <QrCode className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="text"
-                                        placeholder="Scan barcode dengan scanner atau ketik nomor..."
-                                        value={createData.barcode}
-                                        onChange={(e) => setCreateData('barcode', e.target.value)}
-                                        className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsQuickScanModalOpen(true);
-                                    }}
-                                    className="px-3 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.08] text-xs font-medium text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors flex-shrink-0"
-                                    title="Scan Barcode Cepat"
-                                >
-                                    <ScanLine className="w-3.5 h-3.5 text-indigo-400" />
-                                    <span>Scan Barcode</span>
-                                </button>
+                {selectedProduct && (
+                    <form onSubmit={handleSubmitAdjustment} className="space-y-5">
+                        {/* Ringkasan Perhitungan Stok */}
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
+                            <div>
+                                <span className="text-xs text-slate-400 block mb-1">Stok Saat Ini</span>
+                                <span className="text-2xl font-mono font-bold text-white">
+                                    {selectedProduct.stock_qty} <span className="text-sm font-normal text-slate-400">unit</span>
+                                </span>
                             </div>
-                            {createErrors.barcode && (
-                                <p className="text-[11px] text-rose-400">{createErrors.barcode}</p>
-                            )}
-                            <p className="text-[10px] text-slate-500">
-                                Tip: Gunakan hardware barcode scanner kapan saja untuk auto-fill field ini.
-                            </p>
+                            <div className="text-right">
+                                <span className="text-xs text-slate-400 block mb-1">Perkiraan Stok Baru</span>
+                                <span className="text-2xl font-mono font-bold text-emerald-400">
+                                    {previewCalculatedStock} <span className="text-sm font-normal text-slate-400">unit</span>
+                                </span>
+                            </div>
                         </div>
 
+                        {/* Pilihan Tipe Mutasi */}
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1">
-                                Kategori Menu *
+                            <label className="text-sm font-medium text-slate-200 block mb-2">
+                                Tipe Perubahan Stok
                             </label>
-                            <select
-                                value={createData.category_id}
-                                onChange={(e) => setCreateData('category_id', e.target.value)}
-                                className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/50"
-                                required
-                            >
-                                <option value="">Pilih Kategori</option>
-                                {categories.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                        {c.category_name}
-                                    </option>
+                            <div className="grid grid-cols-3 gap-2.5">
+                                {[
+                                    { id: 'in', label: 'Masuk (+)', desc: 'Tambah stok' },
+                                    { id: 'out', label: 'Keluar (−)', desc: 'Kurangi stok' },
+                                    { id: 'adjustment', label: 'Koreksi (~)', desc: 'Hitung fisik' },
+                                ].map((type) => (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() => setAdjustmentData('movement_type', type.id)}
+                                        className={`py-3 px-2 rounded-lg border transition-all text-center min-h-[52px] flex flex-col items-center justify-center ${
+                                            adjustmentData.movement_type === type.id
+                                                ? 'bg-indigo-500/20 border-indigo-500/50 text-white font-semibold shadow-sm'
+                                                : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                                        }`}
+                                    >
+                                        <span className="text-sm">{type.label}</span>
+                                        <span className="text-[11px] opacity-70">{type.desc}</span>
+                                    </button>
                                 ))}
-                            </select>
-                            {createErrors.category_id && (
-                                <p className="text-[11px] text-rose-400 mt-1">{createErrors.category_id}</p>
-                            )}
+                            </div>
                         </div>
 
+                        {/* Jumlah Input */}
+                        <AcrylicInput
+                            label="Jumlah Unit Perubahan"
+                            type="number"
+                            min="1"
+                            value={adjustmentData.quantity_change}
+                            onChange={(e) => setAdjustmentData('quantity_change', parseInt(e.target.value) || 0)}
+                            error={adjustmentErrors.quantity_change}
+                            required
+                        />
+
+                        {/* Catatan */}
                         <div>
-                            <AcrylicInput
-                                label="Stok Awal *"
-                                type="number"
-                                min="0"
-                                value={createData.stock_qty}
-                                onChange={(e) => setCreateData('stock_qty', parseInt(e.target.value) || 0)}
-                                error={createErrors.stock_qty}
-                                required
+                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                                Catatan / Keterangan (Opsional)
+                            </label>
+                            <textarea
+                                rows="2"
+                                value={adjustmentData.notes}
+                                onChange={(e) => setAdjustmentData('notes', e.target.value)}
+                                placeholder="Contoh: Penerimaan barang dari supplier, barang rusak, atau opname fisik"
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
-
-                        <div>
-                            <AcrylicInput
-                                label="Harga Modal HPP (Rp) *"
-                                type="number"
-                                min="0"
-                                value={createData.cost_price}
-                                onChange={(e) => setCreateData('cost_price', parseFloat(e.target.value) || 0)}
-                                error={createErrors.cost_price}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <AcrylicInput
-                                label="Harga Jual (Rp) *"
-                                type="number"
-                                min="0"
-                                value={createData.selling_price}
-                                onChange={(e) => setCreateData('selling_price', parseFloat(e.target.value) || 0)}
-                                error={createErrors.selling_price}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    {/* Kitchen Processing & Availability Flags */}
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] space-y-2.5">
-                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
-                            <input
-                                type="checkbox"
-                                checked={createData.requires_kitchen}
-                                onChange={(e) => setCreateData('requires_kitchen', e.target.checked)}
-                                className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
-                            />
-                            <span>
-                                <strong>Memerlukan Proses Dapur / KDS</strong> (centang untuk makanan yang harus dimasak koki)
-                            </span>
-                        </label>
-
-                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
-                            <input
-                                type="checkbox"
-                                checked={createData.is_available}
-                                onChange={(e) => setCreateData('is_available', e.target.checked)}
-                                className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
-                            />
-                            <span>Menu langsung aktif dan dapat dipesan</span>
-                        </label>
-                    </div>
-                </form>
+                    </form>
+                )}
             </AcrylicModal>
 
-            {/* =========================================================================
-                MODAL: EDIT PRODUK
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 2: EDIT PRODUK & HARGA (KONSISTEN DENGAN BERANDA)
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
-                title={`Edit Menu: ${selectedProduct?.product_name || ''}`}
-                subtitle="Perbarui harga jual, HPP, atau pengaturan dapur."
+                title="Edit Produk & Harga"
+                subtitle="Perbarui data menu, harga modal, harga jual, dan status penjualan."
+                maxWidth="max-w-xl"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsEditModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={editProcessing}
                             onClick={handleSubmitEdit}
                         >
@@ -870,37 +763,32 @@ export default function AdminProductsIndex({
             >
                 {selectedProduct && (
                     <form onSubmit={handleSubmitEdit} className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="sm:col-span-2">
-                                <AcrylicInput
-                                    label="Nama Menu / Produk *"
-                                    value={editData.product_name}
-                                    onChange={(e) => setEditData('product_name', e.target.value)}
-                                    error={editErrors.product_name}
-                                    required
-                                />
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <AcrylicInput
+                                label="Nama Menu"
+                                value={editData.product_name}
+                                onChange={(e) => setEditData('product_name', e.target.value)}
+                                error={editErrors.product_name}
+                                required
+                            />
+                            <AcrylicInput
+                                label="Barcode (Opsional)"
+                                value={editData.barcode}
+                                onChange={(e) => setEditData('barcode', e.target.value)}
+                                inputClassName="font-mono text-indigo-300"
+                                placeholder="Contoh: 8991001"
+                            />
+                        </div>
 
-                            <div className="sm:col-span-2 space-y-1">
-                                <AcrylicInput
-                                    label="Barcode Produk"
-                                    icon={QrCode}
-                                    value={editData.barcode}
-                                    onChange={(e) => setEditData('barcode', e.target.value)}
-                                    error={editErrors.barcode}
-                                    placeholder="Scan atau ketik barcode..."
-                                />
-                            </div>
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-xs font-medium text-slate-300 block mb-1">
-                                    Kategori Menu *
+                                <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                                    Kategori
                                 </label>
                                 <select
                                     value={editData.category_id}
                                     onChange={(e) => setEditData('category_id', e.target.value)}
-                                    className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/50"
-                                    required
+                                    className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
                                 >
                                     {categories.map((c) => (
                                         <option key={c.id} value={c.id}>
@@ -909,235 +797,221 @@ export default function AdminProductsIndex({
                                     ))}
                                 </select>
                             </div>
-
-                            <div>
-                                <AcrylicInput
-                                    label="Stok Tersedia *"
-                                    type="number"
-                                    min="0"
-                                    value={editData.stock_qty}
-                                    onChange={(e) => setEditData('stock_qty', parseInt(e.target.value) || 0)}
-                                    error={editErrors.stock_qty}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <AcrylicInput
-                                    label="Harga Modal HPP (Rp) *"
-                                    type="number"
-                                    min="0"
-                                    value={editData.cost_price}
-                                    onChange={(e) => setEditData('cost_price', parseFloat(e.target.value) || 0)}
-                                    error={editErrors.cost_price}
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <AcrylicInput
-                                    label="Harga Jual (Rp) *"
-                                    type="number"
-                                    min="0"
-                                    value={editData.selling_price}
-                                    onChange={(e) => setEditData('selling_price', parseFloat(e.target.value) || 0)}
-                                    error={editErrors.selling_price}
-                                    required
-                                />
-                            </div>
+                            <AcrylicInput
+                                label="Stok Tersedia (Unit)"
+                                type="number"
+                                min="0"
+                                value={editData.stock_qty}
+                                onChange={(e) => setEditData('stock_qty', parseInt(e.target.value) || 0)}
+                                inputClassName="font-mono"
+                                required
+                            />
                         </div>
 
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] space-y-2">
-                            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <AcrylicInput
+                                label="Harga Modal HPP (Rp)"
+                                type="number"
+                                min="0"
+                                value={editData.cost_price}
+                                onChange={(e) => setEditData('cost_price', parseFloat(e.target.value) || 0)}
+                                inputClassName="font-mono"
+                                required
+                            />
+                            <AcrylicInput
+                                label="Harga Jual (Rp)"
+                                type="number"
+                                min="0"
+                                value={editData.selling_price}
+                                onChange={(e) => setEditData('selling_price', parseFloat(e.target.value) || 0)}
+                                inputClassName="font-mono"
+                                required
+                            />
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3.5">
+                            <label className="flex items-start gap-3.5 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     checked={editData.requires_kitchen}
                                     onChange={(e) => setEditData('requires_kitchen', e.target.checked)}
-                                    className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                    className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                                 />
-                                <span>Memerlukan Proses Dapur / KDS</span>
+                                <div>
+                                    <span className="text-sm font-semibold text-white block">
+                                        Perlu dimasak di dapur (Kitchen KDS)
+                                    </span>
+                                    <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                        Centang jika pesanan harus diproses oleh staf dapur (makanan masak).
+                                    </span>
+                                </div>
                             </label>
 
-                            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
+                            <div className="h-px bg-white/[0.06]" />
+
+                            <label className="flex items-start gap-3.5 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     checked={editData.is_available}
                                     onChange={(e) => setEditData('is_available', e.target.checked)}
-                                    className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                    className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                                 />
-                                <span>Status Menu Tersedia untuk Dipesan</span>
+                                <div>
+                                    <span className="text-sm font-semibold text-white block">
+                                        Status menu aktif dijual
+                                    </span>
+                                    <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                        Jika dinonaktifkan, menu tidak akan muncul di layar kasir maupun QR meja.
+                                    </span>
+                                </div>
                             </label>
                         </div>
                     </form>
                 )}
             </AcrylicModal>
 
-            {/* =========================================================================
-                MODAL: SESUAIKAN STOK (STOCK ADJUSTMENT)
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 3: TAMBAH MENU BARU (KONSISTEN DENGAN BERANDA)
+            ============================================================ */}
             <AcrylicModal
-                isOpen={isAdjustmentModalOpen}
-                onClose={() => setIsAdjustmentModalOpen(false)}
-                title="Penyesuaian Stok Menu"
-                subtitle={selectedProduct ? `${selectedProduct.product_name} (Stok Saat Ini: ${selectedProduct.stock_qty})` : ''}
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title="Tambah Menu Baru"
+                subtitle="Isi data menu untuk dimasukkan ke katalog kasir dan pemesanan meja."
+                maxWidth="max-w-xl"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
-                            onClick={() => setIsAdjustmentModalOpen(false)}
+                            size="md"
+                            onClick={() => setIsCreateModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
-                            loading={adjustmentProcessing}
-                            onClick={handleSubmitAdjustment}
+                            size="md"
+                            loading={createProcessing}
+                            onClick={handleSubmitCreate}
                         >
-                            Simpan Perubahan Stok
+                            Tambah Menu
                         </SpecularButton>
                     </>
                 }
             >
-                {selectedProduct && (
-                    <form onSubmit={handleSubmitAdjustment} className="space-y-4">
-                        <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1.5">
-                                Jenis Penyesuaian
-                            </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {[
-                                    { id: 'in', label: 'Barang Masuk (+)' },
-                                    { id: 'out', label: 'Barang Keluar (-)' },
-                                    { id: 'adjustment', label: 'Koreksi Fisik' },
-                                ].map((type) => (
-                                    <button
-                                        key={type.id}
-                                        type="button"
-                                        onClick={() => setAdjustmentData('movement_type', type.id)}
-                                        className={`py-2 px-2 text-xs font-medium rounded-lg border transition-all ${
-                                            adjustmentData.movement_type === type.id
-                                                ? 'bg-white/[0.08] border-indigo-400/40 text-white font-semibold'
-                                                : 'bg-white/[0.02] border-white/[0.06] text-slate-400 hover:text-white'
-                                        }`}
-                                    >
-                                        {type.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
+                <form onSubmit={handleSubmitCreate} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <AcrylicInput
-                            label="Jumlah Perubahan Stok *"
-                            type="number"
-                            min="1"
-                            value={adjustmentData.quantity_change}
-                            onChange={(e) =>
-                                setAdjustmentData('quantity_change', parseInt(e.target.value) || 0)
-                            }
-                            error={adjustmentErrors.quantity_change}
+                            label="Nama Menu"
+                            value={createData.product_name}
+                            onChange={(e) => setCreateData('product_name', e.target.value)}
+                            placeholder="Contoh: Kopi Tubruk Robusta"
+                            error={createErrors.product_name}
                             required
                         />
-
-                        {/* Calculation Preview */}
-                        <div className="p-3 rounded-lg bg-[#07080B] border border-white/[0.06] flex items-center justify-between text-xs font-mono">
-                            <span className="text-slate-400">Estimasi Stok Akhir:</span>
-                            <span className="text-slate-100 font-bold text-sm">
-                                {previewCalculatedStock} porsi
-                            </span>
-                        </div>
-
                         <AcrylicInput
-                            label="Keterangan / Alasan Penyesuaian"
-                            placeholder="Contoh: Pembelian bahan baku tambahan, basi/rusak"
-                            value={adjustmentData.notes}
-                            onChange={(e) => setAdjustmentData('notes', e.target.value)}
-                            error={adjustmentErrors.notes}
+                            label="Barcode (Scan / Ketik)"
+                            value={createData.barcode}
+                            onChange={(e) => setCreateData('barcode', e.target.value)}
+                            placeholder="Contoh: 8991005"
+                            inputClassName="font-mono text-indigo-300"
                         />
-                    </form>
-                )}
-            </AcrylicModal>
-
-            {/* =========================================================================
-                MODAL: QUICK SCAN BARCODE HELPER
-               ========================================================================= */}
-            <AcrylicModal
-                isOpen={isQuickScanModalOpen}
-                onClose={() => setIsQuickScanModalOpen(false)}
-                title="Scan Barcode Cepat"
-                subtitle="Arahkan hardware scanner ke barcode atau ketik angka barcode di bawah."
-                footer={
-                    <SpecularButton
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setIsQuickScanModalOpen(false)}
-                    >
-                        Tutup
-                    </SpecularButton>
-                }
-            >
-                <form onSubmit={handleProcessQuickScan} className="space-y-4">
-                    <div className="p-4 rounded-xl bg-[#07080B] border border-white/[0.06] text-center space-y-3">
-                        <div className="w-12 h-12 mx-auto rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-indigo-400">
-                            <ScanLine className="w-6 h-6 animate-pulse" />
-                        </div>
-                        <div>
-                            <div className="text-xs font-semibold text-slate-200">
-                                Hardware Scanner Siap Mendengarkan
-                            </div>
-                            <div className="text-[11px] text-slate-400 mt-0.5">
-                                Jika produk sudah ada, form stok akan terbuka. Jika belum ada, form tambah produk baru akan terbuka.
-                            </div>
-                        </div>
                     </div>
 
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300 block">
-                            Atau Masukkan Nomor Barcode Manual:
-                        </label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                autoFocus
-                                value={quickScanInput}
-                                onChange={(e) => setQuickScanInput(e.target.value)}
-                                placeholder="Contoh: 8991001234..."
-                                className="flex-1 bg-[#07080B] border border-white/[0.08] rounded-lg px-3 py-2 text-xs font-mono text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
-                            />
-                            <SpecularButton
-                                type="submit"
-                                variant="primary"
-                                size="sm"
-                                disabled={!quickScanInput.trim()}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                                Kategori
+                            </label>
+                            <select
+                                value={createData.category_id}
+                                onChange={(e) => setCreateData('category_id', e.target.value)}
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                                required
                             >
-                                Proses
-                            </SpecularButton>
+                                {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.category_name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
+                        <AcrylicInput
+                            label="Stok Awal (Unit)"
+                            type="number"
+                            min="0"
+                            value={createData.stock_qty}
+                            onChange={(e) => setCreateData('stock_qty', parseInt(e.target.value) || 0)}
+                            inputClassName="font-mono"
+                            required
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <AcrylicInput
+                            label="Harga Modal HPP (Rp)"
+                            type="number"
+                            min="0"
+                            value={createData.cost_price}
+                            onChange={(e) => setCreateData('cost_price', e.target.value)}
+                            placeholder="Contoh: 12000"
+                            inputClassName="font-mono"
+                            required
+                        />
+                        <AcrylicInput
+                            label="Harga Jual (Rp)"
+                            type="number"
+                            min="0"
+                            value={createData.selling_price}
+                            onChange={(e) => setCreateData('selling_price', e.target.value)}
+                            placeholder="Contoh: 18000"
+                            inputClassName="font-mono"
+                            required
+                        />
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                        <label className="flex items-start gap-3.5 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={createData.requires_kitchen}
+                                onChange={(e) => setCreateData('requires_kitchen', e.target.checked)}
+                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
+                            />
+                            <div>
+                                <span className="text-sm font-semibold text-white block">
+                                    Memerlukan proses memasak di dapur
+                                </span>
+                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                    Centang untuk makanan yang dimasak. Kosongkan untuk minuman atau snack instan.
+                                </span>
+                            </div>
+                        </label>
                     </div>
                 </form>
             </AcrylicModal>
 
-            {/* =========================================================================
-                MODAL: TAMBAH KATEGORI BARU
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 4: TAMBAH KATEGORI (KONSISTEN DENGAN BERANDA)
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
-                title="Tambah Kategori Menu Baru"
-                subtitle="Tambahkan kategori baru seperti Makanan Berat, Minuman Dingin, Snack."
+                title="Kategori Menu Baru"
+                subtitle="Tambahkan kategori baru untuk mengelompokkan makanan atau minuman."
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsCategoryModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={categoryProcessing}
                             onClick={handleSubmitCategory}
                         >
@@ -1148,52 +1022,116 @@ export default function AdminProductsIndex({
             >
                 <form onSubmit={handleSubmitCategory} className="space-y-4">
                     <AcrylicInput
-                        label="Nama Kategori *"
-                        placeholder="Contoh: Paket Hemat, Minuman Hangat"
+                        label="Nama Kategori"
                         value={categoryData.category_name}
                         onChange={(e) => setCategoryData('category_name', e.target.value)}
+                        placeholder="Contoh: Kopi Spesial, Makanan Utama, Camilan"
                         error={categoryErrors.category_name}
                         required
                     />
                 </form>
             </AcrylicModal>
 
-            {/* =========================================================================
-                MODAL: KONFIRMASI HAPUS PRODUK
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 5: SCAN BARCODE CEPAT
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={isQuickScanModalOpen}
+                onClose={() => setIsQuickScanModalOpen(false)}
+                title="Scan Barcode Cepat"
+                subtitle="Arahkan scanner ke produk atau ketik nomor barcode di bawah."
+                maxWidth="max-w-md"
+                footer={
+                    <SpecularButton
+                        variant="secondary"
+                        size="md"
+                        onClick={() => setIsQuickScanModalOpen(false)}
+                    >
+                        Tutup
+                    </SpecularButton>
+                }
+            >
+                <form onSubmit={handleProcessQuickScan} className="space-y-4">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] text-center space-y-3">
+                        <div className="w-12 h-12 mx-auto rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                            <ScanLine className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <div>
+                            <div className="text-sm font-semibold text-white">
+                                Scanner Barcode Siap
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-normal">
+                                Jika menu sudah ada, jendela ubah stok akan terbuka. Jika belum ada, form tambah menu baru akan otomatis terisi barcode ini.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-slate-200 block">
+                            Atau Masukkan Nomor Barcode Manual:
+                        </label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                autoFocus
+                                value={quickScanInput}
+                                onChange={(e) => setQuickScanInput(e.target.value)}
+                                placeholder="Contoh: 8991001234..."
+                                className="flex-1 bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                            />
+                            <SpecularButton
+                                type="submit"
+                                variant="primary"
+                                size="md"
+                                disabled={!quickScanInput.trim()}
+                            >
+                                Proses
+                            </SpecularButton>
+                        </div>
+                    </div>
+                </form>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 6: HAPUS PRODUK (KONSISTEN DENGAN BERANDA)
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="Hapus Produk dari Katalog"
-                subtitle="Tindakan ini akan mengarsipkan produk sehingga tidak lagi muncul di kasir."
+                title="Hapus Menu Ini?"
+                subtitle={selectedProduct ? `Menu: ${selectedProduct.product_name}` : ''}
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsDeleteModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="danger"
-                            size="sm"
+                            size="md"
                             onClick={handleConfirmDelete}
                         >
-                            Ya, Hapus Produk
+                            Ya, Hapus Menu
                         </SpecularButton>
                     </>
                 }
             >
-                <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                    <div>
-                        Yakin ingin menghapus menu{' '}
-                        <strong>{selectedProduct?.product_name}</strong>? Data transaksi sebelumnya tetap tersimpan di riwayat keuangan.
+                <div className="space-y-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-slate-200">
+                    <div className="text-sm font-semibold text-rose-300">
+                        Menu ini akan dihapus dari daftar penjualan
                     </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                        Menu tidak akan lagi tampil di layar kasir maupun menu QR meja pelanggan.
+                    </p>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                        Catatan transaksi dan laporan keuangan sebelumnya yang memuat menu ini tetap tersimpan dengan aman.
+                    </p>
                 </div>
             </AcrylicModal>
         </AdminAcrylicLayout>
     );
 }
-

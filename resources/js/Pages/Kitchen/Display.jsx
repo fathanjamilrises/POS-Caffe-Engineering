@@ -6,19 +6,17 @@ import {
     CheckCircle2,
     Volume2,
     VolumeX,
-    Filter,
     RefreshCw,
     ChefHat,
     AlertTriangle,
     Check,
-    ArrowRight,
     Utensils,
-    QrCode,
+    Bell,
+    Sparkles,
+    CheckCircle,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import AcrylicCard from '@/Components/Acrylic/AcrylicCard';
-import AcrylicBadge from '@/Components/Acrylic/AcrylicBadge';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useAudioAlert } from '@/Hooks/useAudioAlert';
 
@@ -64,7 +62,7 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         );
     };
 
-    // Calculate elapsed minutes and seconds
+    // Calculate elapsed minutes and seconds with ergonomic warning thresholds
     const getElapsedTime = (sentAt) => {
         if (!sentAt) return { text: '00:00', minutes: 0, isUrgent: false, isWarning: false };
         const sentTime = new Date(sentAt).getTime();
@@ -86,6 +84,7 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         return tickets.filter((t) => t.ticket_status === statusFilter);
     }, [tickets, statusFilter]);
 
+    // Status counts
     const counts = useMemo(() => {
         return {
             all: tickets.length,
@@ -95,230 +94,324 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         };
     }, [tickets]);
 
+    // Top Metric Cards (Consistent with Beranda, Produk, & Meja)
+    const metricCards = [
+        {
+            label: 'Total Antrean Dapur',
+            value: counts.all,
+            subtext: 'Seluruh pesanan makanan aktif',
+            icon: ChefHat,
+            iconBg: 'bg-indigo-500/10',
+            iconColor: 'text-indigo-400',
+        },
+        {
+            label: 'Menunggu Dimasak',
+            value: counts.waiting,
+            subtext: 'Tiket baru belum diolah',
+            icon: Clock,
+            iconBg: 'bg-rose-500/10',
+            iconColor: 'text-rose-400',
+        },
+        {
+            label: 'Sedang Dimasak',
+            value: counts.cooking,
+            subtext: 'Sedang di kompor / penggorengan',
+            icon: Flame,
+            iconBg: 'bg-amber-500/10',
+            iconColor: 'text-amber-400',
+        },
+        {
+            label: 'Diantar ke Kasir',
+            value: counts.delivered,
+            subtext: 'Selesai masak, siap disajikan',
+            icon: CheckCircle2,
+            iconBg: 'bg-emerald-500/10',
+            iconColor: 'text-emerald-400',
+        },
+    ];
+
     return (
         <AuthenticatedLayout
-            title="Kitchen Display System (KDS)"
+            title="Kitchen Display System (KDS Dapur)"
+            showSearch={false}
             headerRight={
-                <div className="flex items-center gap-2">
-                    {unnotified_count > 0 && (
+                <div className="flex items-center gap-2.5">
+                    {unnotified_count > 0 ? (
                         <SpecularButton
                             variant="primary"
-                            size="sm"
-                            icon={Volume2}
+                            size="md"
+                            icon={Bell}
                             onClick={handleAcknowledgeAudio}
-                            className="animate-pulse"
+                            className="animate-pulse shadow-md"
                         >
                             <span>Heningkan Bell ({unnotified_count} Baru)</span>
                         </SpecularButton>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => setAudioMuted(!audioMuted)}
+                            className={`min-h-[42px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-colors ${
+                                audioMuted
+                                    ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+                                    : 'bg-white/[0.04] border-white/[0.08] text-slate-300 hover:text-white'
+                            }`}
+                            title={audioMuted ? 'Aktifkan Suara Bell' : 'Bisukan Suara Bell'}
+                        >
+                            {audioMuted ? (
+                                <>
+                                    <VolumeX className="w-4 h-4 text-rose-400" />
+                                    <span className="hidden sm:inline">Bell Mati</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                                    <span className="hidden sm:inline">Bell Aktif</span>
+                                </>
+                            )}
+                        </button>
                     )}
-                    <button
-                        type="button"
-                        onClick={() => setAudioMuted(!audioMuted)}
-                        className={`p-2 rounded-lg border text-xs transition-colors ${
-                            audioMuted
-                                ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
-                                : 'bg-white/[0.04] border-white/[0.08] text-slate-300 hover:text-white'
-                        }`}
-                        title={audioMuted ? 'Suara Bell Dinonaktifkan' : 'Suara Bell Aktif'}
-                    >
-                        {audioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-                    </button>
                     <SpecularButton
                         variant="secondary"
-                        size="sm"
+                        size="md"
                         icon={RefreshCw}
                         onClick={() => router.reload({ only: ['tickets', 'unnotified_count'] })}
                     >
-                        <span className="hidden sm:inline">Refresh</span>
+                        <span className="hidden sm:inline">Segarkan</span>
                     </SpecularButton>
                 </div>
             }
         >
             <Head title="Dapur KDS - Kitchen Display System" />
 
-            {/* Filter Tabs & Counters */}
-            <div className="flex items-center justify-between gap-4 flex-wrap select-none border-b border-white/[0.06] pb-3">
-                <div className="flex items-center gap-1.5 overflow-x-auto">
-                    {[
-                        { id: 'all', label: 'Semua Antrean', count: counts.all },
-                        { id: 'waiting', label: 'Menunggu Dimasak', count: counts.waiting },
-                        { id: 'cooking', label: 'Sedang Dimasak', count: counts.cooking },
-                        { id: 'delivered_to_cashier', label: 'Diantar ke Kasir', count: counts.delivered },
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            type="button"
-                            onClick={() => setStatusFilter(tab.id)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium tracking-wide transition-all ${
-                                statusFilter === tab.id
-                                    ? 'bg-white/[0.07] text-white border border-white/[0.12]'
-                                    : 'bg-white/[0.02] text-slate-400 hover:text-white border border-transparent hover:border-white/[0.06]'
-                            }`}
-                        >
-                            <span>{tab.label}</span>
-                            <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums ${
-                                    statusFilter === tab.id
-                                        ? 'bg-white/10 text-white'
-                                        : 'bg-white/[0.04] text-slate-400'
-                                }`}
-                            >
-                                {tab.count}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-
-                <div className="text-xs text-slate-400 font-mono flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Auto-sync KDS: 6 detik</span>
-                </div>
-            </div>
-
-            {/* KDS Large Screen Grid (Readable from 2 meters away) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredTickets.length === 0 ? (
-                    <div className="col-span-full py-24 text-center text-slate-500 bg-[#0B0D13] rounded-xl border border-white/[0.06]">
-                        <ChefHat className="w-12 h-12 mx-auto text-slate-600 mb-3 opacity-40" />
-                        <h3 className="text-sm font-semibold text-slate-300">
-                            Semua Pesanan Dapur Selesai
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Tiket baru dari kasir atau pemesanan QR meja akan otomatis muncul di sini.
-                        </p>
-                    </div>
-                ) : (
-                    filteredTickets.map((ticket) => {
-                        const elapsed = getElapsedTime(ticket.sent_to_kds_at);
-                        const isWaiting = ticket.ticket_status === 'waiting';
-                        const isCooking = ticket.ticket_status === 'cooking';
-                        const isDelivered = ticket.ticket_status === 'delivered_to_cashier';
-
+            <div className="space-y-6">
+                {/* ============================================================
+                    TOP METRIC CARDS (KONSISTEN DENGAN BERANDA & PRODUK)
+                ============================================================ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {metricCards.map((card, idx) => {
+                        const Icon = card.icon;
                         return (
                             <div
-                                key={ticket.id}
-                                className={`rounded-xl border border-white/[0.06] bg-[#0B0D13] transition-all flex flex-col justify-between overflow-hidden shadow-sm relative ${
-                                    isWaiting
-                                        ? 'border-t-2 border-t-rose-500'
-                                        : isCooking
-                                        ? 'border-t-2 border-t-amber-400'
-                                        : 'border-t-2 border-t-emerald-400'
-                                }`}
+                                key={idx}
+                                className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-5 flex flex-col justify-between"
                             >
-                                {/* Ticket Header */}
-                                <div className="p-3.5 border-b border-white/[0.06] flex items-center justify-between gap-3 bg-white/[0.01]">
-                                    <div>
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-slate-100">
-                                                #{ticket.token_number}
-                                            </span>
-                                            <span className="text-xs font-medium text-slate-400">
-                                                {ticket.order?.table
-                                                    ? ticket.order.table.table_number
-                                                    : 'Takeaway'}
-                                            </span>
-                                        </div>
-                                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                            {ticket.order?.invoice_number || 'INV-POS'}
-                                        </div>
-                                    </div>
-
-                                    {/* Live Elapsed Counter Badge */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-400 font-medium">
+                                        {card.label}
+                                    </span>
                                     <div
-                                        className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium flex items-center gap-1.5 tabular-nums ${
-                                            elapsed.isUrgent
-                                                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30 animate-pulse'
-                                                : elapsed.isWarning
-                                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                                : 'bg-white/[0.04] text-slate-300 border border-white/[0.06]'
-                                        }`}
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.iconBg} ${card.iconColor}`}
                                     >
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{elapsed.text}</span>
+                                        <Icon className="w-4 h-4" />
                                     </div>
                                 </div>
-
-                                {/* Order Item Details */}
-                                <div className="p-4 space-y-3 flex-1">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-7 h-7 rounded-md bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-xs font-bold font-mono text-slate-200 flex-shrink-0">
-                                            {ticket.order_item?.quantity}x
-                                        </div>
-                                        <div className="min-w-0">
-                                            <h4 className="text-sm font-semibold text-slate-200 tracking-wide">
-                                                {ticket.order_item?.product?.product_name || 'Menu Dapur'}
-                                            </h4>
-                                            <div className="text-[11px] text-slate-400">
-                                                {ticket.order_item?.product?.category?.category_name || '-'}
-                                            </div>
-                                        </div>
+                                <div className="mt-4">
+                                    <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums text-white">
+                                        {card.value}
                                     </div>
-
-                                    {/* Notes / Special Instructions */}
-                                    {ticket.order_item?.notes && (
-                                        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs">
-                                            <strong className="block text-[10px] uppercase tracking-wider text-amber-400 font-mono">
-                                                Catatan Khusus:
-                                            </strong>
-                                            <span>{ticket.order_item.notes}</span>
-                                        </div>
-                                    )}
-
-                                    {/* Status Indicator */}
-                                    <div className="pt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                                        <span
-                                            className={`w-1.5 h-1.5 rounded-full ${
-                                                isWaiting ? 'bg-rose-500' : isCooking ? 'bg-amber-400' : 'bg-emerald-400'
-                                            }`}
-                                        />
-                                        <span>
-                                            {isWaiting && 'Menunggu Antrean'}
-                                            {isCooking && 'Sedang Dimasak'}
-                                            {isDelivered && 'Sudah di Kasir'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* One-Tap Action Progression Button */}
-                                <div className="p-3 border-t border-white/[0.06] bg-[#07080B]/60">
-                                    {isWaiting && (
-                                        <SpecularButton
-                                            variant="primary"
-                                            size="md"
-                                            icon={Flame}
-                                            onClick={() => handleUpdateStatus(ticket.id, 'cooking')}
-                                            className="w-full text-xs font-semibold"
-                                        >
-                                            Mulai Masak
-                                        </SpecularButton>
-                                    )}
-
-                                    {isCooking && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleUpdateStatus(ticket.id, 'delivered_to_cashier')
-                                            }
-                                            className="w-full py-2.5 px-3 rounded-lg bg-gradient-to-b from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-medium text-xs shadow-sm border border-amber-400/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]"
-                                        >
-                                            <Check className="w-4 h-4" />
-                                            <span>Selesai Masak &rarr; Antar ke Kasir</span>
-                                        </button>
-                                    )}
-
-                                    {isDelivered && (
-                                        <div className="text-center py-1 text-xs font-mono text-emerald-400 flex items-center justify-center gap-1.5">
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            <span>Menunggu Konfirmasi Kasir</span>
-                                        </div>
-                                    )}
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        {card.subtext}
+                                    </p>
                                 </div>
                             </div>
                         );
-                    })
+                    })}
+                </div>
+
+                {/* ============================================================
+                    TOOLBAR & FILTER TABS (RAMAH USIA 40-60 TAHUN)
+                ============================================================ */}
+                <div className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                    {/* Status Tabs */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
+                        {[
+                            { id: 'all', label: 'Semua Antrean', count: counts.all },
+                            { id: 'waiting', label: 'Menunggu Dimasak', count: counts.waiting },
+                            { id: 'cooking', label: 'Sedang Dimasak', count: counts.cooking },
+                            { id: 'delivered_to_cashier', label: 'Diantar ke Kasir', count: counts.delivered },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                type="button"
+                                onClick={() => setStatusFilter(tab.id)}
+                                className={`min-h-[42px] flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                                    statusFilter === tab.id
+                                        ? 'bg-indigo-600 text-white font-semibold shadow-sm'
+                                        : 'bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.07] border border-white/[0.06]'
+                                }`}
+                            >
+                                <span>{tab.label}</span>
+                                <span
+                                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold tabular-nums ${
+                                        statusFilter === tab.id
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-white/[0.06] text-slate-400'
+                                    }`}
+                                >
+                                    {tab.count}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Auto-Sync Status Indicator */}
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400 self-end sm:self-center shrink-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Sinkronisasi Dapur: Otomatis (6 dtk)</span>
+                    </div>
+                </div>
+
+                {/* ============================================================
+                    KDS LARGE SCREEN GRID (TERBACA JELAS DARI JARAK 2 METER)
+                ============================================================ */}
+                {filteredTickets.length === 0 ? (
+                    <div className="py-24 text-center bg-[#0C0E16] rounded-xl border border-white/[0.08] p-8 space-y-3">
+                        <ChefHat className="w-16 h-16 mx-auto text-slate-500 opacity-50" />
+                        <h3 className="text-lg font-bold text-white">
+                            Semua Pesanan Dapur Selesai
+                        </h3>
+                        <p className="text-sm text-slate-400 max-w-md mx-auto">
+                            Tidak ada antrean tiket makanan yang perlu dimasak saat ini. Tiket baru dari kasir atau pemesanan QR meja akan otomatis muncul di sini.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        {filteredTickets.map((ticket) => {
+                            const elapsed = getElapsedTime(ticket.sent_to_kds_at);
+                            const isWaiting = ticket.ticket_status === 'waiting';
+                            const isCooking = ticket.ticket_status === 'cooking';
+                            const isDelivered = ticket.ticket_status === 'delivered_to_cashier';
+
+                            return (
+                                <div
+                                    key={ticket.id}
+                                    className={`rounded-xl border bg-[#0C0E16] flex flex-col justify-between overflow-hidden shadow-sm transition-all duration-200 relative ${
+                                        isWaiting
+                                            ? 'border-white/[0.08] border-t-4 border-t-rose-500'
+                                            : isCooking
+                                            ? 'border-white/[0.08] border-t-4 border-t-amber-400'
+                                            : 'border-white/[0.08] border-t-4 border-t-emerald-400'
+                                    }`}
+                                >
+                                    {/* Ticket Header: Token & Live Timer */}
+                                    <div className="p-4 border-b border-white/[0.08] flex items-center justify-between gap-3 bg-[#08090D]">
+                                        <div className="min-w-0">
+                                            <div className="flex items-baseline gap-2.5">
+                                                <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
+                                                    #{ticket.token_number}
+                                                </span>
+                                                <span className="text-sm font-bold text-indigo-300 truncate">
+                                                    {ticket.order?.table
+                                                        ? `Meja ${ticket.order.table.table_number}`
+                                                        : 'Bungkus / Takeaway'}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs font-mono text-slate-400 mt-0.5 truncate">
+                                                {ticket.order?.invoice_number || 'INV-POS'} • {ticket.order?.customer_name || 'Pelanggan'}
+                                            </div>
+                                        </div>
+
+                                        {/* Elapsed Timer Badge (Kontras Tinggi) */}
+                                        <div
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 tabular-nums shrink-0 ${
+                                                elapsed.isUrgent
+                                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                                                    : elapsed.isWarning
+                                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                                    : 'bg-white/[0.06] text-slate-300 border border-white/[0.08]'
+                                            }`}
+                                            title="Durasi waktu sejak pesanan dikirim ke dapur"
+                                        >
+                                            <Clock className="w-4 h-4" />
+                                            <span className="text-sm">{elapsed.text}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Ticket Body: Item Name, Quantity, and Special Notes */}
+                                    <div className="p-5 space-y-4 flex-1">
+                                        {/* Quantity & Product Name */}
+                                        <div className="flex items-start gap-3.5">
+                                            <div className="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg font-black font-mono text-indigo-300 shrink-0">
+                                                {ticket.order_item?.quantity}x
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="text-base sm:text-lg font-bold text-white leading-snug">
+                                                    {ticket.order_item?.product?.product_name || 'Menu Dapur'}
+                                                </h4>
+                                                <div className="text-xs text-slate-400 mt-0.5 font-medium">
+                                                    {ticket.order_item?.product?.category?.category_name || 'Makanan Masak'}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Special Notes (Sangat Jelas & Menonjol) */}
+                                        {ticket.order_item?.notes && (
+                                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
+                                                <strong className="block text-[11px] uppercase tracking-wider text-amber-300 font-mono font-bold flex items-center gap-1.5">
+                                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                                    <span>Catatan Khusus Pelanggan:</span>
+                                                </strong>
+                                                <p className="text-sm font-semibold text-white leading-relaxed">
+                                                    "{ticket.order_item.notes}"
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Operational Status Indicator */}
+                                        <div className="pt-2 flex items-center gap-2 text-xs font-medium text-slate-300">
+                                            <span
+                                                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                                    isWaiting ? 'bg-rose-500' : isCooking ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                                                }`}
+                                            />
+                                            <span>
+                                                {isWaiting && 'Menunggu Antrean (Belum Diolah)'}
+                                                {isCooking && 'Sedang Dimasak di Kompor'}
+                                                {isDelivered && 'Sudah Diserahkan ke Meja Kasir'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Progression Button (Tingkat Sentuh Nyaman Min 48px) */}
+                                    <div className="p-4 border-t border-white/[0.08] bg-[#08090D]">
+                                        {isWaiting && (
+                                            <SpecularButton
+                                                variant="primary"
+                                                size="lg"
+                                                icon={Flame}
+                                                onClick={() => handleUpdateStatus(ticket.id, 'cooking')}
+                                                className="w-full min-h-[48px] text-sm font-bold"
+                                            >
+                                                Mulai Masak
+                                            </SpecularButton>
+                                        )}
+
+                                        {isCooking && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    handleUpdateStatus(ticket.id, 'delivered_to_cashier')
+                                                }
+                                                className="w-full min-h-[48px] px-4 py-2.5 rounded-lg bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-sm shadow-md border border-amber-400/30 flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]"
+                                            >
+                                                <Check className="w-5 h-5" />
+                                                <span>Selesai Masak &rarr; Bawa ke Kasir</span>
+                                            </button>
+                                        )}
+
+                                        {isDelivered && (
+                                            <div className="min-h-[48px] rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 flex items-center justify-center gap-2 text-xs font-mono font-bold">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                                <span>Menunggu Konfirmasi Kasir</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         </AuthenticatedLayout>
     );
 }
-

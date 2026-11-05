@@ -1,43 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
-    TrendingUp,
-    TrendingDown,
-    PackageX,
-    Wallet,
-    DollarSign,
-    Layers,
-    SlidersHorizontal,
-    Edit3,
     Plus,
     RefreshCw,
     Search,
-    Clock,
-    AlertTriangle,
     QrCode,
-    Utensils,
     Receipt,
     Calendar,
-    ArrowUpRight,
-    ArrowDownRight,
-    Filter,
-    Trash2,
-    Grid,
     Tag,
     ExternalLink,
+    Package,
+    Clock,
+    LayoutGrid,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
-import AcrylicCard from '@/Components/Acrylic/AcrylicCard';
-import AcrylicBadge from '@/Components/Acrylic/AcrylicBadge';
-import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
 import AcrylicInput from '@/Components/Acrylic/AcrylicInput';
+import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useBarcodeScanner } from '@/Hooks/useBarcodeScanner';
 
-/**
- * Format currency to IDR with tabular numbers
- */
 function formatRupiah(amount) {
     const num = Number(amount) || 0;
     return `Rp ${num.toLocaleString('id-ID')}`;
@@ -52,20 +34,14 @@ export default function AdminDashboard({
     dining_tables = [],
     filters = {},
 }) {
-    // Current Active Tab
-    const [activeTab, setActiveTab] = useState('inventory'); // 'inventory' | 'shifts' | 'orders' | 'tables'
-
-    // Date preset & custom date filter state
+    const [activeTab, setActiveTab] = useState('inventory');
     const [currentPreset, setCurrentPreset] = useState(filters.preset || 'today');
     const [customDate, setCustomDate] = useState(filters.date || '');
-
-    // Search and filter state
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(filters.category_id || 'all');
     const [selectedKitchenType, setSelectedKitchenType] = useState(filters.requires_kitchen || 'all');
     const [selectedStockStatus, setSelectedStockStatus] = useState(filters.stock_status || 'all');
 
-    // Modals state
     const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -73,7 +49,6 @@ export default function AdminDashboard({
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
-    // Inertia form for Stock Adjustment
     const {
         data: adjustmentData,
         setData: setAdjustmentData,
@@ -83,12 +58,11 @@ export default function AdminDashboard({
         errors: adjustmentErrors,
     } = useForm({
         product_id: '',
-        movement_type: 'in', // 'in' | 'out' | 'adjustment'
+        movement_type: 'in',
         quantity_change: 1,
         notes: '',
     });
 
-    // Inertia form for Product Edit
     const {
         data: editData,
         setData: setEditData,
@@ -106,7 +80,6 @@ export default function AdminDashboard({
         is_available: true,
     });
 
-    // Inertia form for Product Create
     const {
         data: createData,
         setData: setCreateData,
@@ -125,7 +98,6 @@ export default function AdminDashboard({
         is_available: true,
     });
 
-    // Inertia form for Category Create
     const {
         data: categoryData,
         setData: setCategoryData,
@@ -137,7 +109,6 @@ export default function AdminDashboard({
         category_name: '',
     });
 
-    // Barcode scanner integration: when scanned, filter or open stock adjustment
     const handleBarcodeDetected = (barcode) => {
         const matched = products.data?.find((p) => p.barcode === barcode);
         if (matched) {
@@ -150,7 +121,6 @@ export default function AdminDashboard({
 
     const { scannerStatus, lastScannedBarcode } = useBarcodeScanner(handleBarcodeDetected);
 
-    // Apply filters with Inertia router
     const triggerFilter = (newFilters = {}) => {
         const queryParams = {
             search: searchQuery,
@@ -161,7 +131,6 @@ export default function AdminDashboard({
             date: customDate,
             ...newFilters,
         };
-
         router.get('/admin', queryParams, {
             preserveState: true,
             preserveScroll: true,
@@ -192,7 +161,6 @@ export default function AdminDashboard({
         setActiveTab('inventory');
     };
 
-    // Open Stock Adjustment Modal
     const handleOpenAdjustment = (product) => {
         setSelectedProduct(product);
         setAdjustmentData({
@@ -215,7 +183,6 @@ export default function AdminDashboard({
         });
     };
 
-    // Open Edit Product Modal
     const handleOpenEdit = (product) => {
         setSelectedProduct(product);
         setEditData({
@@ -240,7 +207,6 @@ export default function AdminDashboard({
         });
     };
 
-    // Open Delete Product Modal
     const handleOpenDelete = (product) => {
         setSelectedProduct(product);
         setIsDeleteModalOpen(true);
@@ -254,7 +220,6 @@ export default function AdminDashboard({
         });
     };
 
-    // Open Create Product Modal
     const handleOpenCreate = () => {
         resetCreate();
         if (categories?.length > 0) {
@@ -274,7 +239,6 @@ export default function AdminDashboard({
         });
     };
 
-    // Create Category
     const handleSubmitCategory = (e) => {
         e.preventDefault();
         postCategory('/admin/categories', {
@@ -286,12 +250,10 @@ export default function AdminDashboard({
         });
     };
 
-    // Update Dining Table Status
     const handleTableStatusChange = (tableId, nextStatus) => {
         router.patch(`/admin/tables/${tableId}/status`, { status: nextStatus }, { preserveScroll: true });
     };
 
-    // Preview new stock calculation for adjustment modal
     const previewCalculatedStock = useMemo(() => {
         if (!selectedProduct) return 0;
         const current = Number(selectedProduct.stock_qty) || 0;
@@ -301,30 +263,35 @@ export default function AdminDashboard({
         return Math.max(0, current + change);
     }, [selectedProduct, adjustmentData.movement_type, adjustmentData.quantity_change]);
 
+    /* ===================================================================
+       Tab definitions — single source of truth
+    =================================================================== */
+    const tabs = [
+        { id: 'inventory', label: 'Menu & Stok', icon: Package, count: products.total || products.data?.length || 0 },
+        { id: 'shifts', label: 'Rekap Shift', icon: Clock, count: cashier_shifts.length },
+        { id: 'orders', label: 'Riwayat Transaksi', icon: Receipt, count: recent_orders.length },
+        { id: 'tables', label: 'Status Meja', icon: LayoutGrid, count: dining_tables.length },
+    ];
+
     return (
         <AdminAcrylicLayout
-            title="Executive Dashboard & Inventory"
-            scannerStatus={scannerStatus}
-            lastScannedBarcode={lastScannedBarcode}
+            title="Beranda"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onQuickSearch={(q) => triggerFilter({ search: q })}
-            onOpenCreateProduct={handleOpenCreate}
         >
-            <Head title="Admin Dashboard & Inventory" />
+            <Head title="Beranda — Dashboard" />
 
-            {/* =========================================================================
-                DATE FILTER BAR FOR DYNAMIC P&L METRICS
-               ========================================================================= */}
-            <div className="flex items-center justify-between gap-4 flex-wrap select-none p-3.5 rounded-xl bg-[#0F111A]/85 backdrop-blur-md border border-white/[0.08] shadow-sm">
-                <div className="flex items-center gap-2">
+            {/* ============================================================
+                FILTER PERIODE
+            ============================================================ */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                <div className="flex items-center gap-2 text-sm text-slate-300">
                     <Calendar className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-medium text-slate-200">
-                        Periode Analisis: <span className="text-indigo-300 font-mono">{summary_metrics.label}</span>
-                    </span>
+                    <span>Periode: <span className="font-medium text-white">{summary_metrics.label}</span></span>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
+                <div className="flex flex-wrap items-center gap-2">
                     {[
                         { id: 'today', label: 'Hari Ini' },
                         { id: 'yesterday', label: 'Kemarin' },
@@ -335,234 +302,164 @@ export default function AdminDashboard({
                             key={btn.id}
                             type="button"
                             onClick={() => handleDatePresetChange(btn.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                 currentPreset === btn.id
-                                    ? 'bg-white/[0.07] text-white border border-white/[0.12] font-medium'
-                                    : 'bg-white/[0.02] text-slate-400 hover:text-white border border-white/[0.05]'
+                                    ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'
+                                    : 'text-slate-400 hover:text-white border border-white/[0.06] hover:border-white/[0.12]'
                             }`}
                         >
                             {btn.label}
                         </button>
                     ))}
 
-                    <div className="flex items-center gap-2 pl-2 border-l border-white/[0.08]">
-                        <input
-                            type="date"
-                            value={customDate}
-                            onChange={handleCustomDateChange}
-                            className="bg-[#0B0D13] text-slate-200 border border-white/[0.08] rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:border-indigo-400 font-mono"
-                        />
-                    </div>
-
-                    <SpecularButton
-                        variant="secondary"
-                        size="sm"
-                        icon={RefreshCw}
-                        onClick={() => triggerFilter()}
-                        title="Segarkan data metrik"
+                    <input
+                        type="date"
+                        value={customDate}
+                        onChange={handleCustomDateChange}
+                        className="bg-[#0C0E16] text-sm text-slate-200 border border-white/[0.08] rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500"
                     />
+
+                    <button
+                        type="button"
+                        onClick={() => triggerFilter()}
+                        className="p-2 text-slate-400 hover:text-white rounded-lg border border-white/[0.06] hover:bg-white/[0.04] transition-colors"
+                        title="Perbarui data"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 
-            {/* =========================================================================
-                1. TOP BENTO GRID: RINGKASAN EKSEKUTIF & LABA RUGI (4 UNIFORM CARDS)
-               ========================================================================= */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {/* Bento Card 1: Gross Revenue */}
-                <AcrylicCard
-                    className="relative group border border-white/[0.07] bg-[#0B0D13]/90"
-                    contentClassName="p-5 flex flex-col justify-between h-full"
-                >
-                    <div className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider text-[11px]">
-                        Pendapatan ({summary_metrics.preset === 'today' ? 'Hari Ini' : 'Periode'})
+            {/* ============================================================
+                RINGKASAN KEUANGAN — 4 KARTU
+            ============================================================ */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Pendapatan */}
+                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                    <div className="text-sm text-slate-400 mb-3">Pendapatan</div>
+                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
+                        {formatRupiah(summary_metrics.gross_revenue)}
                     </div>
-                    <div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-100 tracking-tight">
-                            {formatRupiah(summary_metrics.gross_revenue)}
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs font-mono">
-                            <span className="text-slate-500">
-                                Tunai: <span className="text-slate-300">{formatRupiah(summary_metrics.cash_revenue)}</span>
-                            </span>
-                            <span className="text-slate-500">
-                                QRIS: <span className="text-slate-300">{formatRupiah(summary_metrics.qris_revenue)}</span>
-                            </span>
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                        <span className="text-slate-400">Tunai: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.cash_revenue)}</span></span>
+                        <span className="text-slate-400">QRIS: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.qris_revenue)}</span></span>
                     </div>
-                </AcrylicCard>
+                </div>
 
-                {/* Bento Card 2: Total HPP Modal & Biaya Operasional */}
-                <AcrylicCard
-                    className="relative group border border-white/[0.07] bg-[#0B0D13]/90"
-                    contentClassName="p-5 flex flex-col justify-between h-full"
-                >
-                    <div className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider text-[11px]">
-                        HPP Modal & Operasional
+                {/* Modal & Biaya */}
+                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                    <div className="text-sm text-slate-400 mb-3">Modal & Biaya</div>
+                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
+                        {formatRupiah(summary_metrics.total_cost + summary_metrics.operational_expenses)}
                     </div>
-                    <div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-100 tracking-tight">
-                            {formatRupiah(summary_metrics.total_cost + summary_metrics.operational_expenses)}
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs font-mono">
-                            <span className="text-slate-500">
-                                HPP: <span className="text-slate-300">{formatRupiah(summary_metrics.total_cost)}</span>
-                            </span>
-                            <span className="text-slate-500">
-                                Beban: <span className="text-slate-300">{formatRupiah(summary_metrics.operational_expenses)}</span>
-                            </span>
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                        <span className="text-slate-400">HPP: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.total_cost)}</span></span>
+                        <span className="text-slate-400">Beban: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.operational_expenses)}</span></span>
                     </div>
-                </AcrylicCard>
+                </div>
 
-                {/* Bento Card 3: Laba Bersih (Net Profit) - Minimalist & Uniform */}
-                <AcrylicCard
-                    className="relative group border border-white/[0.07] bg-[#0B0D13]/90"
-                    contentClassName="p-5 flex flex-col justify-between h-full"
-                >
-                    <div className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider text-[11px]">
-                        Laba Bersih (Net Profit)
+                {/* Laba Bersih */}
+                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                    <div className="text-sm text-slate-400 mb-3">Laba Bersih</div>
+                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
+                        {formatRupiah(summary_metrics.net_profit)}
                     </div>
-                    <div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-slate-100 tracking-tight">
-                            {formatRupiah(summary_metrics.net_profit)}
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.05] text-[11px] text-slate-500 font-mono flex items-center justify-between">
-                            <span>Omset - (HPP + Beban)</span>
-                            <span className="text-slate-400">{summary_metrics.total_orders_count} Trx</span>
-                        </div>
+                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
+                        <span className="text-slate-400">Pendapatan − (HPP + Beban)</span>
+                        <span className="text-slate-200 font-mono">{summary_metrics.total_orders_count} transaksi</span>
                     </div>
-                </AcrylicCard>
+                </div>
 
-                {/* Bento Card 4: Status Stok Kritis */}
-                <AcrylicCard
-                    className="relative group border border-white/[0.07] bg-[#0B0D13]/90"
-                    contentClassName="p-5 flex flex-col justify-between h-full"
-                >
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-2 font-medium uppercase tracking-wider text-[11px]">
-                        <span>Stok Kritis</span>
-                        <Link
-                            href="/admin/products"
-                            className="text-[10px] text-indigo-400 hover:text-indigo-300 font-mono flex items-center gap-1 transition-colors normal-case"
-                        >
-                            <span>Kelola Produk &rarr;</span>
+                {/* Stok Kritis */}
+                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                    <div className="flex items-center justify-between text-sm mb-3">
+                        <span className="text-slate-400">Stok Kritis</span>
+                        <Link href="/admin/products" className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+                            Lihat semua →
                         </Link>
                     </div>
-                    <div>
-                        <div className="flex items-baseline gap-3">
-                            <span className="text-2xl font-bold font-mono tabular-nums text-slate-100 tracking-tight">
-                                {summary_metrics.critical_stock_count}
-                            </span>
-                            <span className="text-xs text-slate-500 font-mono">Menu Perlu Restock</span>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.05] flex items-center justify-between text-xs">
-                            <button
-                                type="button"
-                                onClick={() => handleQuickStockFilter('out_of_stock')}
-                                className="text-slate-400 hover:text-rose-400 font-mono transition-colors text-xs"
-                            >
-                                {summary_metrics.out_of_stock_count} Habis
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleQuickStockFilter('low_stock')}
-                                className="text-slate-400 hover:text-amber-400 font-mono transition-colors text-xs"
-                            >
-                                Menipis (≤5)
-                            </button>
-                        </div>
+                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
+                        {summary_metrics.critical_stock_count}
+                        <span className="text-sm font-normal text-slate-400 ml-2">menu perlu restock</span>
                     </div>
-                </AcrylicCard>
+                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex gap-4 text-sm">
+                        <button
+                            type="button"
+                            onClick={() => handleQuickStockFilter('out_of_stock')}
+                            className="text-rose-400 hover:text-rose-300 transition-colors font-mono"
+                        >
+                            {summary_metrics.out_of_stock_count} habis
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleQuickStockFilter('low_stock')}
+                            className="text-amber-400 hover:text-amber-300 transition-colors font-mono"
+                        >
+                            Menipis (≤5)
+                        </button>
+                    </div>
+                </div>
             </section>
 
-            {/* =========================================================================
-                2. TAB NAVIGATION (INVENTORY / SHIFTS / TRANSACTIONS / TABLES)
-               ========================================================================= */}
-            <div className="flex items-center gap-6 border-b border-white/[0.08] select-none overflow-x-auto">
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('inventory')}
-                    className={`flex items-center gap-2 py-3 text-xs transition-colors ${
-                        activeTab === 'inventory'
-                            ? 'border-b-2 border-indigo-400 text-white font-semibold'
-                            : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-medium'
-                    }`}
-                >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Kelola Menu & Stok ({products.total || products.data?.length || 0})</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('shifts')}
-                    className={`flex items-center gap-2 py-3 text-xs transition-colors ${
-                        activeTab === 'shifts'
-                            ? 'border-b-2 border-indigo-400 text-white font-semibold'
-                            : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-medium'
-                    }`}
-                >
-                    <Clock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Rekap Shift Kasir ({cashier_shifts.length})</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('orders')}
-                    className={`flex items-center gap-2 py-3 text-xs transition-colors ${
-                        activeTab === 'orders'
-                            ? 'border-b-2 border-indigo-400 text-white font-semibold'
-                            : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-medium'
-                    }`}
-                >
-                    <Receipt className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Riwayat Transaksi ({recent_orders.length})</span>
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('tables')}
-                    className={`flex items-center gap-2 py-3 text-xs transition-colors ${
-                        activeTab === 'tables'
-                            ? 'border-b-2 border-indigo-400 text-white font-semibold'
-                            : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent font-medium'
-                    }`}
-                >
-                    <Grid className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Status Meja & QR ({dining_tables.length})</span>
-                </button>
+            {/* ============================================================
+                TAB NAVIGASI
+            ============================================================ */}
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-white/[0.08] select-none">
+                {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap transition-colors border-b-2 ${
+                                isActive
+                                    ? 'border-indigo-400 text-white font-semibold'
+                                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                            }`}
+                        >
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : ''}`} />
+                            <span>{tab.label}</span>
+                            <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.04] text-slate-500'}`}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* =========================================================================
-                TAB 1: KELOLA MENU, HARGA & STOK DASAR
-               ========================================================================= */}
+            {/* ============================================================
+                TAB: MENU & STOK
+            ============================================================ */}
             {activeTab === 'inventory' && (
                 <div className="space-y-4">
-                    {/* Sticky Filter Bar */}
-                    <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
-                        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[240px]">
+                    {/* Filter Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[200px]">
                             <div className="relative flex-1">
-                                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Filter barcode / nama menu..."
-                                    className="w-full bg-[#08090D] border border-white/[0.06] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
+                                    placeholder="Cari barcode atau nama menu..."
+                                    className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                                 />
                             </div>
-                            <SpecularButton type="submit" size="sm" variant="secondary">
+                            <button type="submit" className="px-4 py-2.5 text-sm text-slate-300 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] transition-colors">
                                 Cari
-                            </SpecularButton>
+                            </button>
                         </form>
 
-                        <div className="flex items-center flex-wrap gap-2 text-xs">
-                            {/* Category Filter */}
+                        <div className="flex flex-wrap items-center gap-2">
                             <select
                                 value={selectedCategory}
                                 onChange={(e) => {
                                     setSelectedCategory(e.target.value);
                                     triggerFilter({ category_id: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-slate-300 border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-400/50"
+                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="all">Semua Kategori</option>
                                 {categories.map((c) => (
@@ -572,89 +469,82 @@ export default function AdminDashboard({
                                 ))}
                             </select>
 
-                            {/* Kitchen Route Filter */}
                             <select
                                 value={selectedKitchenType}
                                 onChange={(e) => {
                                     setSelectedKitchenType(e.target.value);
                                     triggerFilter({ requires_kitchen: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-slate-300 border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-400/50"
+                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
                             >
-                                <option value="all">Semua Tipe Proses</option>
-                                <option value="true">Dapur / KDS</option>
-                                <option value="false">Instan (Minuman/Snack)</option>
+                                <option value="all">Semua Tipe</option>
+                                <option value="true">Perlu Dapur</option>
+                                <option value="false">Instan</option>
                             </select>
 
-                            {/* Stock Status Filter */}
                             <select
                                 value={selectedStockStatus}
                                 onChange={(e) => {
                                     setSelectedStockStatus(e.target.value);
                                     triggerFilter({ stock_status: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-slate-300 border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-400/50"
+                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
                             >
-                                <option value="all">Semua Status Stok</option>
+                                <option value="all">Semua Stok</option>
                                 <option value="available">Stok Aman (&gt; 5)</option>
-                                <option value="low_stock">Stok Menipis (1-5)</option>
-                                <option value="out_of_stock">Stok Habis (0)</option>
+                                <option value="low_stock">Menipis (1-5)</option>
+                                <option value="out_of_stock">Habis (0)</option>
                             </select>
 
                             <Link href="/admin/products">
-                                <SpecularButton
-                                    variant="secondary"
-                                    size="sm"
-                                    icon={ExternalLink}
-                                    title="Buka Halaman Lengkap Kelola Produk & Stok"
-                                >
-                                    Kelola Produk & Stok
-                                </SpecularButton>
+                                <button type="button" className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Halaman Produk</span>
+                                </button>
                             </Link>
 
-                            <SpecularButton
-                                variant="secondary"
-                                size="sm"
-                                icon={Tag}
+                            <button
+                                type="button"
                                 onClick={() => setIsCreateCategoryModalOpen(true)}
-                                title="Tambah Kategori Baru"
+                                className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
                             >
-                                + Kategori
-                            </SpecularButton>
+                                <Tag className="w-4 h-4" />
+                                <span className="hidden sm:inline">Kategori Baru</span>
+                            </button>
 
-                            <SpecularButton
-                                variant="primary"
-                                size="sm"
-                                icon={Plus}
+                            <button
+                                type="button"
                                 onClick={handleOpenCreate}
+                                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-b from-[#4F46E5] to-[#3730A3] border border-indigo-400/20 rounded-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] hover:from-[#4338CA] hover:to-[#312E81] transition-all"
                             >
+                                <Plus className="w-4 h-4" />
                                 Tambah Menu
-                            </SpecularButton>
+                            </button>
                         </div>
                     </div>
 
-                    {/* Products & Inventory Table */}
-                    <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+                    {/* Tabel Produk (Anti Tumpang Tindih) */}
+                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs text-slate-300">
-                                <thead className="bg-[#08090D] text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/[0.06] sticky top-0 select-none">
+                            <table className="w-full text-left text-sm text-slate-300 min-w-[950px]">
+                                <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-semibold">Barcode</th>
-                                        <th className="py-3 px-4 font-semibold">Nama Menu & Kategori</th>
-                                        <th className="py-3 px-4 font-semibold text-center">Tipe Proses</th>
-                                        <th className="py-3 px-4 font-semibold text-right">HPP Modal</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Harga Jual</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Margin</th>
-                                        <th className="py-3 px-4 font-semibold text-center">Stok</th>
-                                        <th className="py-3 px-4 font-semibold text-center">Status</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Aksi Cepat</th>
+                                        <th className="py-3 px-4 font-medium whitespace-nowrap w-[140px]">Barcode</th>
+                                        <th className="py-3 px-4 font-medium whitespace-nowrap min-w-[200px]">Nama Menu</th>
+                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Tipe</th>
+                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Modal</th>
+                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Harga Jual</th>
+                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[90px]">Margin</th>
+                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Stok</th>
+                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[110px]">Status</th>
+                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[140px]">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {products.data?.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9" className="py-12 text-center text-slate-400">
-                                                Tidak ada produk yang cocok dengan kriteria filter saat ini.
+                                            <td colSpan="9" className="py-12 text-center text-slate-500">
+                                                Tidak ada menu yang sesuai dengan filter.
                                             </td>
                                         </tr>
                                     ) : (
@@ -666,106 +556,51 @@ export default function AdminDashboard({
                                             const isLowStock = p.stock_qty > 0 && p.stock_qty <= 5;
 
                                             return (
-                                                <tr
-                                                    key={p.id}
-                                                    className="hover:bg-white/[0.03] transition-colors"
-                                                >
-                                                    {/* Barcode */}
-                                                    <td className="py-3.5 px-4 font-mono text-[11px] text-indigo-300">
-                                                        {p.barcode || '-'}
+                                                <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                                                    <td className="py-3 px-4 font-mono text-xs text-indigo-300 whitespace-nowrap">
+                                                        {p.barcode || '—'}
                                                     </td>
-
-                                                    {/* Product Name & Category */}
-                                                    <td className="py-3.5 px-4 font-medium text-white">
-                                                        <div className="font-semibold">{p.product_name}</div>
-                                                        <div className="text-[11px] text-slate-400">
-                                                            {p.category?.category_name || '-'}
-                                                        </div>
+                                                    <td className="py-3 px-4 min-w-[200px]">
+                                                        <div className="font-medium text-white">{p.product_name}</div>
+                                                        <div className="text-xs text-slate-500">{p.category?.category_name || '—'}</div>
                                                     </td>
-
-                                                    {/* Kitchen Required */}
-                                                    <td className="py-3 px-4 text-center">
+                                                    <td className="py-3 px-4 text-center text-xs whitespace-nowrap">
                                                         {p.requires_kitchen ? (
-                                                            <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded font-medium bg-amber-500/10 text-amber-300/90 border border-amber-500/20">
-                                                                Dapur / KDS
-                                                            </span>
+                                                            <span className="text-amber-300">Dapur</span>
                                                         ) : (
-                                                            <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded font-medium bg-white/[0.04] text-slate-300 border border-white/[0.08]">
-                                                                Instan
-                                                            </span>
+                                                            <span className="text-slate-400">Instan</span>
                                                         )}
                                                     </td>
-
-                                                    {/* Cost Price */}
-                                                    <td className="py-3 px-4 text-right font-mono text-slate-400">
+                                                    <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs whitespace-nowrap">
                                                         {formatRupiah(p.cost_price)}
                                                     </td>
-
-                                                    {/* Selling Price */}
-                                                    <td className="py-3 px-4 text-right font-mono font-medium text-slate-100">
+                                                    <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs whitespace-nowrap">
                                                         {formatRupiah(p.selling_price)}
                                                     </td>
-
-                                                    {/* Margin */}
-                                                    <td className="py-3 px-4 text-right font-mono text-emerald-400/90 text-[11px]">
+                                                    <td className="py-3 px-4 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">
                                                         {margin}%
                                                     </td>
-
-                                                    {/* Stock Qty */}
-                                                    <td className="py-3 px-4 text-center font-mono text-xs tabular-nums">
-                                                        <span
-                                                            className={
-                                                                isOutOfStock
-                                                                    ? 'text-rose-400 font-semibold'
-                                                                    : isLowStock
-                                                                    ? 'text-amber-400 font-medium'
-                                                                    : 'text-slate-300'
-                                                            }
-                                                        >
+                                                    <td className="py-3 px-4 text-center font-mono tabular-nums whitespace-nowrap">
+                                                        <span className={
+                                                            isOutOfStock ? 'text-rose-400 font-semibold'
+                                                            : isLowStock ? 'text-amber-400 font-medium'
+                                                            : 'text-slate-300'
+                                                        }>
                                                             {p.stock_qty}
                                                         </span>
                                                     </td>
-
-                                                    {/* Availability Status */}
                                                     <td className="py-3 px-4 text-center">
-                                                        <span className="inline-flex items-center gap-1.5 text-xs text-slate-300 select-none">
-                                                            <span
-                                                                className={`w-1.5 h-1.5 rounded-full ${
-                                                                    isOutOfStock || !p.is_available ? 'bg-rose-500' : 'bg-emerald-400'
-                                                                }`}
-                                                            />
-                                                            <span>{isOutOfStock || !p.is_available ? 'Habis' : 'Tersedia'}</span>
+                                                        <span className="inline-flex items-center gap-1.5 text-xs">
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${
+                                                                isOutOfStock || !p.is_available ? 'bg-rose-500' : 'bg-emerald-400'
+                                                            }`} />
+                                                            {isOutOfStock || !p.is_available ? 'Habis' : 'Tersedia'}
                                                         </span>
                                                     </td>
-
-                                                    {/* Actions */}
-                                                    <td className="py-3 px-4 text-right space-x-1 whitespace-nowrap">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenAdjustment(p)}
-                                                            className="text-xs text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] rounded-md px-2.5 py-1 transition-colors"
-                                                            title="Catat penyesuaian stok"
-                                                        >
-                                                            Stok
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenEdit(p)}
-                                                            className="text-xs text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08] rounded-md px-2.5 py-1 transition-colors"
-                                                            title="Edit data & harga menu"
-                                                        >
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenDelete(p)}
-                                                            title="Hapus produk"
-                                                            className="text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 rounded-md px-2.5 py-1 transition-colors"
-                                                        >
-                                                            Hapus
-                                                        </button>
+                                                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                                                        <button type="button" onClick={() => handleOpenAdjustment(p)} className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors">Stok</button>
+                                                        <button type="button" onClick={() => handleOpenEdit(p)} className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors">Edit</button>
+                                                        <button type="button" onClick={() => handleOpenDelete(p)} className="text-xs text-slate-400 hover:text-rose-400 px-2 py-1.5 rounded hover:bg-rose-500/10 transition-colors">Hapus</button>
                                                     </td>
                                                 </tr>
                                             );
@@ -775,12 +610,12 @@ export default function AdminDashboard({
                             </table>
                         </div>
 
-                        {/* Pagination Bar */}
+                        {/* Pagination */}
                         {products.links && products.links.length > 3 && (
-                            <div className="px-5 py-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 bg-white/[0.01]">
-                                <div>
-                                    Menampilkan {products.from || 0} - {products.to || 0} dari {products.total || 0} menu
-                                </div>
+                            <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between text-sm text-slate-400">
+                                <span>
+                                    {products.from || 0} – {products.to || 0} dari {products.total || 0} menu
+                                </span>
                                 <div className="flex items-center gap-1">
                                     {products.links.map((link, idx) => (
                                         <button
@@ -795,7 +630,7 @@ export default function AdminDashboard({
                                                 link.active
                                                     ? 'bg-indigo-600 text-white font-semibold'
                                                     : link.url
-                                                    ? 'hover:bg-white/[0.08] text-slate-300'
+                                                    ? 'hover:bg-white/[0.06] text-slate-300'
                                                     : 'text-slate-600 cursor-not-allowed'
                                             }`}
                                         />
@@ -807,42 +642,40 @@ export default function AdminDashboard({
                 </div>
             )}
 
-            {/* =========================================================================
-                TAB 2: REKAP SHIFT KASIR (CASHIER SHIFTS)
-               ========================================================================= */}
+            {/* ============================================================
+                TAB: REKAP SHIFT
+            ============================================================ */}
             {activeTab === 'shifts' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-xs text-slate-400">
-                            Menampilkan riwayat rekonsiliasi kas kasir, modal awal, penjualan tunai & QRIS, dan selisih kas fisik.
-                        </div>
+                        <p className="text-sm text-slate-400">Riwayat kas kasir, modal awal, penjualan, dan selisih kas.</p>
                         <a href="/admin/export/excel?type=shifts">
-                            <SpecularButton variant="secondary" size="sm">
-                                Export Rekap Shift (.csv)
-                            </SpecularButton>
+                            <button type="button" className="text-sm text-slate-300 px-4 py-2 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
+                                Unduh Excel
+                            </button>
                         </a>
                     </div>
 
-                    <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs text-slate-300">
-                                <thead className="bg-[#08090D] text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/[0.06]">
+                            <table className="w-full text-left text-sm text-slate-300">
+                                <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-semibold">Nama Shift</th>
-                                        <th className="py-3 px-4 font-semibold">Kasir</th>
-                                        <th className="py-3 px-4 font-semibold">Waktu Buka / Tutup</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Modal Awal</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Total Tunai</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Total QRIS</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Kas Fisik Aktual</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Selisih Kas</th>
+                                        <th className="py-3 px-4 font-medium">Nama Shift</th>
+                                        <th className="py-3 px-4 font-medium">Kasir</th>
+                                        <th className="py-3 px-4 font-medium">Waktu</th>
+                                        <th className="py-3 px-4 font-medium text-right">Modal Awal</th>
+                                        <th className="py-3 px-4 font-medium text-right">Tunai</th>
+                                        <th className="py-3 px-4 font-medium text-right">QRIS</th>
+                                        <th className="py-3 px-4 font-medium text-right">Kas Fisik</th>
+                                        <th className="py-3 px-4 font-medium text-right">Selisih</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {cashier_shifts.length === 0 ? (
                                         <tr>
-                                            <td colSpan="8" className="py-12 text-center text-slate-400">
-                                                Belum ada sesi shift kasir yang tercatat.
+                                            <td colSpan="8" className="py-12 text-center text-slate-500">
+                                                Belum ada data shift kasir.
                                             </td>
                                         </tr>
                                     ) : (
@@ -851,48 +684,31 @@ export default function AdminDashboard({
                                             const disc = s.discrepancy;
 
                                             return (
-                                                <tr key={s.id} className="hover:bg-white/[0.03] transition-colors">
-                                                    <td className="py-3.5 px-4 font-semibold text-white">
-                                                        {s.shift_name}
-                                                    </td>
-                                                    <td className="py-3.5 px-4 text-slate-300 font-medium">
-                                                        {s.cashier?.full_name || '-'}
-                                                    </td>
-                                                    <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400">
+                                                <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
+                                                    <td className="py-3 px-4 font-medium text-white">{s.shift_name}</td>
+                                                    <td className="py-3 px-4">{s.cashier?.full_name || '—'}</td>
+                                                    <td className="py-3 px-4 font-mono text-xs text-slate-400">
                                                         <div>{new Date(s.opened_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
-                                                        <div className="text-[10px]">
-                                                            {isClosed ? new Date(s.closed_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : (
-                                                                <span className="text-emerald-400 font-semibold">SEDANG BERJALAN</span>
-                                                            )}
+                                                        <div>
+                                                            {isClosed
+                                                                ? new Date(s.closed_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+                                                                : <span className="text-emerald-400 font-semibold">Aktif</span>
+                                                            }
                                                         </div>
                                                     </td>
-                                                    <td className="py-3.5 px-4 text-right font-mono text-slate-400">
-                                                        {formatRupiah(s.opening_cash)}
+                                                    <td className="py-3 px-4 text-right font-mono text-slate-400">{formatRupiah(s.opening_cash)}</td>
+                                                    <td className="py-3 px-4 text-right font-mono text-slate-200">{formatRupiah(s.total_cash_sales)}</td>
+                                                    <td className="py-3 px-4 text-right font-mono text-indigo-300">{formatRupiah(s.total_qris_sales)}</td>
+                                                    <td className="py-3 px-4 text-right font-mono text-white">
+                                                        {s.closing_cash_actual !== null ? formatRupiah(s.closing_cash_actual) : '—'}
                                                     </td>
-                                                    <td className="py-3.5 px-4 text-right font-mono font-medium text-slate-200">
-                                                        {formatRupiah(s.total_cash_sales)}
-                                                    </td>
-                                                    <td className="py-3.5 px-4 text-right font-mono font-medium text-indigo-300">
-                                                        {formatRupiah(s.total_qris_sales)}
-                                                    </td>
-                                                    <td className="py-3.5 px-4 text-right font-mono text-white">
-                                                        {s.closing_cash_actual !== null ? formatRupiah(s.closing_cash_actual) : '-'}
-                                                    </td>
-                                                    <td className="py-3.5 px-4 text-right font-mono font-semibold">
+                                                    <td className="py-3 px-4 text-right font-mono font-semibold">
                                                         {disc !== null && disc !== undefined ? (
-                                                            <span
-                                                                className={
-                                                                    disc === 0
-                                                                        ? 'text-emerald-400'
-                                                                        : disc > 0
-                                                                        ? 'text-indigo-400'
-                                                                        : 'text-rose-400'
-                                                                }
-                                                            >
+                                                            <span className={disc === 0 ? 'text-emerald-400' : disc > 0 ? 'text-indigo-400' : 'text-rose-400'}>
                                                                 {disc > 0 ? `+${formatRupiah(disc)}` : formatRupiah(disc)}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-slate-500">-</span>
+                                                            <span className="text-slate-500">—</span>
                                                         )}
                                                     </td>
                                                 </tr>
@@ -906,95 +722,91 @@ export default function AdminDashboard({
                 </div>
             )}
 
-            {/* =========================================================================
-                TAB 3: RIWAYAT TRANSAKSI (ORDERS HISTORY)
-               ========================================================================= */}
+            {/* ============================================================
+                TAB: RIWAYAT TRANSAKSI
+            ============================================================ */}
             {activeTab === 'orders' && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-xs text-slate-400">
-                            Daftar transaksi terbaru mencakup invoice, metode pembayaran, total omset, dan status pesanan.
-                        </div>
+                        <p className="text-sm text-slate-400">Daftar transaksi terbaru: invoice, pembayaran, total, dan status.</p>
                         <a href="/admin/export/excel?type=orders">
-                            <SpecularButton variant="secondary" size="sm">
-                                Export Riwayat Transaksi (.csv)
-                            </SpecularButton>
+                            <button type="button" className="text-sm text-slate-300 px-4 py-2 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
+                                Unduh Excel
+                            </button>
                         </a>
                     </div>
 
-                    <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-xs text-slate-300">
-                                <thead className="bg-[#08090D] text-[11px] uppercase tracking-wider text-slate-400 border-b border-white/[0.06]">
+                            <table className="w-full text-left text-sm text-slate-300">
+                                <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-semibold">Invoice & Token</th>
-                                        <th className="py-3 px-4 font-semibold">Sumber</th>
-                                        <th className="py-3 px-4 font-semibold">Kasir</th>
-                                        <th className="py-3 px-4 font-semibold">Metode</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Total HPP</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Total Tagihan</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Diterima / Kembali</th>
-                                        <th className="py-3 px-4 font-semibold text-center">Status</th>
-                                        <th className="py-3 px-4 font-semibold text-right">Waktu</th>
+                                        <th className="py-3 px-4 font-medium">Invoice</th>
+                                        <th className="py-3 px-4 font-medium">Sumber</th>
+                                        <th className="py-3 px-4 font-medium">Kasir</th>
+                                        <th className="py-3 px-4 font-medium">Bayar</th>
+                                        <th className="py-3 px-4 font-medium text-right">Modal</th>
+                                        <th className="py-3 px-4 font-medium text-right">Total</th>
+                                        <th className="py-3 px-4 font-medium text-right">Diterima / Kembali</th>
+                                        <th className="py-3 px-4 font-medium text-center">Status</th>
+                                        <th className="py-3 px-4 font-medium text-right">Waktu</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {recent_orders.length === 0 ? (
                                         <tr>
-                                            <td colSpan="9" className="py-12 text-center text-slate-400">
-                                                Belum ada data transaksi yang tercatat.
+                                            <td colSpan="9" className="py-12 text-center text-slate-500">
+                                                Belum ada transaksi.
                                             </td>
                                         </tr>
                                     ) : (
                                         recent_orders.map((o) => (
-                                            <tr key={o.id} className="hover:bg-white/[0.03] transition-colors">
-                                                <td className="py-3.5 px-4 font-mono">
-                                                    <div className="font-semibold text-white">{o.invoice_number}</div>
-                                                    <div className="text-[11px] text-indigo-400">#{o.token_number}</div>
+                                            <tr key={o.id} className="hover:bg-white/[0.02] transition-colors">
+                                                <td className="py-3 px-4 font-mono text-xs">
+                                                    <div className="text-white">{o.invoice_number}</div>
+                                                    <div className="text-indigo-400">#{o.token_number}</div>
                                                 </td>
-                                                <td className="py-3.5 px-4">
+                                                <td className="py-3 px-4 text-xs">
                                                     {o.order_source === 'qr_table' ? (
-                                                        <span className="inline-flex items-center gap-1 text-slate-300">
+                                                        <span className="flex items-center gap-1 text-slate-300">
                                                             <QrCode className="w-3.5 h-3.5 text-indigo-400" />
-                                                            {o.table?.table_number || 'QR Meja'}
+                                                            {o.table?.table_number || 'QR'}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-slate-400">Kasir Langsung</span>
+                                                        <span className="text-slate-400">Kasir</span>
                                                     )}
                                                 </td>
-                                                <td className="py-3.5 px-4 text-slate-300">
-                                                    {o.cashier?.full_name || '-'}
-                                                </td>
-                                                <td className="py-3.5 px-4">
-                                                    <AcrylicBadge
-                                                        variant={o.payment_method === 'qris' ? 'indigo' : 'emerald'}
-                                                        size="sm"
-                                                    >
+                                                <td className="py-3 px-4 text-xs">{o.cashier?.full_name || '—'}</td>
+                                                <td className="py-3 px-4 text-xs">
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                                        o.payment_method === 'qris'
+                                                            ? 'bg-indigo-500/15 text-indigo-300'
+                                                            : 'bg-emerald-500/15 text-emerald-300'
+                                                    }`}>
                                                         {o.payment_method?.toUpperCase()}
-                                                    </AcrylicBadge>
+                                                    </span>
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono text-slate-400">
+                                                <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs">
                                                     {formatRupiah(o.total_cost)}
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono font-semibold text-white">
+                                                <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs">
                                                     {formatRupiah(o.total_amount)}
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono text-[11px]">
+                                                <td className="py-3 px-4 text-right font-mono text-xs">
                                                     <div className="text-slate-300">{formatRupiah(o.amount_received)}</div>
-                                                    <div className="text-emerald-400">
-                                                        Kembali: {formatRupiah(o.change_amount)}
-                                                    </div>
+                                                    <div className="text-emerald-400">Kembali: {formatRupiah(o.change_amount)}</div>
                                                 </td>
-                                                <td className="py-3.5 px-4 text-center">
-                                                    <AcrylicBadge
-                                                        variant={o.payment_status === 'paid' ? 'emerald' : 'rose'}
-                                                        size="sm"
-                                                        dot
-                                                    >
-                                                        {o.payment_status?.toUpperCase()}
-                                                    </AcrylicBadge>
+                                                <td className="py-3 px-4 text-center">
+                                                    <span className={`inline-flex items-center gap-1.5 text-xs ${
+                                                        o.payment_status === 'paid' ? 'text-emerald-400' : 'text-rose-400'
+                                                    }`}>
+                                                        <span className={`w-1.5 h-1.5 rounded-full ${
+                                                            o.payment_status === 'paid' ? 'bg-emerald-400' : 'bg-rose-500'
+                                                        }`} />
+                                                        {o.payment_status === 'paid' ? 'Lunas' : 'Belum'}
+                                                    </span>
                                                 </td>
-                                                <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-400">
+                                                <td className="py-3 px-4 text-right font-mono text-xs text-slate-400">
                                                     {new Date(o.created_at).toLocaleTimeString('id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
@@ -1010,64 +822,43 @@ export default function AdminDashboard({
                 </div>
             )}
 
-            {/* =========================================================================
-                TAB 4: STATUS MEJA & QR ORDERING
-               ========================================================================= */}
+            {/* ============================================================
+                TAB: STATUS MEJA
+            ============================================================ */}
             {activeTab === 'tables' && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="text-xs text-slate-400">
-                            Kelola status meja makan pelanggan dan periksa apakah ada pesanan yang sedang aktif di meja tersebut.
-                        </div>
-                    </div>
+                    <p className="text-sm text-slate-400">Kelola status meja dan lihat pesanan aktif.</p>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         {dining_tables.map((table) => {
                             const isAvailable = table.status === 'available';
-                            const isOccupied = table.status === 'occupied';
-
                             return (
-                                <div
-                                    key={table.id}
-                                    className="p-4 rounded-xl border border-white/[0.06] bg-[#0B0D13] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] flex flex-col justify-between h-36"
-                                >
+                                <div key={table.id} className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between h-36">
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-semibold text-white font-mono">
-                                                {table.table_number}
-                                            </span>
-                                            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-300">
-                                                <span
-                                                    className={`w-1.5 h-1.5 rounded-full ${
-                                                        isAvailable ? 'bg-emerald-400' : 'bg-amber-400'
-                                                    }`}
-                                                />
-                                                <span>{isAvailable ? 'Tersedia' : 'Terisi'}</span>
+                                            <span className="text-sm font-semibold text-white">{table.table_number}</span>
+                                            <span className="inline-flex items-center gap-1.5 text-xs">
+                                                <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                                                <span className="text-slate-300">{isAvailable ? 'Kosong' : 'Terisi'}</span>
                                             </span>
                                         </div>
-
-                                        <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
-                                            <QrCode className="w-3.5 h-3.5 text-slate-400" />
-                                            <span>{table.qr_code_token ? table.qr_code_token.substring(0, 8) + '...' : '-'}</span>
+                                        <div className="text-xs text-slate-500 flex items-center gap-1">
+                                            <QrCode className="w-3.5 h-3.5" />
+                                            <span className="font-mono">{table.qr_code_token ? table.qr_code_token.substring(0, 8) + '...' : '—'}</span>
                                         </div>
-
                                         {table.orders_count > 0 && (
-                                            <div className="mt-1.5 text-[11px] text-amber-300 font-mono">
-                                                {table.orders_count} pesanan aktif
-                                            </div>
+                                            <div className="mt-1.5 text-xs text-amber-300">{table.orders_count} pesanan aktif</div>
                                         )}
                                     </div>
-
-                                    {/* Action to change status */}
-                                    <div className="pt-2 border-t border-white/[0.05]">
+                                    <div className="pt-2 border-t border-white/[0.06]">
                                         <select
                                             value={table.status}
                                             onChange={(e) => handleTableStatusChange(table.id, e.target.value)}
-                                            className="w-full bg-[#08090D] text-slate-300 border border-white/[0.06] rounded px-2 py-1 text-[11px] focus:outline-none focus:border-indigo-400/50"
+                                            className="w-full bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500"
                                         >
-                                            <option value="available">Tersedia (Available)</option>
-                                            <option value="occupied">Terisi (Occupied)</option>
-                                            <option value="reserved">Dipesan (Reserved)</option>
+                                            <option value="available">Kosong</option>
+                                            <option value="occupied">Terisi</option>
+                                            <option value="reserved">Dipesan</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1077,79 +868,83 @@ export default function AdminDashboard({
                 </div>
             )}
 
-            {/* =========================================================================
-                MODAL 1: PENYESUAIAN STOK (STOCK ADJUSTMENT)
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 1: PENYESUAIAN STOK
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isAdjustmentModalOpen}
                 onClose={() => setIsAdjustmentModalOpen(false)}
-                title="Penyesuaian Stok Menu"
-                subtitle={selectedProduct ? `${selectedProduct.product_name} (${selectedProduct.barcode || 'No Barcode'})` : ''}
+                title="Ubah Stok Menu"
+                subtitle={selectedProduct ? `${selectedProduct.product_name} (${selectedProduct.barcode || 'Tanpa barcode'})` : ''}
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsAdjustmentModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={adjustmentProcessing}
                             onClick={handleSubmitAdjustment}
                         >
-                            Simpan Penyesuaian
+                            Simpan Perubahan
                         </SpecularButton>
                     </>
                 }
             >
                 {selectedProduct && (
-                    <form onSubmit={handleSubmitAdjustment} className="space-y-4">
-                        <div className="p-3 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-between">
+                    <form onSubmit={handleSubmitAdjustment} className="space-y-5">
+                        {/* Ringkasan Perhitungan Stok */}
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
                             <div>
-                                <span className="text-xs text-slate-400 block">Stok Dasar Saat Ini</span>
-                                <span className="text-xl font-mono font-bold text-white">
-                                    {selectedProduct.stock_qty} unit
+                                <span className="text-xs text-slate-400 block mb-1">Stok Saat Ini</span>
+                                <span className="text-2xl font-mono font-bold text-white">
+                                    {selectedProduct.stock_qty} <span className="text-sm font-normal text-slate-400">unit</span>
                                 </span>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs text-slate-400 block">Estimasi Stok Baru</span>
-                                <span className="text-xl font-mono font-bold text-emerald-400">
-                                    {previewCalculatedStock} unit
+                                <span className="text-xs text-slate-400 block mb-1">Perkiraan Stok Baru</span>
+                                <span className="text-2xl font-mono font-bold text-emerald-400">
+                                    {previewCalculatedStock} <span className="text-sm font-normal text-slate-400">unit</span>
                                 </span>
                             </div>
                         </div>
 
+                        {/* Pilihan Tipe Mutasi */}
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1.5">
-                                Tipe Mutasi / Penyesuaian
+                            <label className="text-sm font-medium text-slate-200 block mb-2">
+                                Tipe Perubahan Stok
                             </label>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-3 gap-2.5">
                                 {[
-                                    { id: 'in', label: '+ Masuk (In)', color: 'emerald' },
-                                    { id: 'out', label: '- Keluar (Out)', color: 'rose' },
-                                    { id: 'adjustment', label: '~ Koreksi Opname', color: 'indigo' },
+                                    { id: 'in', label: 'Masuk (+)', desc: 'Tambah stok' },
+                                    { id: 'out', label: 'Keluar (−)', desc: 'Kurangi stok' },
+                                    { id: 'adjustment', label: 'Koreksi (~)', desc: 'Hitung fisik' },
                                 ].map((type) => (
                                     <button
                                         key={type.id}
                                         type="button"
                                         onClick={() => setAdjustmentData('movement_type', type.id)}
-                                        className={`py-2 px-2 text-xs font-semibold rounded-lg border transition-all text-center select-none ${
+                                        className={`py-3 px-2 rounded-lg border transition-all text-center min-h-[52px] flex flex-col items-center justify-center ${
                                             adjustmentData.movement_type === type.id
-                                                ? 'bg-indigo-600/30 border-indigo-400 text-white shadow-sm'
-                                                : 'bg-white/[0.03] border-white/[0.07] text-slate-400 hover:text-slate-200'
+                                                ? 'bg-indigo-500/20 border-indigo-500/50 text-white font-semibold shadow-sm'
+                                                : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.04]'
                                         }`}
                                     >
-                                        {type.label}
+                                        <span className="text-sm">{type.label}</span>
+                                        <span className="text-[11px] opacity-70">{type.desc}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
+                        {/* Jumlah Input */}
                         <AcrylicInput
-                            label="Jumlah Perubahan"
+                            label="Jumlah Unit Perubahan"
                             type="number"
                             min="1"
                             value={adjustmentData.quantity_change}
@@ -1158,42 +953,44 @@ export default function AdminDashboard({
                             required
                         />
 
+                        {/* Catatan */}
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1">
-                                Catatan / Keterangan
+                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                                Catatan / Keterangan (Opsional)
                             </label>
                             <textarea
                                 rows="2"
                                 value={adjustmentData.notes}
                                 onChange={(e) => setAdjustmentData('notes', e.target.value)}
-                                placeholder="Misal: Penerimaan supplier baru, bahan rusak, atau opname fisik harian"
-                                className="w-full bg-[#131624] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+                                placeholder="Contoh: Penerimaan barang dari supplier, barang rusak, atau opname fisik"
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
                     </form>
                 )}
             </AcrylicModal>
 
-            {/* =========================================================================
+            {/* ============================================================
                 MODAL 2: EDIT PRODUK & HARGA
-               ========================================================================= */}
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 title="Edit Produk & Harga"
-                subtitle="Perbarui HPP modal, harga jual, dan status ketersediaan menu."
+                subtitle="Perbarui data menu, harga modal, harga jual, dan status penjualan."
+                maxWidth="max-w-xl"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsEditModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={editProcessing}
                             onClick={handleSubmitEdit}
                         >
@@ -1203,7 +1000,7 @@ export default function AdminDashboard({
                 }
             >
                 <form onSubmit={handleSubmitEdit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <AcrylicInput
                             label="Nama Menu"
                             value={editData.product_name}
@@ -1211,24 +1008,24 @@ export default function AdminDashboard({
                             error={editErrors.product_name}
                             required
                         />
-
                         <AcrylicInput
                             label="Barcode (Opsional)"
                             value={editData.barcode}
                             onChange={(e) => setEditData('barcode', e.target.value)}
                             inputClassName="font-mono text-indigo-300"
+                            placeholder="Contoh: 8991001"
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1">
+                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
                                 Kategori
                             </label>
                             <select
                                 value={editData.category_id}
                                 onChange={(e) => setEditData('category_id', e.target.value)}
-                                className="w-full bg-[#131624] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400"
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
                             >
                                 {categories.map((c) => (
                                     <option key={c.id} value={c.id}>
@@ -1237,71 +1034,71 @@ export default function AdminDashboard({
                                 ))}
                             </select>
                         </div>
-
                         <AcrylicInput
-                            label="Stok Dasar"
+                            label="Stok Tersedia (Unit)"
                             type="number"
                             min="0"
                             value={editData.stock_qty}
                             onChange={(e) => setEditData('stock_qty', parseInt(e.target.value) || 0)}
-                            inputClassName="font-mono text-white"
+                            inputClassName="font-mono"
                             required
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <AcrylicInput
                             label="Harga Modal HPP (Rp)"
                             type="number"
                             min="0"
                             value={editData.cost_price}
                             onChange={(e) => setEditData('cost_price', parseFloat(e.target.value) || 0)}
-                            inputClassName="font-mono text-white"
+                            inputClassName="font-mono"
                             required
                         />
-
                         <AcrylicInput
                             label="Harga Jual (Rp)"
                             type="number"
                             min="0"
                             value={editData.selling_price}
                             onChange={(e) => setEditData('selling_price', parseFloat(e.target.value) || 0)}
-                            inputClassName="font-mono text-white"
+                            inputClassName="font-mono"
                             required
                         />
                     </div>
 
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] space-y-3">
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3.5">
+                        <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={editData.requires_kitchen}
                                 onChange={(e) => setEditData('requires_kitchen', e.target.checked)}
-                                className="rounded bg-[#131624] border-white/20 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-xs font-semibold text-white block">
-                                    Butuh Proses Memasak (Dapur / KDS)
+                                <span className="text-sm font-semibold text-white block">
+                                    Perlu dimasak di dapur (Kitchen KDS)
                                 </span>
-                                <span className="text-[11px] text-slate-400 block">
-                                    Jika aktif, tiket otomatis masuk ke Kitchen Display System saat pesanan dibayar.
+                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                    Centang jika pesanan harus diproses oleh staf dapur (makanan masak).
                                 </span>
                             </div>
                         </label>
 
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <div className="h-px bg-white/[0.06]" />
+
+                        <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={editData.is_available}
                                 onChange={(e) => setEditData('is_available', e.target.checked)}
-                                className="rounded bg-[#131624] border-white/20 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-xs font-semibold text-white block">
-                                    Status Menu Tersedia
+                                <span className="text-sm font-semibold text-white block">
+                                    Status menu aktif dijual
                                 </span>
-                                <span className="text-[11px] text-slate-400 block">
-                                    Terkunci otomatis jika stok habis (0).
+                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                    Jika dinonaktifkan, menu tidak akan muncul di layar kasir maupun QR meja.
                                 </span>
                             </div>
                         </label>
@@ -1309,45 +1106,45 @@ export default function AdminDashboard({
                 </form>
             </AcrylicModal>
 
-            {/* =========================================================================
-                MODAL 3: TAMBAH PRODUK BARU
-               ========================================================================= */}
+            {/* ============================================================
+                MODAL 3: TAMBAH MENU BARU
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                title="Tambah Produk / Menu Baru"
-                subtitle="Masukkan detail menu untuk katalog POS dan pemesanan QR meja."
+                title="Tambah Menu Baru"
+                subtitle="Isi data menu untuk dimasukkan ke katalog kasir dan pemesanan meja."
+                maxWidth="max-w-xl"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsCreateModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={createProcessing}
                             onClick={handleSubmitCreate}
                         >
-                            Tambah ke Menu
+                            Tambah Menu
                         </SpecularButton>
                     </>
                 }
             >
                 <form onSubmit={handleSubmitCreate} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <AcrylicInput
                             label="Nama Menu"
                             value={createData.product_name}
                             onChange={(e) => setCreateData('product_name', e.target.value)}
-                            placeholder="Contoh: Ayam Geprek Sambal Matah"
+                            placeholder="Contoh: Kopi Tubruk Robusta"
                             error={createErrors.product_name}
                             required
                         />
-
                         <AcrylicInput
                             label="Barcode (Scan / Ketik)"
                             value={createData.barcode}
@@ -1357,15 +1154,15 @@ export default function AdminDashboard({
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1">
+                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
                                 Kategori
                             </label>
                             <select
                                 value={createData.category_id}
                                 onChange={(e) => setCreateData('category_id', e.target.value)}
-                                className="w-full bg-[#131624] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-400"
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
                                 required
                             >
                                 {categories.map((c) => (
@@ -1375,56 +1172,54 @@ export default function AdminDashboard({
                                 ))}
                             </select>
                         </div>
-
                         <AcrylicInput
-                            label="Stok Awal"
+                            label="Stok Awal (Unit)"
                             type="number"
                             min="0"
                             value={createData.stock_qty}
                             onChange={(e) => setCreateData('stock_qty', parseInt(e.target.value) || 0)}
-                            inputClassName="font-mono text-white"
+                            inputClassName="font-mono"
                             required
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <AcrylicInput
                             label="Harga Modal HPP (Rp)"
                             type="number"
                             min="0"
                             value={createData.cost_price}
                             onChange={(e) => setCreateData('cost_price', e.target.value)}
-                            placeholder="12000"
-                            inputClassName="font-mono text-white"
+                            placeholder="Contoh: 12000"
+                            inputClassName="font-mono"
                             required
                         />
-
                         <AcrylicInput
                             label="Harga Jual (Rp)"
                             type="number"
                             min="0"
                             value={createData.selling_price}
                             onChange={(e) => setCreateData('selling_price', e.target.value)}
-                            placeholder="20000"
-                            inputClassName="font-mono text-white"
+                            placeholder="Contoh: 18000"
+                            inputClassName="font-mono"
                             required
                         />
                     </div>
 
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                        <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={createData.requires_kitchen}
                                 onChange={(e) => setCreateData('requires_kitchen', e.target.checked)}
-                                className="rounded bg-[#131624] border-white/20 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-xs font-semibold text-white block">
-                                    Memerlukan Proses Dapur / KDS
+                                <span className="text-sm font-semibold text-white block">
+                                    Memerlukan proses memasak di dapur
                                 </span>
-                                <span className="text-[11px] text-slate-400 block">
-                                    Centang untuk menu makanan masak. Uncheck untuk minuman/snack instan langsung.
+                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                    Centang untuk makanan yang dimasak. Kosongkan untuk minuman atau snack instan.
                                 </span>
                             </div>
                         </label>
@@ -1432,26 +1227,27 @@ export default function AdminDashboard({
                 </form>
             </AcrylicModal>
 
-            {/* =========================================================================
+            {/* ============================================================
                 MODAL 4: TAMBAH KATEGORI BARU
-               ========================================================================= */}
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isCreateCategoryModalOpen}
                 onClose={() => setIsCreateCategoryModalOpen(false)}
-                title="Tambah Kategori Menu"
-                subtitle="Tambahkan kategori baru untuk mengelompokkan makanan dan minuman."
+                title="Kategori Menu Baru"
+                subtitle="Tambahkan kategori baru untuk mengelompokkan makanan atau minuman."
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsCreateCategoryModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={categoryProcessing}
                             onClick={handleSubmitCategory}
                         >
@@ -1465,46 +1261,50 @@ export default function AdminDashboard({
                         label="Nama Kategori"
                         value={categoryData.category_name}
                         onChange={(e) => setCategoryData('category_name', e.target.value)}
-                        placeholder="Contoh: Paket Hemat, Minuman Hangat"
+                        placeholder="Contoh: Kopi Spesial, Makanan Utama, Camilan"
                         error={categoryErrors.category_name}
                         required
                     />
                 </form>
             </AcrylicModal>
 
-            {/* =========================================================================
+            {/* ============================================================
                 MODAL 5: KONFIRMASI HAPUS PRODUK
-               ========================================================================= */}
+            ============================================================ */}
             <AcrylicModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="Konfirmasi Hapus Produk"
-                subtitle={selectedProduct ? `Anda yakin ingin menghapus '${selectedProduct.product_name}'?` : ''}
+                title="Hapus Menu Ini?"
+                subtitle={selectedProduct ? `Menu: ${selectedProduct.product_name}` : ''}
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsDeleteModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="danger"
-                            size="sm"
+                            size="md"
                             onClick={handleConfirmDelete}
                         >
-                            Ya, Hapus Produk
+                            Ya, Hapus Menu
                         </SpecularButton>
                     </>
                 }
             >
-                <div className="text-xs text-slate-300 space-y-2">
-                    <p>
-                        Produk ini akan dihapus secara <strong>Soft Delete</strong> dari katalog aktif sehingga tidak lagi muncul di layar Kasir POS maupun menu QR meja.
+                <div className="space-y-3 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-slate-200">
+                    <div className="text-sm font-semibold text-rose-300">
+                        Menu ini akan dihapus dari daftar penjualan
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                        Menu tidak akan lagi tampil di layar kasir maupun menu QR meja pelanggan.
                     </p>
-                    <p className="text-slate-400">
-                        Riwayat transaksi masa lalu yang memuat produk ini akan tetap tersimpan secara aman demi keutuhan data laporan keuangan Anda.
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                        Catatan transaksi dan laporan keuangan sebelumnya yang memuat menu ini tetap tersimpan dengan aman.
                     </p>
                 </div>
             </AcrylicModal>

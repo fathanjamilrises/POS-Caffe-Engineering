@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
-import AdminSidebar from '@/Components/Navigation/AdminSidebar';
+import AdminSidebar, { SidebarContext } from '@/Components/Navigation/AdminSidebar';
 import AdminNavbar from '@/Components/Navigation/AdminNavbar';
 
 /**
- * AuthenticatedLayout: Unified Smoked Acrylic layout for logged-in users (POS, KDS, Tables).
- * Features a fixed docked sidebar (fixed inset-y-0 left-0) and sticky navbar with seamless page scrolling.
+ * AuthenticatedLayout: Unified layout for logged-in users (POS, KDS, Tables).
+ * Features a collapsible docked sidebar and sticky navbar.
+ * Designed for cafe/canteen staff aged 40–60: high contrast, generous touch targets.
  */
 export default function AuthenticatedLayout({
     children,
-    title = 'POS System',
+    title = 'Kasir POS',
     scannerStatus = 'ready',
     lastScannedBarcode = '',
     headerRight = null,
@@ -23,6 +24,17 @@ export default function AuthenticatedLayout({
     const [toast, setToast] = useState(null);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+    // Sidebar collapse state — persisted to localStorage
+    const [collapsed, setCollapsed] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        return localStorage.getItem('sidebar_collapsed') === 'true';
+    });
+
+    useEffect(() => {
+        localStorage.setItem('sidebar_collapsed', String(collapsed));
+    }, [collapsed]);
+
+    // Toast for flash messages
     useEffect(() => {
         if (flash?.success) {
             setToast({ type: 'success', message: flash.success });
@@ -36,61 +48,58 @@ export default function AuthenticatedLayout({
         }
     }, [flash]);
 
+    // Sidebar width offset for main content
+    const sidebarOffset = collapsed ? 'lg:pl-[72px]' : 'lg:pl-64';
+
     return (
-        <div className="relative min-h-screen bg-[#06070A] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
-            {/* Ambient Radial Spotlight (Deep Matte Indigo) */}
-            <div
-                className="pointer-events-none fixed inset-0 z-0"
-                style={{
-                    background:
-                        'radial-gradient(ellipse 80% 40% at 50% -5%, rgba(49, 46, 129, 0.14), transparent 70%)',
-                }}
-            />
+        <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+            <div className="relative min-h-screen bg-[#07080D] text-slate-100 flex flex-col font-sans antialiased overflow-x-hidden">
+                {/* Notification Toast */}
+                {toast && (
+                    <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border bg-[#0E1017] border-white/[0.1] text-white shadow-xl max-w-sm">
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                        ) : (
+                            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                        )}
+                        <span className="text-sm font-medium">{toast.message}</span>
+                        <button
+                            onClick={() => setToast(null)}
+                            className="text-slate-400 hover:text-white ml-2 text-sm"
+                            aria-label="Tutup notifikasi"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
 
-            {/* Notification Toast */}
-            {toast && (
-                <div className="fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-xl shadow-2xl transition-all duration-300 animate-in slide-in-from-top-4 bg-[#16192B]/95 border-indigo-400/30 text-white">
-                    {toast.type === 'success' ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    ) : (
-                        <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
-                    )}
-                    <span className="text-sm font-medium">{toast.message}</span>
-                    <button
-                        onClick={() => setToast(null)}
-                        className="text-slate-400 hover:text-white text-xs ml-2"
-                    >
-                        ✕
-                    </button>
-                </div>
-            )}
-
-            {/* Fixed Sidebar Navigation - Firmly docked to left edge */}
-            <AdminSidebar
-                isOpenMobile={isMobileSidebarOpen}
-                onCloseMobile={() => setIsMobileSidebarOpen(false)}
-            />
-
-            {/* Main Content Area - with lg:pl-64 offset for the fixed sidebar */}
-            <div className="flex-1 flex flex-col min-w-0 lg:pl-64 relative">
-                {/* Unified Top Navbar Component */}
-                <AdminNavbar
-                    title={title}
-                    scannerStatus={scannerStatus}
-                    lastScannedBarcode={lastScannedBarcode}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    onQuickSearch={onQuickSearch}
-                    actions={headerRight}
-                    showSearch={showSearch}
-                    onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
+                {/* Collapsible Fixed Sidebar Navigation */}
+                <AdminSidebar
+                    isOpenMobile={isMobileSidebarOpen}
+                    onCloseMobile={() => setIsMobileSidebarOpen(false)}
                 />
 
-                {/* Page Body */}
-                <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-                    {children}
-                </main>
+                {/* Main Content Area */}
+                <div className={`flex-1 flex flex-col min-w-0 ${sidebarOffset} relative transition-all duration-200`}>
+                    {/* Unified Top Navbar Component */}
+                    <AdminNavbar
+                        title={title}
+                        scannerStatus={scannerStatus}
+                        lastScannedBarcode={lastScannedBarcode}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        onQuickSearch={onQuickSearch}
+                        actions={headerRight}
+                        showSearch={showSearch}
+                        onToggleMobileMenu={() => setIsMobileSidebarOpen(true)}
+                    />
+
+                    {/* Page Body */}
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+                        {children}
+                    </main>
+                </div>
             </div>
-        </div>
+        </SidebarContext.Provider>
     );
 }

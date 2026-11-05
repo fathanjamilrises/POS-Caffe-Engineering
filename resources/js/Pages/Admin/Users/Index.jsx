@@ -15,6 +15,8 @@ import {
     CheckCircle2,
     AlertTriangle,
     X,
+    ChefHat,
+    Check,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
@@ -168,183 +170,224 @@ export default function AdminUsersIndex({
         switch (role) {
             case 'admin':
                 return (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                        Admin
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 whitespace-nowrap">
+                        Administrator
                     </span>
                 );
             case 'kasir':
                 return (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
                         Kasir POS
                     </span>
                 );
             case 'dapur':
                 return (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 whitespace-nowrap">
                         Koki Dapur
                     </span>
                 );
             default:
                 return (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-white/[0.04] border border-white/[0.06]">
+                    <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/[0.04] text-slate-300 border border-white/[0.08] whitespace-nowrap">
                         {role}
                     </span>
                 );
         }
     };
 
+    // 4 Top Metric Cards (Consistent with Beranda, Produk, Meja, Kitchen)
+    const metricCards = [
+        {
+            label: 'Total Akun Pengguna',
+            value: metrics.total_users,
+            subtext: `${metrics.active_count} akun status aktif`,
+            icon: Users,
+            iconBg: 'bg-indigo-500/10',
+            iconColor: 'text-indigo-400',
+        },
+        {
+            label: 'Administrator',
+            value: metrics.admin_count,
+            subtext: 'Akses penuh seluruh sistem',
+            icon: Shield,
+            iconBg: 'bg-indigo-500/10',
+            iconColor: 'text-indigo-400',
+        },
+        {
+            label: 'Staff Kasir POS',
+            value: metrics.kasir_count,
+            subtext: 'Operator order & shift kasir',
+            icon: UserCheck,
+            iconBg: 'bg-emerald-500/10',
+            iconColor: 'text-emerald-400',
+        },
+        {
+            label: 'Staff Koki Dapur',
+            value: metrics.dapur_count,
+            subtext: 'Operator antrean Kitchen KDS',
+            icon: ChefHat,
+            iconBg: 'bg-amber-500/10',
+            iconColor: 'text-amber-400',
+        },
+    ];
+
     return (
         <AdminAcrylicLayout
             title="Kelola Pengguna Sistem"
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            onQuickSearch={(q) => triggerFilter({ search: q })}
-            headerRight={
-                <SpecularButton
-                    variant="primary"
-                    size="sm"
-                    icon={Plus}
-                    onClick={handleOpenCreate}
-                >
-                    <span>Tambah Pengguna</span>
-                </SpecularButton>
-            }
+            showSearch={false}
         >
             <Head title="Kelola Pengguna - Kasir App Admin" />
 
             <div className="space-y-6">
                 {/* =========================================================================
-                    TOP BENTO GRID: USER ROLE METRICS
+                    TOP METRIC CARDS (KONSISTEN DENGAN BERANDA & PRODUK)
                    ========================================================================= */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Total Akun Pengguna</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
-                            {metrics.total_users}
-                        </div>
-                        <div className="text-[11px] text-slate-400 mt-0.5">
-                            {metrics.active_count} akun aktif
-                        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {metricCards.map((card, idx) => {
+                        const Icon = card.icon;
+                        return (
+                            <div
+                                key={idx}
+                                className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-5 flex flex-col justify-between"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-slate-400 font-medium">
+                                        {card.label}
+                                    </span>
+                                    <div
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.iconBg} ${card.iconColor}`}
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums text-white">
+                                        {card.value}
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        {card.subtext}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* =========================================================================
+                    FILTER & TOOLBAR (KONSISTEN DENGAN PRODUK & MEJA)
+                   ========================================================================= */}
+                <div className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    {/* Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') triggerFilter({ search: e.target.value });
+                            }}
+                            placeholder="Cari nama staf atau @username..."
+                            className="w-full h-11 bg-[#08090D] border border-white/[0.08] rounded-lg pl-11 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    triggerFilter({ search: '' });
+                                }}
+                                className="w-8 h-8 absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-white"
+                                aria-label="Hapus pencarian"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Administrator</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
-                            {metrics.admin_count}
-                        </div>
-                        <div className="text-[11px] text-indigo-400 mt-0.5 font-mono">
-                            Akses penuh manajemen
-                        </div>
-                    </div>
+                    {/* Role & Status Filter + CTA */}
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => {
+                                setRoleFilter(e.target.value);
+                                triggerFilter({ role: e.target.value });
+                            }}
+                            className="h-11 bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="all">Semua Peran (Role)</option>
+                            <option value="admin">Administrator</option>
+                            <option value="kasir">Kasir POS</option>
+                            <option value="dapur">Koki Dapur</option>
+                        </select>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Staff Kasir POS</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
-                            {metrics.kasir_count}
-                        </div>
-                        <div className="text-[11px] text-emerald-400 mt-0.5 font-mono">
-                            Operator terminal pembayaran
-                        </div>
-                    </div>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                triggerFilter({ status: e.target.value });
+                            }}
+                            className="h-11 bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                        >
+                            <option value="all">Semua Status Akun</option>
+                            <option value="active">Status Aktif</option>
+                            <option value="inactive">Status Nonaktif</option>
+                        </select>
 
-                    <div className="p-4 bg-[#0B0D13] border border-white/[0.06] rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
-                        <span className="text-xs text-slate-400 font-medium">Staff Koki / Dapur</span>
-                        <div className="mt-2 text-2xl font-bold font-mono tabular-nums text-slate-100">
-                            {metrics.dapur_count}
-                        </div>
-                        <div className="text-[11px] text-amber-400 mt-0.5 font-mono">
-                            Operator Kitchen KDS
-                        </div>
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            icon={Plus}
+                            onClick={handleOpenCreate}
+                        >
+                            <span>Tambah Pengguna</span>
+                        </SpecularButton>
                     </div>
                 </div>
 
                 {/* =========================================================================
-                    FILTER TOOLBAR
+                    USERS DATA TABLE (ANTI-TUMPANG TINDIH & RAMAH USIA 40-60 TAHUN)
                    ========================================================================= */}
-                <div className="p-3 bg-[#0B0D13] border border-white/[0.06] rounded-xl">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                        {/* Search Input */}
-                        <div className="relative w-full sm:w-80">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') triggerFilter({ search: e.target.value });
-                                }}
-                                placeholder="Cari nama atau @username..."
-                                className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
-                            />
-                        </div>
-
-                        {/* Role & Status Filter */}
-                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                            <select
-                                value={roleFilter}
-                                onChange={(e) => {
-                                    setRoleFilter(e.target.value);
-                                    triggerFilter({ role: e.target.value });
-                                }}
-                                className="bg-[#07080B] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-400/50"
-                            >
-                                <option value="all">Semua Peran</option>
-                                <option value="admin">Administrator</option>
-                                <option value="kasir">Kasir POS</option>
-                                <option value="dapur">Koki Dapur</option>
-                            </select>
-
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => {
-                                    setStatusFilter(e.target.value);
-                                    triggerFilter({ status: e.target.value });
-                                }}
-                                className="bg-[#07080B] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-400/50"
-                            >
-                                <option value="all">Semua Status</option>
-                                <option value="active">Aktif</option>
-                                <option value="inactive">Nonaktif</option>
-                            </select>
-
-                            <SpecularButton
-                                variant="primary"
-                                size="sm"
-                                icon={Plus}
-                                onClick={handleOpenCreate}
-                            >
-                                <span>+ Tambah Pengguna</span>
-                            </SpecularButton>
-                        </div>
-                    </div>
-                </div>
-
-                {/* =========================================================================
-                    USERS DATA TABLE
-                   ========================================================================= */}
-                <div className="bg-[#0B0D13] border border-white/[0.06] rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
+                <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr className="border-b border-white/[0.06] bg-white/[0.01] text-slate-400 font-mono text-[11px] uppercase tracking-wider">
-                                    <th className="py-3 px-4">Pengguna</th>
-                                    <th className="py-3 px-4">Peran (Role)</th>
-                                    <th className="py-3 px-4">Status Akun</th>
-                                    <th className="py-3 px-4 text-center">Riwayat Sesi Shift</th>
-                                    <th className="py-3 px-4">Terdaftar</th>
-                                    <th className="py-3 px-4 text-right">Aksi</th>
+                        <table className="w-full text-left text-sm text-slate-300 min-w-[850px]">
+                            <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
+                                <tr>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap min-w-[220px]">
+                                        Profil Pengguna
+                                    </th>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap w-[150px]">
+                                        Peran (Role)
+                                    </th>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap w-[140px]">
+                                        Status Akun
+                                    </th>
+                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[140px]">
+                                        Aktivitas Shift
+                                    </th>
+                                    <th className="py-3 px-4 font-medium whitespace-nowrap w-[130px]">
+                                        Terdaftar
+                                    </th>
+                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[120px]">
+                                        Aksi
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/[0.04]">
                                 {users.data.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="py-16 text-center text-slate-500">
-                                            <Users className="w-8 h-8 mx-auto text-slate-600 mb-2 opacity-50" />
-                                            <span className="block">Tidak ada pengguna yang cocok dengan pencarian.</span>
-                                            <div className="mt-3">
+                                            <Users className="w-10 h-10 mx-auto text-slate-600 mb-2 opacity-50" />
+                                            <p className="text-base font-semibold text-slate-300">
+                                                Tidak ada pengguna yang cocok
+                                            </p>
+                                            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                                                Coba periksa kata kunci pencarian Anda atau tambahkan pengguna baru ke sistem.
+                                            </p>
+                                            <div className="mt-4">
                                                 <SpecularButton
                                                     variant="primary"
-                                                    size="sm"
+                                                    size="md"
                                                     icon={Plus}
                                                     onClick={handleOpenCreate}
                                                 >
@@ -363,21 +406,21 @@ export default function AdminUsersIndex({
                                                 className="hover:bg-white/[0.02] transition-colors group"
                                             >
                                                 {/* Profile Name & Username */}
-                                                <td className="py-3 px-4">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center font-bold text-xs font-mono text-slate-200">
+                                                <td className="py-3.5 px-4 min-w-[220px]">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center font-bold text-sm font-mono text-indigo-300 shrink-0">
                                                             {u.full_name?.substring(0, 2).toUpperCase() || 'US'}
                                                         </div>
-                                                        <div>
-                                                            <div className="font-semibold text-slate-200 flex items-center gap-1.5">
-                                                                <span>{u.full_name}</span>
+                                                        <div className="min-w-0">
+                                                            <div className="font-semibold text-white flex items-center gap-2">
+                                                                <span className="truncate">{u.full_name}</span>
                                                                 {isSelf && (
-                                                                    <span className="text-[10px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.2 rounded border border-indigo-500/20">
-                                                                        Anda
+                                                                    <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30 shrink-0">
+                                                                        Akun Anda
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="text-[11px] font-mono text-slate-500">
+                                                            <div className="text-xs font-mono text-slate-400 mt-0.5 truncate">
                                                                 @{u.username}
                                                             </div>
                                                         </div>
@@ -385,68 +428,74 @@ export default function AdminUsersIndex({
                                                 </td>
 
                                                 {/* Role */}
-                                                <td className="py-3 px-4">
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
                                                     {getRoleBadge(u.role)}
                                                 </td>
 
-                                                {/* Status with minimal 6px dot & toggle */}
-                                                <td className="py-3 px-4">
+                                                {/* Status with Tactile Toggle Button */}
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
                                                     <button
                                                         type="button"
                                                         disabled={isSelf}
                                                         onClick={() => handleToggleStatus(u)}
-                                                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-colors ${
+                                                        className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all inline-flex items-center gap-2 ${
                                                             isSelf
-                                                                ? 'cursor-default'
-                                                                : 'hover:bg-white/[0.06] cursor-pointer'
+                                                                ? 'opacity-80 cursor-default bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+                                                                : u.is_active
+                                                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer'
+                                                                : 'bg-rose-500/10 text-rose-300 border-rose-500/30 hover:bg-rose-500/20 cursor-pointer'
                                                         }`}
-                                                        title={isSelf ? 'Anda tidak dapat mengubah status akun Anda sendiri' : 'Klik untuk mengubah status'}
+                                                        title={
+                                                            isSelf
+                                                                ? 'Status akun Anda sendiri selalu aktif'
+                                                                : 'Klik untuk mengaktifkan / menonaktifkan akun staf'
+                                                        }
                                                     >
                                                         <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${
+                                                            className={`w-2 h-2 rounded-full shrink-0 ${
                                                                 u.is_active ? 'bg-emerald-400' : 'bg-rose-500'
                                                             }`}
                                                         />
-                                                        <span className="text-slate-300">
-                                                            {u.is_active ? 'Aktif' : 'Nonaktif'}
-                                                        </span>
+                                                        <span>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
                                                     </button>
                                                 </td>
 
                                                 {/* Shift Activity */}
-                                                <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-400">
+                                                <td className="py-3.5 px-4 text-center font-mono tabular-nums text-slate-300 text-sm whitespace-nowrap">
                                                     {u.cashier_shifts_count || 0} sesi
                                                 </td>
 
                                                 {/* Date created */}
-                                                <td className="py-3 px-4 text-slate-400 text-[11px] font-mono">
+                                                <td className="py-3.5 px-4 text-slate-400 text-xs font-mono whitespace-nowrap">
                                                     {u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-'}
                                                 </td>
 
                                                 {/* Actions */}
-                                                <td className="py-3 px-4 text-right">
-                                                    <div className="inline-flex items-center gap-1">
+                                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                                    <div className="inline-flex items-center gap-1.5 justify-end">
                                                         <button
                                                             type="button"
                                                             onClick={() => handleOpenEdit(u)}
-                                                            className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                                                            className="min-h-[36px] px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] transition-colors flex items-center gap-1 text-xs"
                                                             title="Edit Pengguna"
                                                         >
-                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                            <Edit2 className="w-3.5 h-3.5 text-indigo-400" />
+                                                            <span>Edit</span>
                                                         </button>
 
                                                         <button
                                                             type="button"
                                                             disabled={isSelf}
                                                             onClick={() => handleOpenDelete(u)}
-                                                            className={`p-1 rounded transition-colors ${
+                                                            className={`min-h-[36px] px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1 text-xs border ${
                                                                 isSelf
-                                                                    ? 'text-slate-600 cursor-not-allowed'
-                                                                    : 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/10'
+                                                                    ? 'text-slate-600 border-transparent cursor-not-allowed'
+                                                                    : 'bg-white/[0.04] hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border-white/[0.08]'
                                                             }`}
                                                             title={isSelf ? 'Tidak dapat menghapus akun sendiri' : 'Hapus Pengguna'}
                                                         >
-                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                                            <span>Hapus</span>
                                                         </button>
                                                     </div>
                                                 </td>
@@ -458,26 +507,26 @@ export default function AdminUsersIndex({
                         </table>
                     </div>
 
-                    {/* Pagination Bar */}
+                    {/* Pagination Bar (Konsisten Dengan Produk) */}
                     {users.links && users.links.length > 3 && (
-                        <div className="p-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+                        <div className="p-4 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
                             <div>
                                 Menampilkan{' '}
-                                <span className="text-slate-200 font-mono">{users.data.length}</span> pengguna
+                                <span className="text-white font-mono font-bold">{users.data.length}</span> pengguna
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-wrap">
                                 {users.links.map((link, idx) => (
                                     <button
                                         key={idx}
                                         disabled={!link.url || link.active}
                                         onClick={() => link.url && router.get(link.url, {}, { preserveScroll: true })}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
-                                        className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                                        className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                                             link.active
-                                                ? 'bg-white/[0.08] text-white font-medium border border-white/[0.12]'
+                                                ? 'bg-indigo-600 text-white font-semibold shadow-sm'
                                                 : link.url
-                                                ? 'hover:bg-white/[0.04] text-slate-400 hover:text-slate-200'
-                                                : 'text-slate-600 cursor-not-allowed'
+                                                ? 'hover:bg-white/[0.06] text-slate-300 hover:text-white border border-white/[0.06]'
+                                                : 'text-slate-600 cursor-not-allowed border border-transparent'
                                         }`}
                                     />
                                 ))}
@@ -488,25 +537,26 @@ export default function AdminUsersIndex({
             </div>
 
             {/* =========================================================================
-                MODAL: TAMBAH PENGGUNA BARU
+                MODAL 1: TAMBAH PENGGUNA BARU
                ========================================================================= */}
             <AcrylicModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
                 title="Tambah Pengguna Baru"
                 subtitle="Buat akun untuk kasir, koki dapur, atau sesama administrator."
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsCreateModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={createProcessing}
                             onClick={handleSubmitCreate}
                         >
@@ -526,22 +576,43 @@ export default function AdminUsersIndex({
                     />
 
                     <AcrylicInput
-                        label="Username (Login) *"
+                        label="Username (Login Masuk) *"
                         placeholder="Contoh: kasir2, chef_tono"
                         value={createData.username}
-                        onChange={(e) => setCreateData('username', e.target.value)}
+                        onChange={(e) => setCreateData('username', e.target.value.toLowerCase().trim())}
                         error={createErrors.username}
+                        inputClassName="font-mono text-indigo-300"
                         required
                     />
 
                     <div>
-                        <label className="text-xs font-medium text-slate-300 block mb-1">
-                            Peran Pengguna (Role) *
+                        <label className="text-sm font-medium text-slate-200 block mb-2">
+                            Pilih Peran Pengguna (Role) *
                         </label>
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                            {[
+                                { id: 'kasir', label: 'Kasir POS' },
+                                { id: 'dapur', label: 'Koki Dapur' },
+                                { id: 'admin', label: 'Admin' },
+                            ].map((roleOption) => (
+                                <button
+                                    key={roleOption.id}
+                                    type="button"
+                                    onClick={() => setCreateData('role', roleOption.id)}
+                                    className={`min-h-[40px] px-2 py-2 text-xs font-semibold rounded-lg border transition-all text-center ${
+                                        createData.role === roleOption.id
+                                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                                            : 'bg-[#08090D] border-white/[0.08] text-slate-300 hover:text-white'
+                                    }`}
+                                >
+                                    {roleOption.label}
+                                </button>
+                            ))}
+                        </div>
                         <select
                             value={createData.role}
                             onChange={(e) => setCreateData('role', e.target.value)}
-                            className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/50"
+                            className="w-full h-11 bg-[#08090D] border border-white/[0.08] rounded-lg px-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
                             required
                         >
                             <option value="kasir">Kasir POS (Akses Terminal Order & Shift)</option>
@@ -549,12 +620,12 @@ export default function AdminUsersIndex({
                             <option value="admin">Administrator (Akses Penuh Seluruh Sistem)</option>
                         </select>
                         {createErrors.role && (
-                            <p className="text-[11px] text-rose-400 mt-1">{createErrors.role}</p>
+                            <p className="text-xs text-rose-400 mt-1">{createErrors.role}</p>
                         )}
                     </div>
 
                     <AcrylicInput
-                        label="Kata Sandi (Minimal 6 Karakter) *"
+                        label="Kata Sandi Login (Minimal 6 Karakter) *"
                         type="password"
                         placeholder="••••••••"
                         value={createData.password}
@@ -563,13 +634,13 @@ export default function AdminUsersIndex({
                         required
                     />
 
-                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
+                    <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                        <label className="flex items-center gap-3 cursor-pointer select-none text-sm text-slate-200">
                             <input
                                 type="checkbox"
                                 checked={createData.is_active}
                                 onChange={(e) => setCreateData('is_active', e.target.checked)}
-                                className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5"
+                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                             />
                             <span>Akun langsung aktif dan dapat digunakan untuk masuk</span>
                         </label>
@@ -578,25 +649,26 @@ export default function AdminUsersIndex({
             </AcrylicModal>
 
             {/* =========================================================================
-                MODAL: EDIT PENGGUNA
+                MODAL 2: EDIT PENGGUNA
                ========================================================================= */}
             <AcrylicModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 title={`Edit Pengguna: ${selectedUser?.full_name || ''}`}
-                subtitle="Perbarui data staf atau reset kata sandi."
+                subtitle="Perbarui data staf atau reset kata sandi login."
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsEditModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
-                            size="sm"
+                            size="md"
                             loading={editProcessing}
                             onClick={handleSubmitEdit}
                         >
@@ -616,22 +688,23 @@ export default function AdminUsersIndex({
                         />
 
                         <AcrylicInput
-                            label="Username (Login) *"
+                            label="Username (Login Masuk) *"
                             value={editData.username}
-                            onChange={(e) => setEditData('username', e.target.value)}
+                            onChange={(e) => setEditData('username', e.target.value.toLowerCase().trim())}
                             error={editErrors.username}
+                            inputClassName="font-mono text-indigo-300"
                             required
                         />
 
                         <div>
-                            <label className="text-xs font-medium text-slate-300 block mb-1">
+                            <label className="text-sm font-medium text-slate-200 block mb-2">
                                 Peran Pengguna (Role) *
                             </label>
                             <select
                                 value={editData.role}
                                 disabled={selectedUser.id === currentUserId}
                                 onChange={(e) => setEditData('role', e.target.value)}
-                                className="w-full bg-[#07080B] border border-white/[0.08] rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-400/50 disabled:opacity-50"
+                                className="w-full h-11 bg-[#08090D] border border-white/[0.08] rounded-lg px-3 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
                                 required
                             >
                                 <option value="kasir">Kasir POS (Akses Terminal Order & Shift)</option>
@@ -639,8 +712,8 @@ export default function AdminUsersIndex({
                                 <option value="admin">Administrator (Akses Penuh Seluruh Sistem)</option>
                             </select>
                             {selectedUser.id === currentUserId && (
-                                <p className="text-[10px] text-slate-500 mt-1">
-                                    Peran akun sendiri tidak dapat diubah demi keamanan.
+                                <p className="text-xs text-amber-300/90 mt-1">
+                                    Peran akun Anda sendiri tidak dapat diubah demi keamanan sistem.
                                 </p>
                             )}
                         </div>
@@ -648,22 +721,22 @@ export default function AdminUsersIndex({
                         <AcrylicInput
                             label="Kata Sandi Baru (Kosongkan jika tidak ingin mengubah)"
                             type="password"
-                            placeholder="Biarkan kosong jika tidak diubah"
+                            placeholder="Biarkan kosong jika tetap menggunakan kata sandi lama"
                             value={editData.password}
                             onChange={(e) => setEditData('password', e.target.value)}
                             error={editErrors.password}
                         />
 
-                        <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06]">
-                            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300">
+                        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.08]">
+                            <label className="flex items-center gap-3 cursor-pointer select-none text-sm text-slate-200">
                                 <input
                                     type="checkbox"
                                     disabled={selectedUser.id === currentUserId}
                                     checked={editData.is_active}
                                     onChange={(e) => setEditData('is_active', e.target.checked)}
-                                    className="rounded bg-[#07080B] border-white/20 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 disabled:opacity-50"
+                                    className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-4 h-4 disabled:opacity-50"
                                 />
-                                <span>Status Akun Aktif</span>
+                                <span>Status Akun Aktif (Dapat Login)</span>
                             </label>
                         </div>
                     </form>
@@ -671,25 +744,27 @@ export default function AdminUsersIndex({
             </AcrylicModal>
 
             {/* =========================================================================
-                MODAL: KONFIRMASI HAPUS PENGGUNA
+                MODAL 3: KONFIRMASI HAPUS PENGGUNA
                ========================================================================= */}
             <AcrylicModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
-                title="Hapus Pengguna"
-                subtitle="Tindakan ini akan mencabut akses login pengguna dari sistem."
+                title="Hapus Akun Pengguna?"
+                subtitle={selectedUser ? `Pengguna: ${selectedUser.full_name} (@${selectedUser.username})` : ''}
+                maxWidth="max-w-md"
                 footer={
                     <>
                         <SpecularButton
                             variant="secondary"
-                            size="sm"
+                            size="md"
                             onClick={() => setIsDeleteModalOpen(false)}
                         >
                             Batal
                         </SpecularButton>
                         <SpecularButton
                             variant="danger"
-                            size="sm"
+                            size="md"
+                            icon={Trash2}
                             onClick={handleConfirmDelete}
                         >
                             Ya, Hapus Pengguna
@@ -697,14 +772,19 @@ export default function AdminUsersIndex({
                     </>
                 }
             >
-                <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                    <div>
-                        Yakin ingin menghapus akun <strong>{selectedUser?.full_name}</strong> (@{selectedUser?.username})? Riwayat transaksi atau shift yang pernah dibuat pengguna ini akan tetap tersimpan di database.
+                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-slate-200 space-y-2">
+                    <div className="text-sm font-semibold text-rose-300 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+                        <span>Akses Login Pengguna Akan Dicabut</span>
                     </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                        Akun <strong className="text-white">{selectedUser?.full_name}</strong> (@{selectedUser?.username}) akan dihapus dari sistem dan tidak dapat lagi masuk ke aplikasi.
+                    </p>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                        Catatan transaksi dan rekonsiliasi shift yang pernah dikerjakan oleh pengguna ini tetap tersimpan aman di basis data laporan.
+                    </p>
                 </div>
             </AcrylicModal>
         </AdminAcrylicLayout>
     );
 }
-

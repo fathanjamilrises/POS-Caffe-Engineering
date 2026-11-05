@@ -3,8 +3,12 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 /**
- * AcrylicModal: Elevated Smoked Acrylic dialog primitive.
- * Positioned at center-top of the main layout, rendered via portal with full-viewport backdrop.
+ * AcrylicModal: Clean, high-accessibility dialog primitive.
+ * Optimized for staff aged 40-60:
+ * - High-contrast backdrop and card surface (#0C0E16)
+ * - Large readable typography (18px title, 14px description)
+ * - Large touch-friendly close button (min 40x40px)
+ * - Accessible keyboard navigation (Escape to close)
  */
 export default function AcrylicModal({
     isOpen,
@@ -44,49 +48,53 @@ export default function AcrylicModal({
     if (!isOpen || !mounted) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex justify-center items-start pt-14 sm:pt-20 p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
-            {/* Backdrop covering entire layout utama (including sidebar and navbar) */}
+        <div className="fixed inset-0 z-[100] flex justify-center items-start pt-10 sm:pt-16 p-4 sm:p-6 overflow-y-auto animate-in fade-in duration-150">
+            {/* Backdrop Overlay */}
             <div
-                className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+                className="fixed inset-0 bg-black/75 transition-opacity"
                 onClick={onClose}
                 aria-hidden="true"
             />
 
-            {/* Modal Dialog Card at Center Top of Layout Utama */}
+            {/* Modal Dialog Card */}
             <div
-                className={`relative w-full ${maxWidth} bg-[#0B0D13] border border-white/[0.08] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.85),inset_0_1px_0_0_rgba(255,255,255,0.06)] rounded-xl text-slate-100 z-10 overflow-hidden my-4 sm:my-6 animate-in zoom-in-95 duration-150`}
+                className={`relative w-full ${maxWidth} bg-[#0C0E16] border border-white/[0.1] shadow-2xl rounded-2xl text-slate-100 z-10 overflow-hidden my-4 sm:my-6 animate-in zoom-in-95 duration-150`}
                 role="dialog"
                 aria-modal="true"
             >
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between gap-4">
-                    <div>
+                <div className="px-6 py-5 border-b border-white/[0.08] flex items-start justify-between gap-4">
+                    <div className="space-y-1">
                         {title && (
-                            <h2 className="text-sm font-semibold tracking-wide text-white">
+                            <h2 className="text-lg font-bold tracking-tight text-white">
                                 {title}
                             </h2>
                         )}
                         {subtitle && (
-                            <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+                            <p className="text-sm text-slate-400 leading-relaxed">
+                                {subtitle}
+                            </p>
                         )}
                     </div>
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors focus:outline-none"
+                        className="p-2 -mr-1 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.08] transition-colors shrink-0"
+                        title="Tutup (Esc)"
+                        aria-label="Tutup jendela"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Content Body */}
-                <div className="px-6 py-5 max-h-[calc(85vh-140px)] overflow-y-auto">
+                <div className="px-6 py-5 sm:py-6 max-h-[calc(85vh-160px)] overflow-y-auto">
                     {children}
                 </div>
 
                 {/* Optional Footer */}
                 {footer && (
-                    <div className="px-6 py-3.5 border-t border-white/[0.06] bg-[#08090D] flex items-center justify-end gap-3">
+                    <div className="px-6 py-4 border-t border-white/[0.08] bg-[#090B12] flex items-center justify-end gap-3">
                         {footer}
                     </div>
                 )}
