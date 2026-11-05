@@ -19,6 +19,37 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
+// Promotional Landing Page (Public)
+Route::get('/', function (Request $request) {
+    if (Auth::check() && ! $request->has('preview')) {
+        $user = Auth::user();
+
+        return match ($user->role) {
+            'kasir' => redirect()->route('cashier.pos'),
+            'dapur' => redirect()->route('kitchen.display'),
+            default => redirect()->route('admin.dashboard'),
+        };
+    }
+
+    $sampleTable = \App\Models\DiningTable::where('status', 'available')->first()
+        ?: \App\Models\DiningTable::first();
+
+    return Inertia::render('Welcome', [
+        'sample_table_token' => $sampleTable?->qr_code_token,
+        'sample_table_number' => $sampleTable?->table_number,
+    ]);
+})->name('welcome');
+
+Route::get('/welcome', function () {
+    $sampleTable = \App\Models\DiningTable::where('status', 'available')->first()
+        ?: \App\Models\DiningTable::first();
+
+    return Inertia::render('Welcome', [
+        'sample_table_token' => $sampleTable?->qr_code_token,
+        'sample_table_number' => $sampleTable?->table_number,
+    ]);
+})->name('welcome.preview');
+
 // Authentication Routes (Guest Only)
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
@@ -49,7 +80,7 @@ Route::prefix('table/{token}')->name('table.')->group(function (): void {
 // Authenticated Routes
 Route::middleware('auth')->group(function (): void {
     // Root redirect based on role
-    Route::get('/', function () {
+    Route::get('/home', function () {
         $user = Auth::user();
 
         return match ($user->role) {
