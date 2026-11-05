@@ -49,6 +49,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'barcode' => ['nullable', 'string', 'max:100', 'unique:products,barcode'],
+            'image_url' => ['nullable', 'string', 'max:500'],
             'product_name' => ['required', 'string', 'max:150'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0'],
@@ -113,6 +114,7 @@ class ProductController extends Controller
         $validated = $request->validate([
             'category_id' => ['sometimes', 'exists:categories,id'],
             'barcode' => ['nullable', 'string', 'max:100', Rule::unique('products', 'barcode')->ignore($product->id)],
+            'image_url' => ['nullable', 'string', 'max:500'],
             'product_name' => ['sometimes', 'string', 'max:150'],
             'cost_price' => ['sometimes', 'numeric', 'min:0'],
             'selling_price' => ['sometimes', 'numeric', 'min:0'],

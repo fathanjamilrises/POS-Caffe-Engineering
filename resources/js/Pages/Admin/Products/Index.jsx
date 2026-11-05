@@ -7,7 +7,18 @@ import {
     FolderPlus,
     RefreshCw,
     AlertTriangle,
-    QrCode,
+    Package,
+    CheckCircle2,
+    XCircle,
+    X,
+    Pencil,
+    Trash2,
+    SlidersHorizontal,
+    ChefHat,
+    Zap,
+    Barcode,
+    ArrowUpDown,
+    RotateCcw,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
@@ -21,6 +32,14 @@ function formatRupiah(amount) {
     return `Rp ${num.toLocaleString('id-ID')}`;
 }
 
+/**
+ * AdminProductsIndex: Elevated Products & Inventory Management screen.
+ * Tuned specifically for cafe/canteen staff aged 40–60 using tablet POS:
+ * - Generous 44px–52px touch targets for effortless finger interaction.
+ * - High-contrast typography with bold monospace numbers for prices and stock counts.
+ * - Quick-stepper stock buttons (+1, +5, +10, -1, -5, -10) eliminating keyboard hassle.
+ * - Strict Obsidian Ultramarine & Tanzanite palette without decorative pill clutters (Anti-Slop).
+ */
 export default function AdminProductsIndex({
     products = { data: [], links: [] },
     categories = [],
@@ -61,6 +80,7 @@ export default function AdminProductsIndex({
     } = useForm({
         category_id: categories?.[0]?.id || '',
         barcode: '',
+        image_url: '',
         product_name: '',
         cost_price: '',
         selling_price: '',
@@ -80,6 +100,7 @@ export default function AdminProductsIndex({
     } = useForm({
         category_id: '',
         barcode: '',
+        image_url: '',
         product_name: '',
         cost_price: 0,
         selling_price: 0,
@@ -129,6 +150,29 @@ export default function AdminProductsIndex({
         );
     };
 
+    const handleResetFilter = () => {
+        setSearchQuery('');
+        setSelectedCategory('all');
+        setProcessFilter('all');
+        setStockFilter('all');
+        router.get(
+            '/admin/products',
+            {
+                search: '',
+                category_id: 'all',
+                requires_kitchen: 'all',
+                stock_status: 'all',
+            },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
+    const isFilterActive =
+        Boolean(searchQuery) ||
+        selectedCategory !== 'all' ||
+        processFilter !== 'all' ||
+        stockFilter !== 'all';
+
     // Hardware Barcode Scanner Integration
     const handleBarcodeDetected = (barcode) => {
         const cleanCode = barcode.trim();
@@ -171,6 +215,7 @@ export default function AdminProductsIndex({
         setCreateData({
             category_id: categories?.[0]?.id || '',
             barcode: prefilledBarcode || '',
+            image_url: '',
             product_name: '',
             cost_price: '',
             selling_price: '',
@@ -187,6 +232,7 @@ export default function AdminProductsIndex({
         setEditData({
             category_id: product.category_id,
             barcode: product.barcode || '',
+            image_url: product.image_url || '',
             product_name: product.product_name,
             cost_price: product.cost_price,
             selling_price: product.selling_price,
@@ -217,7 +263,7 @@ export default function AdminProductsIndex({
 
     // Submit Create Product
     const handleSubmitCreate = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         postProduct('/admin/products', {
             preserveScroll: true,
             onSuccess: () => {
@@ -229,7 +275,7 @@ export default function AdminProductsIndex({
 
     // Submit Edit Product
     const handleSubmitEdit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!selectedProduct) return;
         putProduct(`/admin/products/${selectedProduct.id}`, {
             preserveScroll: true,
@@ -242,7 +288,7 @@ export default function AdminProductsIndex({
 
     // Submit Stock Adjustment
     const handleSubmitAdjustment = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         postAdjustment('/admin/products/stock-adjustments', {
             preserveScroll: true,
             onSuccess: () => {
@@ -263,7 +309,7 @@ export default function AdminProductsIndex({
 
     // Submit Category
     const handleSubmitCategory = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         postCategory('/admin/categories', {
             preserveScroll: true,
             onSuccess: () => {
@@ -281,6 +327,13 @@ export default function AdminProductsIndex({
         setIsQuickScanModalOpen(false);
         setQuickScanInput('');
         handleBarcodeDetected(code);
+    };
+
+    // Quick increment adjustment quantity
+    const handleStepQuantity = (delta) => {
+        const current = Number(adjustmentData.quantity_change) || 0;
+        const next = Math.max(1, current + delta);
+        setAdjustmentData('quantity_change', next);
     };
 
     // Stock adjustment preview calculation
@@ -309,335 +362,443 @@ export default function AdminProductsIndex({
 
             <div className="space-y-6">
                 {/* ============================================================
-                    RINGKASAN METRIK STOK (4 KARTU — KONSISTEN DENGAN BERANDA)
+                    1. HEADER CARD & ACTION CONTROLS (HIGH ERGONOMICS FOR TABLET)
+                ============================================================ */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm">
+                    {/* Left: Icon Badge & Descriptive Title */}
+                    <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4338CA] via-[#3730A3] to-[#1E1B4B] flex items-center justify-center border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] shrink-0">
+                            <Package className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-tight truncate">
+                                Katalog Menu & Manajemen Stok
+                            </h2>
+                            <p className="text-xs sm:text-sm text-slate-400 font-medium truncate mt-0.5">
+                                Pantau ketersediaan bahan, harga jual HPP, dan nomor barcode secara akurat.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Right: Tactile Action Buttons (Min 44px Height for Finger Tapping) */}
+                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            icon={ScanLine}
+                            onClick={() => setIsQuickScanModalOpen(true)}
+                            title="Scan Barcode Produk"
+                        >
+                            <span>Scan Barcode</span>
+                        </SpecularButton>
+
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            icon={FolderPlus}
+                            onClick={() => setIsCategoryModalOpen(true)}
+                            title="Tambah Kategori Baru"
+                        >
+                            <span>Kategori Baru</span>
+                        </SpecularButton>
+
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            icon={Plus}
+                            onClick={() => handleOpenCreate()}
+                            title="Tambah Menu Baru ke Katalog"
+                        >
+                            <span>Tambah Menu</span>
+                        </SpecularButton>
+                    </div>
+                </div>
+
+                {/* ============================================================
+                    2. METRIC CARDS — INVENTORY HEALTH SUMMARY
                 ============================================================ */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Card 1: Total Menu */}
-                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                        <div className="text-sm text-slate-400 mb-3">Total Menu</div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-white">
-                            {metrics.total_products}
+                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Total Menu
+                                </span>
+                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                    <Package className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                                {metrics.total_products}
+                            </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                            <span className="text-slate-400">Katalog terdaftar</span>
-                            <span className="text-slate-200 font-mono">Semua varian</span>
+                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] text-xs text-slate-400 font-mono">
+                            <span>Katalog produk aktif terdaftar</span>
                         </div>
                     </div>
 
                     {/* Card 2: Stok Aman */}
-                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                        <div className="text-sm text-slate-400 mb-3">Stok Aman</div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-emerald-400">
-                            {metrics.available_products}
+                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Stok Aman
+                                </span>
+                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-emerald-400 tracking-tight">
+                                {metrics.available_products}
+                            </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                            <span className="text-slate-400">Tersedia</span>
-                            <span className="text-emerald-400 font-mono">&gt; 5 unit</span>
+                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span>Tersedia &gt; 5 unit</span>
+                            <span className="text-emerald-400 font-semibold font-mono">Siap Saji</span>
                         </div>
                     </div>
 
                     {/* Card 3: Stok Menipis */}
-                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                        <div className="text-sm text-slate-400 mb-3">Stok Menipis</div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-amber-400">
-                            {metrics.low_stock_products}
+                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Stok Menipis
+                                </span>
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                    <AlertTriangle className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-amber-400 tracking-tight">
+                                {metrics.low_stock_products}
+                            </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                            <span className="text-slate-400">Perlu restock</span>
-                            <span className="text-amber-400 font-mono">1 – 5 unit</span>
+                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span>Sisa 1 – 5 unit</span>
+                            <span className="text-amber-400 font-semibold font-mono">Perlu Restock</span>
                         </div>
                     </div>
 
                     {/* Card 4: Stok Habis */}
-                    <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                        <div className="text-sm text-slate-400 mb-3">Stok Habis</div>
-                        <div className="text-2xl font-bold font-mono tabular-nums text-rose-400">
-                            {metrics.out_of_stock_products}
+                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Stok Habis
+                                </span>
+                                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                                    <XCircle className="w-4 h-4" />
+                                </div>
+                            </div>
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-rose-400 tracking-tight">
+                                {metrics.out_of_stock_products}
+                            </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                            <span className="text-slate-400">Habis / Nonaktif</span>
-                            <span className="text-rose-400 font-mono">0 unit</span>
+                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                            <span>Stok 0 unit</span>
+                            <span className="text-rose-400 font-semibold font-mono">Tidak Dijual</span>
                         </div>
                     </div>
                 </section>
 
                 {/* ============================================================
-                    BAR FILTER & PENCARIAN (KONSISTEN DENGAN BERANDA)
+                    3. FILTER & PENCARIAN (ERGONOMIS DENGAN TOUCH TARGET BESAR)
                 ============================================================ */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                    {/* Form Pencarian */}
-                    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[200px]">
-                        <div className="relative flex-1">
-                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Cari barcode atau nama menu..."
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg pl-9 pr-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                            />
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm space-y-3.5">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        {/* Search Bar with Clear Button */}
+                        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[240px]">
+                            <div className="relative flex-1">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Cari barcode atau nama menu..."
+                                    className="w-full h-11 bg-[#08090D] border border-white/[0.08] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition-colors"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            triggerFilter({ search: '' });
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                                        title="Hapus pencarian"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <SpecularButton
+                                type="submit"
+                                variant="secondary"
+                                size="md"
+                                className="min-h-[44px]"
+                            >
+                                Cari
+                            </SpecularButton>
+                        </form>
+
+                        {/* Filter Dropdowns */}
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {/* Kategori */}
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => {
+                                    setSelectedCategory(e.target.value);
+                                    triggerFilter({ category_id: e.target.value });
+                                }}
+                                className="h-11 bg-[#08090D] text-sm font-medium text-slate-200 border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 focus:outline-none transition-colors"
+                            >
+                                <option value="all">Semua Kategori</option>
+                                {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.category_name} ({c.products_count ?? 0})
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* Tipe Proses */}
+                            <select
+                                value={processFilter}
+                                onChange={(e) => {
+                                    setProcessFilter(e.target.value);
+                                    triggerFilter({ requires_kitchen: e.target.value });
+                                }}
+                                className="h-11 bg-[#08090D] text-sm font-medium text-slate-200 border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 focus:outline-none transition-colors"
+                            >
+                                <option value="all">Semua Tipe</option>
+                                <option value="true">Perlu Dapur (KDS)</option>
+                                <option value="false">Instan (Minuman/Snack)</option>
+                            </select>
+
+                            {/* Status Stok */}
+                            <select
+                                value={stockFilter}
+                                onChange={(e) => {
+                                    setStockFilter(e.target.value);
+                                    triggerFilter({ stock_status: e.target.value });
+                                }}
+                                className="h-11 bg-[#08090D] text-sm font-medium text-slate-200 border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 focus:outline-none transition-colors"
+                            >
+                                <option value="all">Semua Status Stok</option>
+                                <option value="available">Stok Aman (&gt; 5)</option>
+                                <option value="low_stock">Menipis (1 – 5)</option>
+                                <option value="out_of_stock">Habis (0)</option>
+                            </select>
+
+                            {/* Reset Filter Button (If Active) */}
+                            {isFilterActive && (
+                                <button
+                                    type="button"
+                                    onClick={handleResetFilter}
+                                    className="h-11 px-3.5 rounded-xl text-xs font-semibold text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 flex items-center gap-1.5 transition-colors active:scale-95"
+                                    title="Reset seluruh filter"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <span>Reset</span>
+                                </button>
+                            )}
+
+                            {/* Refresh Button */}
+                            <button
+                                type="button"
+                                onClick={() => triggerFilter()}
+                                className="w-11 h-11 text-slate-400 hover:text-white rounded-xl border border-white/[0.08] bg-[#08090D] hover:bg-white/[0.06] flex items-center justify-center transition-colors shrink-0 active:scale-95"
+                                title="Perbarui data produk"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            className="px-4 py-2.5 text-sm text-slate-300 bg-white/[0.04] border border-white/[0.08] rounded-lg hover:bg-white/[0.08] transition-colors"
-                        >
-                            Cari
-                        </button>
-                    </form>
-
-                    {/* Filter & Tombol Aksi */}
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* Kategori */}
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => {
-                                setSelectedCategory(e.target.value);
-                                triggerFilter({ category_id: e.target.value });
-                            }}
-                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
-                        >
-                            <option value="all">Semua Kategori</option>
-                            {categories.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {c.category_name} ({c.products_count ?? 0})
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Tipe Proses */}
-                        <select
-                            value={processFilter}
-                            onChange={(e) => {
-                                setProcessFilter(e.target.value);
-                                triggerFilter({ requires_kitchen: e.target.value });
-                            }}
-                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
-                        >
-                            <option value="all">Semua Tipe</option>
-                            <option value="true">Perlu Dapur</option>
-                            <option value="false">Instan</option>
-                        </select>
-
-                        {/* Status Stok */}
-                        <select
-                            value={stockFilter}
-                            onChange={(e) => {
-                                setStockFilter(e.target.value);
-                                triggerFilter({ stock_status: e.target.value });
-                            }}
-                            className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
-                        >
-                            <option value="all">Semua Stok</option>
-                            <option value="available">Stok Aman (&gt; 5)</option>
-                            <option value="low_stock">Menipis (1-5)</option>
-                            <option value="out_of_stock">Habis (0)</option>
-                        </select>
-
-                        {/* Tombol Scan Barcode */}
-                        <button
-                            type="button"
-                            onClick={() => setIsQuickScanModalOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
-                        >
-                            <ScanLine className="w-4 h-4 text-indigo-400" />
-                            <span className="hidden sm:inline">Scan Barcode</span>
-                        </button>
-
-                        {/* Tombol Kategori Baru */}
-                        <button
-                            type="button"
-                            onClick={() => setIsCategoryModalOpen(true)}
-                            className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
-                        >
-                            <FolderPlus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Kategori Baru</span>
-                        </button>
-
-                        {/* Tombol Segarkan */}
-                        <button
-                            type="button"
-                            onClick={() => triggerFilter()}
-                            className="p-2.5 text-slate-400 hover:text-white rounded-lg border border-white/[0.08] hover:bg-white/[0.04] transition-colors"
-                            title="Segarkan data"
-                        >
-                            <RefreshCw className="w-4 h-4" />
-                        </button>
-
-                        {/* Tombol Utama Tambah Menu */}
-                        <button
-                            type="button"
-                            onClick={() => handleOpenCreate()}
-                            className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-b from-[#4F46E5] to-[#3730A3] border border-indigo-400/20 rounded-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] hover:from-[#4338CA] hover:to-[#312E81] transition-all"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Tambah Menu
-                        </button>
                     </div>
                 </div>
 
                 {/* ============================================================
-                    TABEL MENU & STOK (KONSISTEN DENGAN BERANDA - ANTI TUMPANG TINDIH)
+                    4. KATALOG MENU (CARD GRID — ERGONOMIS & KONSISTEN)
                 ============================================================ */}
-                <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-slate-300 min-w-[950px]">
-                            <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
-                                <tr>
-                                    <th className="py-3 px-4 font-medium whitespace-nowrap w-[140px]">Barcode</th>
-                                    <th className="py-3 px-4 font-medium whitespace-nowrap min-w-[200px]">Nama Menu</th>
-                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Tipe</th>
-                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Modal</th>
-                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Harga Jual</th>
-                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[90px]">Margin</th>
-                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Stok</th>
-                                    <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[110px]">Status</th>
-                                    <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[140px]">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/[0.04]">
-                                {products.data?.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="9" className="py-12 text-center text-slate-500">
-                                            Tidak ada menu yang sesuai dengan filter.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    products.data?.map((p) => {
-                                        const cost = Number(p.cost_price) || 0;
-                                        const selling = Number(p.selling_price) || 0;
-                                        const margin = selling > 0 ? (((selling - cost) / selling) * 100).toFixed(1) : 0;
-                                        const isOutOfStock = p.stock_qty <= 0;
-                                        const isLowStock = p.stock_qty > 0 && p.stock_qty <= 5;
-
-                                        return (
-                                            <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                                {/* Barcode */}
-                                                <td className="py-3 px-4 font-mono text-xs text-indigo-300 whitespace-nowrap">
-                                                    {p.barcode || '—'}
-                                                </td>
-
-                                                {/* Nama Menu & Kategori */}
-                                                <td className="py-3 px-4 min-w-[200px]">
-                                                    <div className="font-medium text-white">{p.product_name}</div>
-                                                    <div className="text-xs text-slate-500">{p.category?.category_name || '—'}</div>
-                                                </td>
-
-                                                {/* Tipe Proses */}
-                                                <td className="py-3 px-4 text-center text-xs whitespace-nowrap">
-                                                    {p.requires_kitchen ? (
-                                                        <span className="text-amber-300">Dapur</span>
-                                                    ) : (
-                                                        <span className="text-slate-400">Instan</span>
-                                                    )}
-                                                </td>
-
-                                                {/* Modal */}
-                                                <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs whitespace-nowrap">
-                                                    {formatRupiah(p.cost_price)}
-                                                </td>
-
-                                                {/* Harga Jual */}
-                                                <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs whitespace-nowrap">
-                                                    {formatRupiah(p.selling_price)}
-                                                </td>
-
-                                                {/* Margin */}
-                                                <td className="py-3 px-4 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">
-                                                    {margin}%
-                                                </td>
-
-                                                {/* Stok */}
-                                                <td className="py-3 px-4 text-center font-mono tabular-nums whitespace-nowrap">
-                                                    <span className={
-                                                        isOutOfStock ? 'text-rose-400 font-semibold'
-                                                        : isLowStock ? 'text-amber-400 font-medium'
-                                                        : 'text-slate-300'
-                                                    }>
-                                                        {p.stock_qty}
-                                                    </span>
-                                                </td>
-
-                                                {/* Status */}
-                                                <td className="py-3 px-4 text-center">
-                                                    <span className="inline-flex items-center gap-1.5 text-xs">
-                                                        <span className={`w-1.5 h-1.5 rounded-full ${
-                                                            isOutOfStock || !p.is_available ? 'bg-rose-500' : 'bg-emerald-400'
-                                                        }`} />
-                                                        {isOutOfStock || !p.is_available ? 'Habis' : 'Tersedia'}
-                                                    </span>
-                                                </td>
-
-                                                {/* Aksi */}
-                                                <td className="py-3 px-4 text-right whitespace-nowrap">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenAdjustment(p)}
-                                                        className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors"
-                                                    >
-                                                        Stok
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenEdit(p)}
-                                                        className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenDelete(p)}
-                                                        className="text-xs text-slate-400 hover:text-rose-400 px-2 py-1.5 rounded hover:bg-rose-500/10 transition-colors"
-                                                    >
-                                                        Hapus
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    {products.links && products.links.length > 3 && (
-                        <div className="px-4 py-3 border-t border-white/[0.06] flex items-center justify-between text-sm text-slate-400">
-                            <span>
-                                {products.from || 0} – {products.to || 0} dari {products.total || 0} menu
-                            </span>
-                            <div className="flex items-center gap-1">
-                                {products.links.map((link, idx) => (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        disabled={!link.url}
-                                        onClick={() => {
-                                            if (link.url) router.get(link.url, {}, { preserveScroll: true });
-                                        }}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                        className={`px-2.5 py-1 rounded text-xs transition-colors ${
-                                            link.active
-                                                ? 'bg-indigo-600 text-white font-semibold'
-                                                : link.url
-                                                ? 'hover:bg-white/[0.06] text-slate-300'
-                                                : 'text-slate-600 cursor-not-allowed'
-                                        }`}
-                                    />
-                                ))}
+                {products.data?.length === 0 ? (
+                    <div className="p-12 sm:p-16 rounded-2xl bg-[#0C0E16] border border-white/[0.08] text-center shadow-sm">
+                        <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-1">
+                                <Package className="w-6 h-6" />
                             </div>
+                            <div className="text-base sm:text-lg font-bold text-white tracking-tight">
+                                Tidak ada menu yang sesuai
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                Coba ubah kata kunci pencarian atau sesuaikan filter yang sedang aktif.
+                            </p>
+                            {isFilterActive && (
+                                <button
+                                    type="button"
+                                    onClick={handleResetFilter}
+                                    className="mt-3 px-4 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 rounded-xl transition-colors active:scale-95"
+                                >
+                                    Bersihkan Filter
+                                </button>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {products.data.map((p) => {
+                            const cost = Number(p.cost_price) || 0;
+                            const selling = Number(p.selling_price) || 0;
+                            const margin = selling > 0 ? (((selling - cost) / selling) * 100).toFixed(1) : 0;
+                            const isOutOfStock = p.stock_qty <= 0;
+                            const isLowStock = p.stock_qty > 0 && p.stock_qty <= 5;
+
+                            return (
+                                <div
+                                    key={p.id}
+                                    className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between gap-4 group"
+                                >
+                                    {/* 1. Header: Meta (Barcode & Kategori) + Tipe Proses */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between text-xs gap-2">
+                                            <div className="flex items-center gap-2 min-w-0 font-mono text-slate-400">
+                                                <span className="text-indigo-300 font-semibold truncate">
+                                                    {p.barcode || 'NO-BARCODE'}
+                                                </span>
+                                                <span className="text-slate-600">•</span>
+                                                <span className="text-slate-400 font-sans truncate">
+                                                    {p.category?.category_name || 'Umum'}
+                                                </span>
+                                            </div>
+
+                                            {p.requires_kitchen ? (
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20 inline-flex items-center gap-1 shrink-0">
+                                                    <ChefHat className="w-3 h-3 text-amber-400" />
+                                                    <span>Dapur</span>
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-white/[0.04] text-slate-300 border border-white/[0.08] inline-flex items-center gap-1 shrink-0">
+                                                    <Zap className="w-3 h-3 text-slate-400" />
+                                                    <span>Instan</span>
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Nama Produk */}
+                                        <h3 className="font-bold text-slate-100 text-base sm:text-lg tracking-tight leading-snug line-clamp-2">
+                                            {p.product_name}
+                                        </h3>
+                                    </div>
+
+                                    {/* 2. Harga & Sisa Stok (Tata Letak Terbuka, Tanpa Kotak Bertingkat) */}
+                                    <div className="space-y-2 pt-1 border-t border-white/[0.04]">
+                                        <div className="flex items-baseline justify-between gap-2">
+                                            <span className="text-xl sm:text-2xl font-bold font-mono tabular-nums text-white">
+                                                {formatRupiah(p.selling_price)}
+                                            </span>
+                                            <span
+                                                className={`font-mono tabular-nums text-xs font-bold px-2.5 py-1 rounded-lg ${
+                                                    isOutOfStock
+                                                        ? 'text-rose-300 bg-rose-500/15 border border-rose-500/25'
+                                                        : isLowStock
+                                                        ? 'text-amber-300 bg-amber-500/15 border border-amber-500/25'
+                                                        : 'text-emerald-300 bg-emerald-500/15 border border-emerald-500/25'
+                                                }`}
+                                            >
+                                                {isOutOfStock ? 'Stok Habis' : isLowStock ? `Sisa ${p.stock_qty}` : `${p.stock_qty} unit`}
+                                            </span>
+                                        </div>
+
+                                        {/* Financial Insight: HPP & Margin */}
+                                        <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                                            <span>HPP: <strong className="text-slate-300">{formatRupiah(p.cost_price)}</strong></span>
+                                            <span className="text-slate-500">•</span>
+                                            <span>Margin: <strong className="text-emerald-400">+{margin}%</strong></span>
+                                        </div>
+                                    </div>
+
+                                    {/* 3. Tombol Aksi (Target 42px Ramah Sentuh Tablet) */}
+                                    <div className="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenAdjustment(p)}
+                                            className="flex-1 h-11 px-3 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-[#4338CA] to-[#312E81] hover:from-[#3730A3] hover:to-[#1E1B4B] border border-indigo-400/30 rounded-xl flex items-center justify-center gap-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)] active:scale-95 transition-all"
+                                            title="Sesuaikan jumlah stok menu"
+                                        >
+                                            <SlidersHorizontal className="w-4 h-4 text-indigo-200" />
+                                            <span>Ubah Stok</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenEdit(p)}
+                                            className="w-11 h-11 text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
+                                            title="Edit nama, harga, dan kategori"
+                                            aria-label="Edit menu"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenDelete(p)}
+                                            className="w-11 h-11 text-slate-400 hover:text-rose-400 bg-white/[0.02] hover:bg-rose-500/15 border border-white/[0.06] hover:border-rose-500/30 rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
+                                            title="Hapus menu dari katalog"
+                                            aria-label="Hapus menu"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Pagination (Di bawah Grid Kartu) */}
+                {products.links && products.links.length > 3 && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-400">
+                        <div>
+                            Menampilkan{' '}
+                            <span className="font-mono text-slate-200 font-semibold">{products.from || 0}</span> –{' '}
+                            <span className="font-mono text-slate-200 font-semibold">{products.to || 0}</span> dari{' '}
+                            <span className="font-mono text-slate-200 font-semibold">{products.total || 0}</span> menu
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            {products.links.map((link, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    disabled={!link.url}
+                                    onClick={() => {
+                                        if (link.url) router.get(link.url, {}, { preserveScroll: true });
+                                    }}
+                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                    className={`min-h-[38px] min-w-[38px] px-3 py-1 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+                                        link.active
+                                            ? 'bg-gradient-to-r from-[#4338CA] to-[#3730A3] text-white border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]'
+                                            : link.url
+                                            ? 'bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.06]'
+                                            : 'text-slate-600 bg-transparent cursor-not-allowed opacity-50'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ============================================================
-                MODAL 1: PENYESUAIAN STOK (KONSISTEN DENGAN BERANDA)
+                MODAL 1: PENYESUAIAN STOK DENGAN STEPPER (TABLET FIRST)
             ============================================================ */}
             <AcrylicModal
                 isOpen={isAdjustmentModalOpen}
                 onClose={() => setIsAdjustmentModalOpen(false)}
-                title="Ubah Stok Menu"
-                subtitle={selectedProduct ? `${selectedProduct.product_name} (${selectedProduct.barcode || 'Tanpa barcode'})` : ''}
+                title="Penyesuaian Stok Menu"
+                subtitle={
+                    selectedProduct
+                        ? `${selectedProduct.product_name} • Barcode: ${selectedProduct.barcode || 'Tanpa Barcode'}`
+                        : ''
+                }
+                maxWidth="max-w-lg"
                 footer={
                     <>
                         <SpecularButton
@@ -653,79 +814,130 @@ export default function AdminProductsIndex({
                             loading={adjustmentProcessing}
                             onClick={handleSubmitAdjustment}
                         >
-                            Simpan Perubahan
+                            Simpan Perubahan Stok
                         </SpecularButton>
                     </>
                 }
             >
                 {selectedProduct && (
                     <form onSubmit={handleSubmitAdjustment} className="space-y-5">
-                        {/* Ringkasan Perhitungan Stok */}
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
+                        {/* Ringkasan Perhitungan Stok (2 Komparasi Besar) */}
+                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] grid grid-cols-2 gap-4">
                             <div>
-                                <span className="text-xs text-slate-400 block mb-1">Stok Saat Ini</span>
-                                <span className="text-2xl font-mono font-bold text-white">
-                                    {selectedProduct.stock_qty} <span className="text-sm font-normal text-slate-400">unit</span>
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                                    Stok Saat Ini
                                 </span>
+                                <div className="text-3xl font-mono font-bold text-white">
+                                    {selectedProduct.stock_qty}{' '}
+                                    <span className="text-xs font-medium text-slate-400">unit</span>
+                                </div>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs text-slate-400 block mb-1">Perkiraan Stok Baru</span>
-                                <span className="text-2xl font-mono font-bold text-emerald-400">
-                                    {previewCalculatedStock} <span className="text-sm font-normal text-slate-400">unit</span>
+                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                                    Perkiraan Stok Baru
                                 </span>
+                                <div className="text-3xl font-mono font-bold text-emerald-400">
+                                    {previewCalculatedStock}{' '}
+                                    <span className="text-xs font-medium text-slate-400">unit</span>
+                                </div>
                             </div>
                         </div>
 
                         {/* Pilihan Tipe Mutasi */}
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-2">
+                            <label className="text-sm font-semibold text-slate-200 block mb-2">
                                 Tipe Perubahan Stok
                             </label>
                             <div className="grid grid-cols-3 gap-2.5">
                                 {[
-                                    { id: 'in', label: 'Masuk (+)', desc: 'Tambah stok' },
-                                    { id: 'out', label: 'Keluar (−)', desc: 'Kurangi stok' },
-                                    { id: 'adjustment', label: 'Koreksi (~)', desc: 'Hitung fisik' },
+                                    { id: 'in', label: 'Masuk (+)', desc: 'Tambah stok barang' },
+                                    { id: 'out', label: 'Keluar (−)', desc: 'Kurangi stok barang' },
+                                    { id: 'adjustment', label: 'Opname (~)', desc: 'Koreksi stok fisik' },
                                 ].map((type) => (
                                     <button
                                         key={type.id}
                                         type="button"
                                         onClick={() => setAdjustmentData('movement_type', type.id)}
-                                        className={`py-3 px-2 rounded-lg border transition-all text-center min-h-[52px] flex flex-col items-center justify-center ${
+                                        className={`py-3 px-2 rounded-xl border transition-all text-center min-h-[56px] flex flex-col items-center justify-center active:scale-95 ${
                                             adjustmentData.movement_type === type.id
-                                                ? 'bg-indigo-500/20 border-indigo-500/50 text-white font-semibold shadow-sm'
-                                                : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                                                ? 'bg-gradient-to-br from-indigo-950/80 to-indigo-900/60 border-indigo-500/50 text-white font-bold shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
+                                                : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.06]'
                                         }`}
                                     >
                                         <span className="text-sm">{type.label}</span>
-                                        <span className="text-[11px] opacity-70">{type.desc}</span>
+                                        <span className="text-[11px] opacity-75 mt-0.5">{type.desc}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        {/* Jumlah Input */}
-                        <AcrylicInput
-                            label="Jumlah Unit Perubahan"
-                            type="number"
-                            min="1"
-                            value={adjustmentData.quantity_change}
-                            onChange={(e) => setAdjustmentData('quantity_change', parseInt(e.target.value) || 0)}
-                            error={adjustmentErrors.quantity_change}
-                            required
-                        />
+                        {/* Jumlah Unit dengan Tombol Cepat (Stepper) untuk Kemudahan Staf Usia 40-60 */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-200 block">
+                                Jumlah Unit Perubahan
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleStepQuantity(-10)}
+                                    className="h-11 px-3 text-xs font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl active:scale-95"
+                                    title="Kurangi 10"
+                                >
+                                    −10
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleStepQuantity(-1)}
+                                    className="h-11 px-3 text-xs font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl active:scale-95"
+                                    title="Kurangi 1"
+                                >
+                                    −1
+                                </button>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={adjustmentData.quantity_change}
+                                    onChange={(e) =>
+                                        setAdjustmentData('quantity_change', parseInt(e.target.value) || 0)
+                                    }
+                                    className="h-11 flex-1 bg-[#08090D] border border-white/[0.08] rounded-xl text-center font-mono text-lg font-bold text-white focus:outline-none focus:border-indigo-500"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => handleStepQuantity(1)}
+                                    className="h-11 px-3 text-xs font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl active:scale-95"
+                                    title="Tambah 1"
+                                >
+                                    +1
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleStepQuantity(10)}
+                                    className="h-11 px-3 text-xs font-bold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl active:scale-95"
+                                    title="Tambah 10"
+                                >
+                                    +10
+                                </button>
+                            </div>
+                            {adjustmentErrors.quantity_change && (
+                                <p className="text-xs text-rose-400 font-medium">
+                                    {adjustmentErrors.quantity_change}
+                                </p>
+                            )}
+                        </div>
 
-                        {/* Catatan */}
+                        {/* Catatan Perubahan */}
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                            <label className="text-sm font-semibold text-slate-200 block mb-1.5">
                                 Catatan / Keterangan (Opsional)
                             </label>
                             <textarea
                                 rows="2"
                                 value={adjustmentData.notes}
                                 onChange={(e) => setAdjustmentData('notes', e.target.value)}
-                                placeholder="Contoh: Penerimaan barang dari supplier, barang rusak, atau opname fisik"
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                                placeholder="Contoh: Penerimaan barang dari supplier, barang kadaluarsa, atau audit fisik"
+                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                         </div>
                     </form>
@@ -733,7 +945,7 @@ export default function AdminProductsIndex({
             </AcrylicModal>
 
             {/* ============================================================
-                MODAL 2: EDIT PRODUK & HARGA (KONSISTEN DENGAN BERANDA)
+                MODAL 2: EDIT PRODUK & HARGA
             ============================================================ */}
             <AcrylicModal
                 isOpen={isEditModalOpen}
@@ -772,13 +984,21 @@ export default function AdminProductsIndex({
                                 required
                             />
                             <AcrylicInput
-                                label="Barcode (Opsional)"
+                                label="Nomor Barcode (Opsional)"
                                 value={editData.barcode}
                                 onChange={(e) => setEditData('barcode', e.target.value)}
                                 inputClassName="font-mono text-indigo-300"
                                 placeholder="Contoh: 8991001"
                             />
                         </div>
+
+                        <AcrylicInput
+                            label="URL Foto Produk (Opsional untuk Menu QR Pelanggan)"
+                            value={editData.image_url}
+                            onChange={(e) => setEditData('image_url', e.target.value)}
+                            placeholder="https://images.unsplash.com/... atau /images/menu.jpg"
+                            error={editErrors.image_url}
+                        />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
@@ -788,7 +1008,7 @@ export default function AdminProductsIndex({
                                 <select
                                     value={editData.category_id}
                                     onChange={(e) => setEditData('category_id', e.target.value)}
-                                    className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                                    className="w-full h-11 bg-[#08090D] border border-white/[0.08] rounded-xl px-3.5 text-sm text-white focus:outline-none focus:border-indigo-500"
                                 >
                                     {categories.map((c) => (
                                         <option key={c.id} value={c.id}>
@@ -803,7 +1023,7 @@ export default function AdminProductsIndex({
                                 min="0"
                                 value={editData.stock_qty}
                                 onChange={(e) => setEditData('stock_qty', parseInt(e.target.value) || 0)}
-                                inputClassName="font-mono"
+                                inputClassName="font-mono font-bold"
                                 required
                             />
                         </div>
@@ -824,7 +1044,7 @@ export default function AdminProductsIndex({
                                 min="0"
                                 value={editData.selling_price}
                                 onChange={(e) => setEditData('selling_price', parseFloat(e.target.value) || 0)}
-                                inputClassName="font-mono"
+                                inputClassName="font-mono font-bold text-white"
                                 required
                             />
                         </div>
@@ -871,7 +1091,7 @@ export default function AdminProductsIndex({
             </AcrylicModal>
 
             {/* ============================================================
-                MODAL 3: TAMBAH MENU BARU (KONSISTEN DENGAN BERANDA)
+                MODAL 3: TAMBAH MENU BARU
             ============================================================ */}
             <AcrylicModal
                 isOpen={isCreateModalOpen}
@@ -910,13 +1130,21 @@ export default function AdminProductsIndex({
                             required
                         />
                         <AcrylicInput
-                            label="Barcode (Scan / Ketik)"
+                            label="Nomor Barcode (Scan / Ketik)"
                             value={createData.barcode}
                             onChange={(e) => setCreateData('barcode', e.target.value)}
                             placeholder="Contoh: 8991005"
                             inputClassName="font-mono text-indigo-300"
                         />
                     </div>
+
+                    <AcrylicInput
+                        label="URL Foto Produk (Opsional untuk Menu QR Pelanggan)"
+                        value={createData.image_url}
+                        onChange={(e) => setCreateData('image_url', e.target.value)}
+                        placeholder="https://images.unsplash.com/... atau /images/menu.jpg"
+                        error={createErrors.image_url}
+                    />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -926,7 +1154,7 @@ export default function AdminProductsIndex({
                             <select
                                 value={createData.category_id}
                                 onChange={(e) => setCreateData('category_id', e.target.value)}
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                                className="w-full h-11 bg-[#08090D] border border-white/[0.08] rounded-xl px-3.5 text-sm text-white focus:outline-none focus:border-indigo-500"
                                 required
                             >
                                 {categories.map((c) => (
@@ -942,7 +1170,7 @@ export default function AdminProductsIndex({
                             min="0"
                             value={createData.stock_qty}
                             onChange={(e) => setCreateData('stock_qty', parseInt(e.target.value) || 0)}
-                            inputClassName="font-mono"
+                            inputClassName="font-mono font-bold"
                             required
                         />
                     </div>
@@ -965,7 +1193,7 @@ export default function AdminProductsIndex({
                             value={createData.selling_price}
                             onChange={(e) => setCreateData('selling_price', e.target.value)}
                             placeholder="Contoh: 18000"
-                            inputClassName="font-mono"
+                            inputClassName="font-mono font-bold text-white"
                             required
                         />
                     </div>
@@ -992,7 +1220,7 @@ export default function AdminProductsIndex({
             </AcrylicModal>
 
             {/* ============================================================
-                MODAL 4: TAMBAH KATEGORI (KONSISTEN DENGAN BERANDA)
+                MODAL 4: TAMBAH KATEGORI BARU
             ============================================================ */}
             <AcrylicModal
                 isOpen={isCategoryModalOpen}
@@ -1077,7 +1305,7 @@ export default function AdminProductsIndex({
                                 value={quickScanInput}
                                 onChange={(e) => setQuickScanInput(e.target.value)}
                                 placeholder="Contoh: 8991001234..."
-                                className="flex-1 bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                                className="h-11 flex-1 bg-[#08090D] border border-white/[0.08] rounded-xl px-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                             />
                             <SpecularButton
                                 type="submit"
@@ -1093,7 +1321,7 @@ export default function AdminProductsIndex({
             </AcrylicModal>
 
             {/* ============================================================
-                MODAL 6: HAPUS PRODUK (KONSISTEN DENGAN BERANDA)
+                MODAL 6: HAPUS PRODUK
             ============================================================ */}
             <AcrylicModal
                 isOpen={isDeleteModalOpen}

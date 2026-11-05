@@ -68,10 +68,11 @@ class DatabaseSeeder extends Seeder
         $snack = Category::firstOrCreate(['category_name' => 'Snack & Dessert']);
 
         // 4. Sample Products
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['barcode' => '8991001'],
             [
                 'category_id' => $makanan->id,
+                'image_url' => 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=600&q=80',
                 'product_name' => 'Nasi Goreng Spesial',
                 'cost_price' => 12000,
                 'selling_price' => 20000,
@@ -81,10 +82,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['barcode' => '8991002'],
             [
                 'category_id' => $makanan->id,
+                'image_url' => 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=600&q=80',
                 'product_name' => 'Mie Goreng Seafood',
                 'cost_price' => 14000,
                 'selling_price' => 23000,
@@ -94,10 +96,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['barcode' => '8992001'],
             [
                 'category_id' => $minuman->id,
+                'image_url' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=600&q=80',
                 'product_name' => 'Es Teh Manis',
                 'cost_price' => 1500,
                 'selling_price' => 5000,
@@ -107,10 +110,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['barcode' => '8992002'],
             [
                 'category_id' => $minuman->id,
+                'image_url' => 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
                 'product_name' => 'Kopi Susu Gula Aren',
                 'cost_price' => 6000,
                 'selling_price' => 15000,
@@ -120,10 +124,11 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Product::firstOrCreate(
+        Product::updateOrCreate(
             ['barcode' => '8993001'],
             [
                 'category_id' => $snack->id,
+                'image_url' => 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=600&q=80',
                 'product_name' => 'Kentang Goreng (French Fries)',
                 'cost_price' => 7000,
                 'selling_price' => 14000,

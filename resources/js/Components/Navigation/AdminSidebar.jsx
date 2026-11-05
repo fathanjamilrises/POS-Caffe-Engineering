@@ -12,10 +12,13 @@ import {
     Users,
     PanelLeftClose,
     PanelLeftOpen,
+    Maximize2,
+    Minimize2,
 } from 'lucide-react';
+import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
 
 /**
- * Sidebar collapsed state context — shared between sidebar and layout.
+ * Sidebar collapsed state context — shared between sidebar and layouts.
  */
 export const SidebarContext = createContext({
     collapsed: false,
@@ -27,10 +30,14 @@ export function useSidebar() {
 }
 
 /**
- * AdminSidebar: Clean collapsible sidebar for staff aged 40–60.
- * - Large touch targets (min 48px height)
- * - Clear Bahasa Indonesia labels, no jargon
- * - Collapse/expand toggle that persists via localStorage
+ * AdminSidebar: Tablet-first, high-ergonomics navigation sidebar.
+ * Specifically tuned for cafe/canteen staff aged 40–60 using tablet POS devices:
+ * - Minimum 52px touch target height for finger/stylus tapping.
+ * - Clean Obsidian Ultramarine & Tanzanite palette without decorative pill clutter (anti-slop).
+ * - Buttery-smooth collapse/expand transition (300ms ease-in-out) with text cross-fade.
+ * - Perfectly centered logo button when collapsed (never overlapped or covered).
+ * - Tablet kiosk fullscreen mode toggle to eliminate browser distractions.
+ * - Safe logout confirmation modal (prevents accidental mis-taps on touchscreen).
  */
 export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () => {} }) {
     const { auth = {} } = usePage().props;
@@ -39,209 +46,381 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
 
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
-    const handleLogout = () => {
+    // Fullscreen Kiosk Mode for Tablet
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+    };
+
+    // Logout Confirmation Modal
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    const handleConfirmLogout = () => {
+        setShowLogoutModal(false);
         router.post('/logout');
     };
 
-    const allNavLinks = [
-        {
-            name: 'Beranda',
-            description: 'Ringkasan & laporan',
-            href: '/admin',
-            icon: LayoutDashboard,
-            roles: ['admin'],
-            exact: true,
-        },
-        {
-            name: 'Produk & Stok',
-            description: 'Kelola menu dan harga',
-            href: '/admin/products',
-            icon: Package,
-            roles: ['admin'],
-        },
-        {
-            name: 'Kasir',
-            description: 'Buka layar kasir',
-            href: '/pos',
-            icon: UtensilsCrossed,
-            roles: ['admin', 'kasir'],
-        },
-        {
-            name: 'Meja & QR',
-            description: 'Kelola meja pelanggan',
-            href: '/tables',
-            icon: QrCode,
-            roles: ['admin', 'kasir'],
-        },
-        {
-            name: 'Dapur',
-            description: 'Layar tampilan dapur',
-            href: '/kitchen',
-            icon: ChefHat,
-            roles: ['admin', 'dapur'],
-        },
-        {
-            name: 'Pengguna',
-            description: 'Kelola akun staff',
-            href: '/admin/users',
-            icon: Users,
-            roles: ['admin'],
-        },
-    ];
+    // Navigation Groups strictly separated by role
+    const userRole = user?.role || 'admin';
 
-    const navLinks = allNavLinks.filter((link) => {
-        if (!user) return true;
-        if (user.role === 'admin') return true;
-        return link.roles.includes(user.role);
-    });
+    const getNavGroups = () => {
+        if (userRole === 'admin') {
+            return [
+                {
+                    title: 'Menu Administrasi',
+                    links: [
+                        {
+                            name: 'Beranda',
+                            description: 'Ringkasan & Pendapatan',
+                            href: '/admin',
+                            icon: LayoutDashboard,
+                            exact: true,
+                        },
+                        {
+                            name: 'Produk & Stok',
+                            description: 'Katalog Menu & Sisa Stok',
+                            href: '/admin/products',
+                            icon: Package,
+                        },
+                        {
+                            name: 'Meja & QR',
+                            description: 'Status Meja & QR',
+                            href: '/tables',
+                            icon: QrCode,
+                        },
+                        {
+                            name: 'Pengguna',
+                            description: 'Kelola Akun & Staff',
+                            href: '/admin/users',
+                            icon: Users,
+                        },
+                    ],
+                },
+            ];
+        }
 
-    const sidebarWidth = collapsed ? 'w-[72px]' : 'w-64';
+        if (userRole === 'kasir') {
+            return [
+                {
+                    title: 'Operasional Kasir',
+                    links: [
+                        {
+                            name: 'Kasir POS',
+                            description: 'Transaksi & Pembayaran',
+                            href: '/pos',
+                            icon: UtensilsCrossed,
+                        },
+                        {
+                            name: 'Meja & QR',
+                            description: 'Status Meja & QR',
+                            href: '/tables',
+                            icon: QrCode,
+                        },
+                    ],
+                },
+            ];
+        }
+
+        if (userRole === 'dapur') {
+            return [
+                {
+                    title: 'Operasional Dapur',
+                    links: [
+                        {
+                            name: 'Dapur (KDS)',
+                            description: 'Monitor Antrean Masakan',
+                            href: '/kitchen',
+                            icon: ChefHat,
+                        },
+                    ],
+                },
+            ];
+        }
+
+        return [];
+    };
+
+    const navGroups = getNavGroups();
+
+    const sidebarWidth = collapsed ? 'w-20' : 'w-72';
 
     return (
         <>
-            {/* Mobile Backdrop */}
+            {/* Mobile / Tablet Portrait Backdrop */}
             {isOpenMobile && (
                 <div
-                    className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+                    className="fixed inset-0 bg-black/75 z-40 lg:hidden backdrop-blur-xs transition-opacity duration-300"
                     onClick={onCloseMobile}
                     aria-hidden="true"
                 />
             )}
 
-            {/* Sidebar */}
+            {/* Sidebar Shell */}
             <aside
-                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-white/[0.06] bg-[#08090D] h-screen select-none transition-all duration-200 ease-in-out ${sidebarWidth} ${
-                    isOpenMobile ? 'translate-x-0 z-50 w-64' : '-translate-x-full lg:translate-x-0'
+                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-white/[0.08] bg-[#08090D] h-screen select-none transition-all duration-300 ease-in-out overflow-hidden ${sidebarWidth} ${
+                    isOpenMobile ? 'translate-x-0 z-50 w-72' : '-translate-x-full lg:translate-x-0'
                 }`}
             >
-                {/* Header: Logo + Collapse Toggle */}
-                <div className="h-16 px-4 flex items-center justify-between border-b border-white/[0.06] shrink-0">
-                    <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
-                        <div className="w-9 h-9 rounded-lg bg-gradient-to-b from-[#4338CA] to-[#312E81] flex items-center justify-center border border-indigo-400/20 shrink-0">
-                            <Store className="w-[18px] h-[18px] text-white" />
+                {/* 1. Header: Store Logo, Title & Always-Visible Open/Close Toggle */}
+                <div className="h-16 px-3.5 flex items-center justify-between border-b border-white/[0.08] shrink-0 bg-[#0A0C13] overflow-hidden">
+                    {/* Left: Logo & Store Title (Cleanly hides/covers when collapsed) */}
+                    <div
+                        className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ease-in-out ${
+                            collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[200px] opacity-100 flex-1 min-w-0'
+                        }`}
+                    >
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4338CA] via-[#3730A3] to-[#1E1B4B] flex items-center justify-center border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] shrink-0">
+                            <Store className="w-5 h-5 text-white" />
                         </div>
-                        {!collapsed && (
-                            <span className="text-sm font-semibold text-slate-100 truncate">
-                                Kasir App
-                            </span>
-                        )}
+                        <div className="overflow-hidden whitespace-nowrap min-w-0">
+                            <div className="text-sm font-bold text-slate-100 tracking-tight leading-tight truncate">
+                                KASIR CAFE
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-medium truncate">
+                                Sistem POS Tablet
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Desktop: collapse toggle | Mobile: close */}
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isOpenMobile) {
-                                onCloseMobile();
-                            } else {
-                                setCollapsed(!collapsed);
-                            }
-                        }}
-                        className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.05] transition-colors shrink-0"
-                        title={collapsed ? 'Perbesar menu' : 'Perkecil menu'}
+                    {/* Open/Close Toggle Button (ALWAYS PRESENT & VISIBLE!) */}
+                    <div
+                        className={`flex items-center transition-all duration-300 ease-in-out shrink-0 ${
+                            collapsed ? 'w-full justify-center' : ''
+                        }`}
                     >
-                        {isOpenMobile ? (
-                            <X className="w-5 h-5" />
-                        ) : collapsed ? (
-                            <PanelLeftOpen className="w-5 h-5" />
-                        ) : (
-                            <PanelLeftClose className="w-5 h-5" />
-                        )}
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (isOpenMobile) {
+                                    onCloseMobile();
+                                } else {
+                                    setCollapsed(!collapsed);
+                                }
+                            }}
+                            className={`rounded-xl text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.15] flex items-center justify-center transition-all active:scale-95 ${
+                                collapsed ? 'w-11 h-11' : 'w-9 h-9'
+                            }`}
+                            title={collapsed ? 'Buka panel menu (Perbesar)' : 'Tutup panel menu (Perkecil)'}
+                            aria-label={collapsed ? 'Buka panel menu' : 'Tutup panel menu'}
+                        >
+                            {isOpenMobile ? (
+                                <X className="w-5 h-5" />
+                            ) : collapsed ? (
+                                <PanelLeftOpen className="w-5 h-5 text-indigo-400" />
+                            ) : (
+                                <PanelLeftClose className="w-5 h-5 text-slate-400" />
+                            )}
+                        </button>
+                    </div>
                 </div>
 
-                {/* Navigation */}
-                <nav className="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto">
-                    {navLinks.map((link) => {
-                        const Icon = link.icon;
-                        const isActive = link.exact
-                            ? currentPath === link.href
-                            : currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href));
-
-                        return (
-                            <Link
-                                key={link.name}
-                                href={link.href}
-                                onClick={onCloseMobile}
-                                title={collapsed ? link.name : undefined}
-                                className={`flex items-center gap-3 rounded-lg transition-colors duration-100 ${
-                                    collapsed ? 'justify-center px-0 py-3' : 'px-3 py-3'
-                                } ${
-                                    isActive
-                                        ? 'bg-indigo-500/[0.1] text-white'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+            {/* 2. Navigation Links List */}
+            <nav className="flex-1 px-2.5 py-3 space-y-4 overflow-y-auto overflow-x-hidden">
+                {navGroups.map((group, groupIdx) => (
+                    <div key={group.title || groupIdx}>
+                        {groupIdx > 0 && collapsed ? (
+                            <div className="border-t border-white/[0.06] my-2 mx-3" />
+                        ) : (
+                            <div
+                                className={`px-3 mb-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
+                                    collapsed ? 'max-w-0 opacity-0 h-0 mb-0' : 'max-w-[200px] opacity-100 h-auto'
                                 }`}
                             >
-                                <Icon
-                                    className={`w-5 h-5 shrink-0 ${
-                                        isActive ? 'text-indigo-400' : ''
-                                    }`}
-                                />
-                                {!collapsed && (
-                                    <div className="min-w-0">
-                                        <div className={`text-sm truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
-                                            {link.name}
-                                        </div>
-                                        <div className="text-[11px] text-slate-500 truncate">
-                                            {link.description}
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Active indicator bar */}
-                                {isActive && !collapsed && (
-                                    <div className="ml-auto w-1 h-5 rounded-full bg-indigo-400 shrink-0" />
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
+                                {group.title}
+                            </div>
+                        )}
+                        <div className="space-y-1.5">
+                            {group.links.map((link) => {
+                                const Icon = link.icon;
+                                const isActive = link.exact
+                                    ? currentPath === link.href
+                                    : currentPath === link.href || (link.href !== '/' && currentPath.startsWith(link.href));
 
-                {/* Footer: User & Logout */}
-                <div className="p-2.5 border-t border-white/[0.06] shrink-0">
-                    {collapsed ? (
-                        /* Collapsed: avatar only + logout below */
-                        <div className="flex flex-col items-center gap-2">
-                            <div
-                                className="w-9 h-9 rounded-lg bg-indigo-950/50 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-200"
-                                title={user?.full_name || 'User'}
-                            >
-                                {user?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                title="Keluar"
-                                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        onClick={onCloseMobile}
+                                        title={collapsed ? `${link.name} — ${link.description}` : undefined}
+                                        className={`group relative flex items-center h-[52px] min-h-[52px] rounded-xl transition-all duration-300 ease-in-out active:scale-[0.98] ${
+                                            collapsed ? 'px-0 justify-center w-12 mx-auto' : 'px-3 gap-3 w-full'
+                                        } ${
+                                            isActive
+                                                ? 'bg-gradient-to-r from-indigo-950/70 via-indigo-900/40 to-indigo-950/20 text-white border border-indigo-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
+                                                : 'bg-[#0C0E16]/40 hover:bg-[#141824] text-slate-300 hover:text-white border border-white/[0.04] hover:border-white/[0.08]'
+                                        }`}
+                                    >
+                                        {/* Icon Badge */}
+                                        <div
+                                            className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                                                isActive
+                                                    ? 'bg-gradient-to-br from-[#4338CA] to-[#312E81] text-white border border-indigo-400/40 shadow-sm'
+                                                    : 'bg-white/[0.03] border border-white/[0.05] text-slate-400 group-hover:text-slate-200 group-hover:bg-white/[0.06]'
+                                            }`}
+                                        >
+                                            <Icon className="w-5 h-5" />
+                                        </div>
+
+                                        {/* Label & Description (Smoothly collapses width and fades out) */}
+                                        <div
+                                            className={`overflow-hidden transition-all duration-300 ease-in-out whitespace-nowrap min-w-0 ${
+                                                collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[180px] opacity-100 flex-1'
+                                            }`}
+                                        >
+                                            <div
+                                                className={`text-sm truncate ${
+                                                    isActive ? 'font-bold text-white' : 'font-semibold text-slate-200 group-hover:text-white'
+                                                }`}
+                                            >
+                                                {link.name}
+                                            </div>
+                                            <div
+                                                className={`text-xs truncate mt-0.5 ${
+                                                    isActive ? 'text-indigo-200/90 font-medium' : 'text-slate-400 group-hover:text-slate-300'
+                                                }`}
+                                            >
+                                                {link.description}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
+                    </div>
+                ))}
+            </nav>
+
+            {/* 3. Tablet Utility Tool: Clean Fullscreen Toggle (No decorative pill badges) */}
+            <div className="px-3 py-2 border-t border-white/[0.06] shrink-0">
+                <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    className={`flex items-center h-[46px] rounded-xl bg-[#0C0E16] hover:bg-[#151824] border border-white/[0.06] text-slate-300 hover:text-white transition-all duration-300 ease-in-out active:scale-[0.98] ${
+                        collapsed ? 'w-12 px-0 justify-center mx-auto' : 'w-full px-3 gap-2.5'
+                    }`}
+                    title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Tablet'}
+                >
+                    {isFullscreen ? (
+                        <Minimize2 className="w-5 h-5 text-indigo-400 shrink-0" />
                     ) : (
-                        /* Expanded: full user info row */
-                        <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                            <div className="w-9 h-9 rounded-lg bg-indigo-950/50 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-200 shrink-0">
-                                {user?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <div className="text-sm font-medium text-slate-200 truncate">
-                                    {user?.full_name || 'Administrator'}
-                                </div>
-                                <div className="text-xs text-slate-500 capitalize">
-                                    {user?.role || 'Admin'}
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                title="Keluar dari akun"
-                                className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0"
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <Maximize2 className="w-5 h-5 text-indigo-400 shrink-0" />
                     )}
+                    <span
+                        className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out truncate ${
+                            collapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[180px] opacity-100 flex-1 text-left'
+                        }`}
+                    >
+                        {isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Tablet'}
+                    </span>
+                </button>
+            </div>
+
+            {/* 4. Footer: Staff Profile & Safe Logout Button */}
+            <div className="p-3 border-t border-white/[0.08] bg-[#0A0C13] shrink-0">
+                {collapsed ? (
+                    <div className="flex flex-col items-center gap-2">
+                        <div
+                            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-200"
+                            title={`${user?.full_name || (user?.role === 'admin' ? 'Administrator' : 'Staff')} (${user?.role?.toUpperCase() || 'PENGGUNA'})`}
+                        >
+                            {user?.full_name?.substring(0, 2).toUpperCase() || 'ST'}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowLogoutModal(true)}
+                            title="Keluar dari akun"
+                            className="w-11 h-11 rounded-xl bg-white/[0.02] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/30 flex items-center justify-center transition-colors active:scale-95"
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#0C0E16] border border-white/[0.06]">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-200 shrink-0">
+                            {user?.full_name?.substring(0, 2).toUpperCase() || 'ST'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-slate-100 truncate">
+                                {user?.full_name || (user?.role === 'admin' ? 'Administrator' : 'Staff Operasional')}
+                            </div>
+                            <div className="text-xs text-slate-400 capitalize mt-0.5 truncate">
+                                {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'kasir' ? 'Staff Kasir' : user?.role === 'dapur' ? 'Staff Dapur' : user?.role}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowLogoutModal(true)}
+                            title="Keluar dari akun"
+                            className="w-9 h-9 rounded-xl bg-white/[0.02] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/30 flex items-center justify-center transition-colors shrink-0 active:scale-95"
+                        >
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+            </div>
+        </aside>
+
+        {/* Logout Confirmation Dialog (Accessible Modal) */}
+        <AcrylicModal
+            isOpen={showLogoutModal}
+            onClose={() => setShowLogoutModal(false)}
+            title="Konfirmasi Keluar Sesi"
+            subtitle="Pastikan seluruh pekerjaan atau transaksi berjalan telah disimpan sebelum mengakhiri sesi."
+            maxWidth="max-w-md"
+            footer={
+                <div className="flex items-center justify-end gap-3 w-full">
+                    <button
+                        type="button"
+                        onClick={() => setShowLogoutModal(false)}
+                        className="px-4 py-2.5 text-sm font-medium text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-colors min-h-[44px]"
+                    >
+                        Batal, Tetap di Halaman
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleConfirmLogout}
+                        className="px-5 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 border border-rose-500/40 rounded-xl transition-all shadow-sm min-h-[44px] flex items-center gap-2 active:scale-95"
+                    >
+                        <LogOut className="w-4 h-4" />
+                        <span>Ya, Keluar Sesi</span>
+                    </button>
                 </div>
-            </aside>
-        </>
+            }
+        >
+            <div className="py-2 text-sm text-slate-300 space-y-2.5">
+                <p>
+                    Anda sedang aktif sebagai{' '}
+                    <strong className="text-white font-semibold">
+                        {user?.full_name || 'Staff'}
+                    </strong>{' '}
+                    dengan hak akses{' '}
+                    <span className="font-mono text-indigo-300 uppercase font-semibold">
+                        {user?.role || 'PENGGUNA'}
+                    </span>
+                    .
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                    Sesi Anda pada sistem ini akan ditutup dan Anda akan dialihkan kembali ke halaman masuk (login).
+                </p>
+            </div>
+        </AcrylicModal>
+    </>
     );
 }

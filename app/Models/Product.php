@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'category_id',
     'barcode',
+    'image_url',
     'product_name',
     'cost_price',
     'selling_price',

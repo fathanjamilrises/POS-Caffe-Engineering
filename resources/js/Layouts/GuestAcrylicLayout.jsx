@@ -1,5 +1,6 @@
 import React from 'react';
 import { Store } from 'lucide-react';
+import ToastContainer from '@/Components/Notification/ToastContainer';
 
 /**
  * GuestAcrylicLayout: Layout for unauthenticated visitors (Login, Public Errors).
@@ -9,6 +10,7 @@ export default function GuestAcrylicLayout({ children, title = null, centered = 
     if (fullScreen) {
         return (
             <div className="relative min-h-screen bg-[#07080D] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
+                <ToastContainer />
                 {children}
             </div>
         );
@@ -16,6 +18,7 @@ export default function GuestAcrylicLayout({ children, title = null, centered = 
 
     return (
         <div className="relative min-h-screen bg-[#06070A] text-slate-100 flex flex-col font-sans selection:bg-indigo-500/20 selection:text-indigo-200 antialiased overflow-x-hidden">
+            <ToastContainer />
             {/* Ambient Radial Spotlight */}
             <div
                 className="pointer-events-none fixed inset-0 z-0"

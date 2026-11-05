@@ -12,6 +12,10 @@ import {
     Package,
     Clock,
     LayoutGrid,
+    TrendingUp,
+    TrendingDown,
+    Wallet,
+    AlertTriangle,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
@@ -283,12 +287,21 @@ export default function AdminDashboard({
             <Head title="Beranda — Dashboard" />
 
             {/* ============================================================
-                FILTER PERIODE
+                1. HEADER & FILTER PERIODE
             ============================================================ */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Periode: <span className="font-medium text-white">{summary_metrics.label}</span></span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm">
+                <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#4338CA] via-[#3730A3] to-[#1E1B4B] flex items-center justify-center border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] shrink-0">
+                        <Calendar className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                        <h2 className="text-base sm:text-lg font-bold text-white tracking-tight leading-tight truncate">
+                            Ringkasan Penjualan & Operasional
+                        </h2>
+                        <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
+                            Periode Laporan: <span className="text-indigo-300 font-semibold">{summary_metrics.label}</span>
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -302,10 +315,10 @@ export default function AdminDashboard({
                             key={btn.id}
                             type="button"
                             onClick={() => handleDatePresetChange(btn.id)}
-                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            className={`min-h-[42px] px-3.5 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                                 currentPreset === btn.id
-                                    ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'
-                                    : 'text-slate-400 hover:text-white border border-white/[0.06] hover:border-white/[0.12]'
+                                    ? 'bg-gradient-to-r from-indigo-950/80 to-indigo-900/50 text-white border border-indigo-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)]'
+                                    : 'text-slate-300 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-white/[0.12]'
                             }`}
                         >
                             {btn.label}
@@ -316,13 +329,14 @@ export default function AdminDashboard({
                         type="date"
                         value={customDate}
                         onChange={handleCustomDateChange}
-                        className="bg-[#0C0E16] text-sm text-slate-200 border border-white/[0.08] rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-500"
+                        className="min-h-[42px] bg-[#08090D] text-sm text-slate-200 border border-white/[0.08] rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors"
+                        title="Pilih tanggal khusus"
                     />
 
                     <button
                         type="button"
                         onClick={() => triggerFilter()}
-                        className="p-2 text-slate-400 hover:text-white rounded-lg border border-white/[0.06] hover:bg-white/[0.04] transition-colors"
+                        className="w-[42px] h-[42px] text-slate-400 hover:text-white rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.06] flex items-center justify-center transition-colors shrink-0 active:scale-95"
                         title="Perbarui data"
                     >
                         <RefreshCw className="w-4 h-4" />
@@ -331,80 +345,116 @@ export default function AdminDashboard({
             </div>
 
             {/* ============================================================
-                RINGKASAN KEUANGAN — 4 KARTU
+                2. RINGKASAN KEUANGAN & OPERASIONAL — METRIK TERARAH
             ============================================================ */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Pendapatan */}
-                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                    <div className="text-sm text-slate-400 mb-3">Pendapatan</div>
-                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
-                        {formatRupiah(summary_metrics.gross_revenue)}
+                {/* 1. Pendapatan Kotor */}
+                <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                Total Pendapatan
+                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                <Wallet className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                            {formatRupiah(summary_metrics.gross_revenue)}
+                        </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                        <span className="text-slate-400">Tunai: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.cash_revenue)}</span></span>
-                        <span className="text-slate-400">QRIS: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.qris_revenue)}</span></span>
-                    </div>
-                </div>
-
-                {/* Modal & Biaya */}
-                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                    <div className="text-sm text-slate-400 mb-3">Modal & Biaya</div>
-                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
-                        {formatRupiah(summary_metrics.total_cost + summary_metrics.operational_expenses)}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                        <span className="text-slate-400">HPP: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.total_cost)}</span></span>
-                        <span className="text-slate-400">Beban: <span className="text-slate-200 font-mono">{formatRupiah(summary_metrics.operational_expenses)}</span></span>
+                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span>Tunai: <strong className="text-slate-200">{formatRupiah(summary_metrics.cash_revenue)}</strong></span>
+                        <span className="text-slate-600">•</span>
+                        <span>QRIS: <strong className="text-indigo-300">{formatRupiah(summary_metrics.qris_revenue)}</strong></span>
                     </div>
                 </div>
 
-                {/* Laba Bersih */}
-                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                    <div className="text-sm text-slate-400 mb-3">Laba Bersih</div>
-                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
-                        {formatRupiah(summary_metrics.net_profit)}
+                {/* 2. Modal & Beban (HPP) */}
+                <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                Modal & Beban
+                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                <TrendingDown className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                            {formatRupiah(summary_metrics.total_cost + summary_metrics.operational_expenses)}
+                        </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex justify-between text-sm">
-                        <span className="text-slate-400">Pendapatan − (HPP + Beban)</span>
-                        <span className="text-slate-200 font-mono">{summary_metrics.total_orders_count} transaksi</span>
+                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span>HPP: <strong className="text-slate-200">{formatRupiah(summary_metrics.total_cost)}</strong></span>
+                        <span className="text-slate-600">•</span>
+                        <span>Beban: <strong className="text-slate-200">{formatRupiah(summary_metrics.operational_expenses)}</strong></span>
                     </div>
                 </div>
 
-                {/* Stok Kritis */}
-                <div className="p-5 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
-                    <div className="flex items-center justify-between text-sm mb-3">
-                        <span className="text-slate-400">Stok Kritis</span>
-                        <Link href="/admin/products" className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
-                            Lihat semua →
-                        </Link>
+                {/* 3. Laba Bersih (Hero Metric Card) */}
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0C0E16] via-[#111322] to-[#161830] border border-indigo-500/35 hover:border-indigo-500/55 transition-all shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                                Laba Bersih
+                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                                <TrendingUp className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-emerald-400 tracking-tight">
+                            {formatRupiah(summary_metrics.net_profit)}
+                        </div>
                     </div>
-                    <div className="text-2xl font-bold font-mono tabular-nums text-white">
-                        {summary_metrics.critical_stock_count}
-                        <span className="text-sm font-normal text-slate-400 ml-2">menu perlu restock</span>
+                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span>Volume:</span>
+                        <span className="text-slate-200 font-bold">{summary_metrics.total_orders_count} pesanan</span>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-white/[0.06] flex gap-4 text-sm">
+                </div>
+
+                {/* 4. Stok Kritis (Actionable Alert Card) */}
+                <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div className="flex items-center justify-between mb-2.5">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                Stok Kritis
+                            </span>
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                <AlertTriangle className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight flex items-baseline gap-2">
+                            <span>{summary_metrics.critical_stock_count}</span>
+                            <span className="text-xs font-normal text-slate-400">varian perlu restok</span>
+                        </div>
+                    </div>
+                    <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs">
                         <button
                             type="button"
                             onClick={() => handleQuickStockFilter('out_of_stock')}
-                            className="text-rose-400 hover:text-rose-300 transition-colors font-mono"
+                            className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/25 hover:bg-rose-500/25 transition-colors"
                         >
-                            {summary_metrics.out_of_stock_count} habis
+                            {summary_metrics.out_of_stock_count} Habis
                         </button>
                         <button
                             type="button"
                             onClick={() => handleQuickStockFilter('low_stock')}
-                            className="text-amber-400 hover:text-amber-300 transition-colors font-mono"
+                            className="px-2 py-0.5 rounded-md font-mono text-[11px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/25 hover:bg-amber-500/25 transition-colors"
                         >
                             Menipis (≤5)
                         </button>
+                        <Link href="/admin/products" className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors font-medium">
+                            Katalog →
+                        </Link>
                     </div>
                 </div>
             </section>
 
             {/* ============================================================
-                TAB NAVIGASI
+                3. TAB NAVIGASI DATA (KEYCAP STYLE)
             ============================================================ */}
-            <div className="flex items-center gap-1 overflow-x-auto border-b border-white/[0.08] select-none">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -413,15 +463,21 @@ export default function AdminDashboard({
                             key={tab.id}
                             type="button"
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap transition-colors border-b-2 ${
+                            className={`flex items-center gap-2.5 min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all active:scale-[0.98] ${
                                 isActive
-                                    ? 'border-indigo-400 text-white font-semibold'
-                                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                                    ? 'bg-gradient-to-r from-indigo-950/80 via-indigo-900/50 to-indigo-950/30 text-white border border-indigo-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)]'
+                                    : 'bg-[#0C0E16]/60 hover:bg-[#141824] text-slate-400 hover:text-white border border-white/[0.04] hover:border-white/[0.08]'
                             }`}
                         >
-                            <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : ''}`} />
+                            <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
                             <span>{tab.label}</span>
-                            <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${isActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/[0.04] text-slate-500'}`}>
+                            <span
+                                className={`text-xs font-mono px-2 py-0.5 rounded-md ${
+                                    isActive
+                                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                                        : 'bg-white/[0.04] text-slate-500 border border-white/[0.04]'
+                                }`}
+                            >
                                 {tab.count}
                             </span>
                         </button>
@@ -459,7 +515,7 @@ export default function AdminDashboard({
                                     setSelectedCategory(e.target.value);
                                     triggerFilter({ category_id: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                                className="min-h-[44px] bg-[#08090D] text-sm text-slate-200 border border-white/[0.08] rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="all">Semua Kategori</option>
                                 {categories.map((c) => (
@@ -475,7 +531,7 @@ export default function AdminDashboard({
                                     setSelectedKitchenType(e.target.value);
                                     triggerFilter({ requires_kitchen: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                                className="min-h-[44px] bg-[#08090D] text-sm text-slate-200 border border-white/[0.08] rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="all">Semua Tipe</option>
                                 <option value="true">Perlu Dapur</option>
@@ -488,7 +544,7 @@ export default function AdminDashboard({
                                     setSelectedStockStatus(e.target.value);
                                     triggerFilter({ stock_status: e.target.value });
                                 }}
-                                className="bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-3 py-2.5 focus:outline-none focus:border-indigo-500"
+                                className="min-h-[44px] bg-[#08090D] text-sm text-slate-200 border border-white/[0.08] rounded-xl px-3.5 py-2 focus:outline-none focus:border-indigo-500"
                             >
                                 <option value="all">Semua Stok</option>
                                 <option value="available">Stok Aman (&gt; 5)</option>
@@ -497,16 +553,16 @@ export default function AdminDashboard({
                             </select>
 
                             <Link href="/admin/products">
-                                <button type="button" className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
+                                <button type="button" className="min-h-[44px] flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-300 border border-white/[0.08] rounded-xl hover:bg-white/[0.04] transition-colors">
                                     <ExternalLink className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Halaman Produk</span>
+                                    <span className="hidden sm:inline">Katalog Lengkap</span>
                                 </button>
                             </Link>
 
                             <button
                                 type="button"
                                 onClick={() => setIsCreateCategoryModalOpen(true)}
-                                className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-300 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors"
+                                className="min-h-[44px] flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-300 border border-white/[0.08] rounded-xl hover:bg-white/[0.04] transition-colors"
                             >
                                 <Tag className="w-4 h-4" />
                                 <span className="hidden sm:inline">Kategori Baru</span>
@@ -515,10 +571,10 @@ export default function AdminDashboard({
                             <button
                                 type="button"
                                 onClick={handleOpenCreate}
-                                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-b from-[#4F46E5] to-[#3730A3] border border-indigo-400/20 rounded-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] hover:from-[#4338CA] hover:to-[#312E81] transition-all"
+                                className="min-h-[44px] flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-b from-[#4F46E5] to-[#3730A3] border border-indigo-400/30 rounded-xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)] hover:from-[#4338CA] hover:to-[#312E81] transition-all active:scale-95"
                             >
                                 <Plus className="w-4 h-4" />
-                                Tambah Menu
+                                <span>Tambah Menu</span>
                             </button>
                         </div>
                     </div>
@@ -529,15 +585,15 @@ export default function AdminDashboard({
                             <table className="w-full text-left text-sm text-slate-300 min-w-[950px]">
                                 <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-medium whitespace-nowrap w-[140px]">Barcode</th>
-                                        <th className="py-3 px-4 font-medium whitespace-nowrap min-w-[200px]">Nama Menu</th>
-                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Tipe</th>
-                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Modal</th>
-                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[110px]">Harga Jual</th>
-                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[90px]">Margin</th>
-                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[90px]">Stok</th>
-                                        <th className="py-3 px-4 font-medium text-center whitespace-nowrap w-[110px]">Status</th>
-                                        <th className="py-3 px-4 font-medium text-right whitespace-nowrap w-[140px]">Aksi</th>
+                                        <th className="py-3.5 px-4 font-semibold whitespace-nowrap w-[140px]">Barcode</th>
+                                        <th className="py-3.5 px-4 font-semibold whitespace-nowrap min-w-[200px]">Nama Menu</th>
+                                        <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap w-[90px]">Tipe</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right whitespace-nowrap w-[110px]">Modal</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right whitespace-nowrap w-[110px]">Harga Jual</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right whitespace-nowrap w-[90px]">Margin</th>
+                                        <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap w-[90px]">Stok</th>
+                                        <th className="py-3.5 px-4 font-semibold text-center whitespace-nowrap w-[110px]">Status</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right whitespace-nowrap w-[150px]">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
@@ -557,50 +613,70 @@ export default function AdminDashboard({
 
                                             return (
                                                 <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="py-3 px-4 font-mono text-xs text-indigo-300 whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 font-mono text-xs text-indigo-300 whitespace-nowrap">
                                                         {p.barcode || '—'}
                                                     </td>
-                                                    <td className="py-3 px-4 min-w-[200px]">
-                                                        <div className="font-medium text-white">{p.product_name}</div>
-                                                        <div className="text-xs text-slate-500">{p.category?.category_name || '—'}</div>
+                                                    <td className="py-3.5 px-4 min-w-[200px]">
+                                                        <div className="font-semibold text-white">{p.product_name}</div>
+                                                        <div className="text-xs text-slate-400 mt-0.5">{p.category?.category_name || '—'}</div>
                                                     </td>
-                                                    <td className="py-3 px-4 text-center text-xs whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 text-center text-xs whitespace-nowrap">
                                                         {p.requires_kitchen ? (
-                                                            <span className="text-amber-300">Dapur</span>
+                                                            <span className="font-medium text-amber-300">Dapur</span>
                                                         ) : (
                                                             <span className="text-slate-400">Instan</span>
                                                         )}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 text-right font-mono text-slate-400 text-xs whitespace-nowrap">
                                                         {formatRupiah(p.cost_price)}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 text-right font-mono font-medium text-white text-xs whitespace-nowrap">
                                                         {formatRupiah(p.selling_price)}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">
                                                         {margin}%
                                                     </td>
-                                                    <td className="py-3 px-4 text-center font-mono tabular-nums whitespace-nowrap">
+                                                    <td className="py-3.5 px-4 text-center font-mono tabular-nums whitespace-nowrap">
                                                         <span className={
-                                                            isOutOfStock ? 'text-rose-400 font-semibold'
-                                                            : isLowStock ? 'text-amber-400 font-medium'
-                                                            : 'text-slate-300'
+                                                            isOutOfStock ? 'text-rose-400 font-bold'
+                                                            : isLowStock ? 'text-amber-400 font-semibold'
+                                                            : 'text-slate-200'
                                                         }>
                                                             {p.stock_qty}
                                                         </span>
                                                     </td>
-                                                    <td className="py-3 px-4 text-center">
-                                                        <span className="inline-flex items-center gap-1.5 text-xs">
+                                                    <td className="py-3.5 px-4 text-center">
+                                                        <span className="inline-flex items-center gap-1.5 text-xs font-medium">
                                                             <span className={`w-1.5 h-1.5 rounded-full ${
                                                                 isOutOfStock || !p.is_available ? 'bg-rose-500' : 'bg-emerald-400'
-                                                            }`} />
+                                                             }`} />
                                                             {isOutOfStock || !p.is_available ? 'Habis' : 'Tersedia'}
                                                         </span>
                                                     </td>
-                                                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                                                        <button type="button" onClick={() => handleOpenAdjustment(p)} className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors">Stok</button>
-                                                        <button type="button" onClick={() => handleOpenEdit(p)} className="text-xs text-slate-400 hover:text-white px-2 py-1.5 rounded hover:bg-white/[0.06] transition-colors">Edit</button>
-                                                        <button type="button" onClick={() => handleOpenDelete(p)} className="text-xs text-slate-400 hover:text-rose-400 px-2 py-1.5 rounded hover:bg-rose-500/10 transition-colors">Hapus</button>
+                                                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenAdjustment(p)}
+                                                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] transition-all min-h-[34px] active:scale-95"
+                                                            >
+                                                                Stok
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenEdit(p)}
+                                                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] transition-all min-h-[34px] active:scale-95"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenDelete(p)}
+                                                                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all min-h-[34px] active:scale-95"
+                                                            >
+                                                                Hapus
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
@@ -647,35 +723,41 @@ export default function AdminDashboard({
             ============================================================ */}
             {activeTab === 'shifts' && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-400">Riwayat kas kasir, modal awal, penjualan, dan selisih kas.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div>
+                            <h3 className="text-sm font-bold text-white">Rekap Kasir & Shift Kerja</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">Riwayat pembukuan kas, modal awal, penjualan tunai/QRIS, dan selisih fisik.</p>
+                        </div>
                         <a href="/admin/export/excel?type=shifts">
-                            <button type="button" className="text-sm text-slate-300 px-4 py-2 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
-                                Unduh Excel
+                            <button
+                                type="button"
+                                className="min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all flex items-center gap-2 active:scale-95"
+                            >
+                                <span>Unduh Laporan Excel</span>
                             </button>
                         </a>
                     </div>
 
-                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden">
+                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm text-slate-300">
+                            <table className="w-full text-left text-sm text-slate-300 min-w-[850px]">
                                 <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-medium">Nama Shift</th>
-                                        <th className="py-3 px-4 font-medium">Kasir</th>
-                                        <th className="py-3 px-4 font-medium">Waktu</th>
-                                        <th className="py-3 px-4 font-medium text-right">Modal Awal</th>
-                                        <th className="py-3 px-4 font-medium text-right">Tunai</th>
-                                        <th className="py-3 px-4 font-medium text-right">QRIS</th>
-                                        <th className="py-3 px-4 font-medium text-right">Kas Fisik</th>
-                                        <th className="py-3 px-4 font-medium text-right">Selisih</th>
+                                        <th className="py-3.5 px-4 font-semibold">Nama Shift</th>
+                                        <th className="py-3.5 px-4 font-semibold">Kasir Bertugas</th>
+                                        <th className="py-3.5 px-4 font-semibold">Waktu Operasional</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Modal Awal</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Penjualan Tunai</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Penjualan QRIS</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Kas Fisik Akhir</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Selisih Kas</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {cashier_shifts.length === 0 ? (
                                         <tr>
                                             <td colSpan="8" className="py-12 text-center text-slate-500">
-                                                Belum ada data shift kasir.
+                                                Belum ada data shift kasir pada periode ini.
                                             </td>
                                         </tr>
                                     ) : (
@@ -685,24 +767,24 @@ export default function AdminDashboard({
 
                                             return (
                                                 <tr key={s.id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="py-3 px-4 font-medium text-white">{s.shift_name}</td>
-                                                    <td className="py-3 px-4">{s.cashier?.full_name || '—'}</td>
-                                                    <td className="py-3 px-4 font-mono text-xs text-slate-400">
-                                                        <div>{new Date(s.opened_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
-                                                        <div>
+                                                    <td className="py-3.5 px-4 font-semibold text-white">{s.shift_name}</td>
+                                                    <td className="py-3.5 px-4 text-slate-200">{s.cashier?.full_name || '—'}</td>
+                                                    <td className="py-3.5 px-4 font-mono text-xs text-slate-400">
+                                                        <div className="text-slate-200">{new Date(s.opened_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        <div className="mt-0.5">
                                                             {isClosed
                                                                 ? new Date(s.closed_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-                                                                : <span className="text-emerald-400 font-semibold">Aktif</span>
+                                                                : <span className="text-emerald-400 font-semibold inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Aktif</span>
                                                             }
                                                         </div>
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-mono text-slate-400">{formatRupiah(s.opening_cash)}</td>
-                                                    <td className="py-3 px-4 text-right font-mono text-slate-200">{formatRupiah(s.total_cash_sales)}</td>
-                                                    <td className="py-3 px-4 text-right font-mono text-indigo-300">{formatRupiah(s.total_qris_sales)}</td>
-                                                    <td className="py-3 px-4 text-right font-mono text-white">
+                                                    <td className="py-3.5 px-4 text-right font-mono text-slate-400">{formatRupiah(s.opening_cash)}</td>
+                                                    <td className="py-3.5 px-4 text-right font-mono text-slate-200">{formatRupiah(s.total_cash_sales)}</td>
+                                                    <td className="py-3.5 px-4 text-right font-mono text-indigo-300">{formatRupiah(s.total_qris_sales)}</td>
+                                                    <td className="py-3.5 px-4 text-right font-mono font-medium text-white">
                                                         {s.closing_cash_actual !== null ? formatRupiah(s.closing_cash_actual) : '—'}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-mono font-semibold">
+                                                    <td className="py-3.5 px-4 text-right font-mono font-bold">
                                                         {disc !== null && disc !== undefined ? (
                                                             <span className={disc === 0 ? 'text-emerald-400' : disc > 0 ? 'text-indigo-400' : 'text-rose-400'}>
                                                                 {disc > 0 ? `+${formatRupiah(disc)}` : formatRupiah(disc)}
@@ -727,77 +809,83 @@ export default function AdminDashboard({
             ============================================================ */}
             {activeTab === 'orders' && (
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm text-slate-400">Daftar transaksi terbaru: invoice, pembayaran, total, dan status.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div>
+                            <h3 className="text-sm font-bold text-white">Riwayat Transaksi Pelanggan</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">Daftar transaksi terbaru: invoice, meja/sumber, kasir, metode pembayaran, dan status bayar.</p>
+                        </div>
                         <a href="/admin/export/excel?type=orders">
-                            <button type="button" className="text-sm text-slate-300 px-4 py-2 border border-white/[0.08] rounded-lg hover:bg-white/[0.04] transition-colors">
-                                Unduh Excel
+                            <button
+                                type="button"
+                                className="min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all flex items-center gap-2 active:scale-95"
+                            >
+                                <span>Unduh Transaksi Excel</span>
                             </button>
                         </a>
                     </div>
 
-                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden">
+                    <div className="rounded-xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm text-slate-300">
+                            <table className="w-full text-left text-sm text-slate-300 min-w-[950px]">
                                 <thead className="bg-[#0A0C14] text-xs text-slate-400 border-b border-white/[0.06]">
                                     <tr>
-                                        <th className="py-3 px-4 font-medium">Invoice</th>
-                                        <th className="py-3 px-4 font-medium">Sumber</th>
-                                        <th className="py-3 px-4 font-medium">Kasir</th>
-                                        <th className="py-3 px-4 font-medium">Bayar</th>
-                                        <th className="py-3 px-4 font-medium text-right">Modal</th>
-                                        <th className="py-3 px-4 font-medium text-right">Total</th>
-                                        <th className="py-3 px-4 font-medium text-right">Diterima / Kembali</th>
-                                        <th className="py-3 px-4 font-medium text-center">Status</th>
-                                        <th className="py-3 px-4 font-medium text-right">Waktu</th>
+                                        <th className="py-3.5 px-4 font-semibold">Invoice & Antrean</th>
+                                        <th className="py-3.5 px-4 font-semibold">Sumber</th>
+                                        <th className="py-3.5 px-4 font-semibold">Kasir</th>
+                                        <th className="py-3.5 px-4 font-semibold">Metode</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Modal</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Total Tagihan</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Diterima / Kembali</th>
+                                        <th className="py-3.5 px-4 font-semibold text-center">Status</th>
+                                        <th className="py-3.5 px-4 font-semibold text-right">Waktu</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/[0.04]">
                                     {recent_orders.length === 0 ? (
                                         <tr>
                                             <td colSpan="9" className="py-12 text-center text-slate-500">
-                                                Belum ada transaksi.
+                                                Belum ada transaksi pada periode ini.
                                             </td>
                                         </tr>
                                     ) : (
                                         recent_orders.map((o) => (
                                             <tr key={o.id} className="hover:bg-white/[0.02] transition-colors">
-                                                <td className="py-3 px-4 font-mono text-xs">
-                                                    <div className="text-white">{o.invoice_number}</div>
-                                                    <div className="text-indigo-400">#{o.token_number}</div>
+                                                <td className="py-3.5 px-4 font-mono text-xs">
+                                                    <div className="font-semibold text-white">{o.invoice_number}</div>
+                                                    <div className="text-indigo-400 font-bold mt-0.5">#{o.token_number}</div>
                                                 </td>
-                                                <td className="py-3 px-4 text-xs">
+                                                <td className="py-3.5 px-4 text-xs">
                                                     {o.order_source === 'qr_table' ? (
-                                                        <span className="flex items-center gap-1 text-slate-300">
+                                                        <span className="flex items-center gap-1.5 text-slate-200 font-medium">
                                                             <QrCode className="w-3.5 h-3.5 text-indigo-400" />
-                                                            {o.table?.table_number || 'QR'}
+                                                            <span>Meja {o.table?.table_number || 'QR'}</span>
                                                         </span>
                                                     ) : (
-                                                        <span className="text-slate-400">Kasir</span>
+                                                        <span className="text-slate-400 font-medium">Kasir Langsung</span>
                                                     )}
                                                 </td>
-                                                <td className="py-3 px-4 text-xs">{o.cashier?.full_name || '—'}</td>
-                                                <td className="py-3 px-4 text-xs">
-                                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                                <td className="py-3.5 px-4 text-xs text-slate-200">{o.cashier?.full_name || '—'}</td>
+                                                <td className="py-3.5 px-4 text-xs">
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${
                                                         o.payment_method === 'qris'
-                                                            ? 'bg-indigo-500/15 text-indigo-300'
-                                                            : 'bg-emerald-500/15 text-emerald-300'
+                                                            ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25'
+                                                            : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
                                                     }`}>
                                                         {o.payment_method?.toUpperCase()}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-4 text-right font-mono text-slate-400 text-xs">
+                                                <td className="py-3.5 px-4 text-right font-mono text-slate-400 text-xs">
                                                     {formatRupiah(o.total_cost)}
                                                 </td>
-                                                <td className="py-3 px-4 text-right font-mono font-medium text-white text-xs">
+                                                <td className="py-3.5 px-4 text-right font-mono font-bold text-white text-xs">
                                                     {formatRupiah(o.total_amount)}
                                                 </td>
-                                                <td className="py-3 px-4 text-right font-mono text-xs">
-                                                    <div className="text-slate-300">{formatRupiah(o.amount_received)}</div>
-                                                    <div className="text-emerald-400">Kembali: {formatRupiah(o.change_amount)}</div>
+                                                <td className="py-3.5 px-4 text-right font-mono text-xs">
+                                                    <div className="text-slate-200">{formatRupiah(o.amount_received)}</div>
+                                                    <div className="text-emerald-400 font-semibold mt-0.5">Kembali: {formatRupiah(o.change_amount)}</div>
                                                 </td>
-                                                <td className="py-3 px-4 text-center">
-                                                    <span className={`inline-flex items-center gap-1.5 text-xs ${
+                                                <td className="py-3.5 px-4 text-center">
+                                                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
                                                         o.payment_status === 'paid' ? 'text-emerald-400' : 'text-rose-400'
                                                     }`}>
                                                         <span className={`w-1.5 h-1.5 rounded-full ${
@@ -806,7 +894,7 @@ export default function AdminDashboard({
                                                         {o.payment_status === 'paid' ? 'Lunas' : 'Belum'}
                                                     </span>
                                                 </td>
-                                                <td className="py-3 px-4 text-right font-mono text-xs text-slate-400">
+                                                <td className="py-3.5 px-4 text-right font-mono text-xs text-slate-400">
                                                     {new Date(o.created_at).toLocaleTimeString('id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
@@ -827,34 +915,59 @@ export default function AdminDashboard({
             ============================================================ */}
             {activeTab === 'tables' && (
                 <div className="space-y-4">
-                    <p className="text-sm text-slate-400">Kelola status meja dan lihat pesanan aktif.</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08]">
+                        <div>
+                            <h3 className="text-sm font-bold text-white">Status Meja Makan</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">Pantau meja terisi, kosong, atau reservasi beserta pesanan aktif pelanggan.</p>
+                        </div>
+                        <Link href="/tables">
+                            <button
+                                type="button"
+                                className="min-h-[42px] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] rounded-xl transition-all flex items-center gap-2 active:scale-95"
+                            >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>Buka Layar Meja & QR</span>
+                            </button>
+                        </Link>
+                    </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
                         {dining_tables.map((table) => {
                             const isAvailable = table.status === 'available';
                             return (
-                                <div key={table.id} className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between h-36">
+                                <div
+                                    key={table.id}
+                                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between h-40 shadow-sm ${
+                                        isAvailable
+                                            ? 'bg-[#0C0E16] border-white/[0.08] hover:border-white/[0.14]'
+                                            : 'bg-gradient-to-br from-[#0C0E16] to-[#1a1820] border-amber-500/30'
+                                    }`}
+                                >
                                     <div>
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-semibold text-white">{table.table_number}</span>
-                                            <span className="inline-flex items-center gap-1.5 text-xs">
+                                            <span className="text-base font-bold text-white">{table.table_number}</span>
+                                            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                                isAvailable ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
+                                            }`}>
                                                 <span className={`w-1.5 h-1.5 rounded-full ${isAvailable ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                                                <span className="text-slate-300">{isAvailable ? 'Kosong' : 'Terisi'}</span>
+                                                <span>{isAvailable ? 'Kosong' : 'Terisi'}</span>
                                             </span>
                                         </div>
-                                        <div className="text-xs text-slate-500 flex items-center gap-1">
-                                            <QrCode className="w-3.5 h-3.5" />
-                                            <span className="font-mono">{table.qr_code_token ? table.qr_code_token.substring(0, 8) + '...' : '—'}</span>
+                                        <div className="text-xs text-slate-400 flex items-center gap-1.5">
+                                            <QrCode className="w-3.5 h-3.5 text-indigo-400" />
+                                            <span className="font-mono text-slate-300">{table.qr_code_token ? table.qr_code_token.substring(0, 8) + '...' : '—'}</span>
                                         </div>
                                         {table.orders_count > 0 && (
-                                            <div className="mt-1.5 text-xs text-amber-300">{table.orders_count} pesanan aktif</div>
+                                            <div className="mt-2 text-xs font-semibold text-amber-300">
+                                                {table.orders_count} pesanan aktif
+                                            </div>
                                         )}
                                     </div>
                                     <div className="pt-2 border-t border-white/[0.06]">
                                         <select
                                             value={table.status}
                                             onChange={(e) => handleTableStatusChange(table.id, e.target.value)}
-                                            className="w-full bg-[#08090D] text-sm text-slate-300 border border-white/[0.08] rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500"
+                                            className="w-full bg-[#08090D] text-xs font-medium text-slate-200 border border-white/[0.08] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 min-h-[36px]"
                                         >
                                             <option value="available">Kosong</option>
                                             <option value="occupied">Terisi</option>

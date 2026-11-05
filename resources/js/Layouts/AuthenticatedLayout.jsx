@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
 import AdminSidebar, { SidebarContext } from '@/Components/Navigation/AdminSidebar';
 import AdminNavbar from '@/Components/Navigation/AdminNavbar';
+import ToastContainer from '@/Components/Notification/ToastContainer';
 
 /**
  * AuthenticatedLayout: Unified layout for logged-in users (POS, KDS, Tables).
@@ -19,9 +19,10 @@ export default function AuthenticatedLayout({
     setSearchQuery = null,
     onQuickSearch = null,
     showSearch = false,
+    fullWidth = false,
+    isPosMode = false,
+    mainClassName = '',
 }) {
-    const { flash = {} } = usePage().props;
-    const [toast, setToast] = useState(null);
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
     // Sidebar collapse state — persisted to localStorage
@@ -34,44 +35,18 @@ export default function AuthenticatedLayout({
         localStorage.setItem('sidebar_collapsed', String(collapsed));
     }, [collapsed]);
 
-    // Toast for flash messages
-    useEffect(() => {
-        if (flash?.success) {
-            setToast({ type: 'success', message: flash.success });
-            const timer = setTimeout(() => setToast(null), 4000);
-            return () => clearTimeout(timer);
-        }
-        if (flash?.error) {
-            setToast({ type: 'error', message: flash.error });
-            const timer = setTimeout(() => setToast(null), 4000);
-            return () => clearTimeout(timer);
-        }
-    }, [flash]);
-
     // Sidebar width offset for main content
-    const sidebarOffset = collapsed ? 'lg:pl-[72px]' : 'lg:pl-64';
+    const sidebarOffset = collapsed ? 'lg:pl-20' : 'lg:pl-72';
 
     return (
         <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
-            <div className="relative min-h-screen bg-[#07080D] text-slate-100 flex flex-col font-sans antialiased overflow-x-hidden">
-                {/* Notification Toast */}
-                {toast && (
-                    <div className="fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg border bg-[#0E1017] border-white/[0.1] text-white shadow-xl max-w-sm">
-                        {toast.type === 'success' ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                        ) : (
-                            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                        )}
-                        <span className="text-sm font-medium">{toast.message}</span>
-                        <button
-                            onClick={() => setToast(null)}
-                            className="text-slate-400 hover:text-white ml-2 text-sm"
-                            aria-label="Tutup notifikasi"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
+            <div
+                className={`relative ${
+                    isPosMode ? 'h-screen max-h-screen overflow-hidden overflow-x-hidden' : 'min-h-screen overflow-x-clip'
+                } bg-[#07080D] text-slate-100 flex flex-col font-sans antialiased`}
+            >
+                {/* Dynamic Non-blocking Push Notification Alert Stack */}
+                <ToastContainer />
 
                 {/* Collapsible Fixed Sidebar Navigation */}
                 <AdminSidebar
@@ -80,7 +55,11 @@ export default function AuthenticatedLayout({
                 />
 
                 {/* Main Content Area */}
-                <div className={`flex-1 flex flex-col min-w-0 ${sidebarOffset} relative transition-all duration-200`}>
+                <div
+                    className={`flex-1 flex flex-col min-w-0 ${
+                        isPosMode ? 'h-full max-h-screen overflow-hidden overflow-x-hidden' : ''
+                    } ${sidebarOffset} relative transition-all duration-300 ease-in-out`}
+                >
                     {/* Unified Top Navbar Component */}
                     <AdminNavbar
                         title={title}
@@ -95,7 +74,17 @@ export default function AuthenticatedLayout({
                     />
 
                     {/* Page Body */}
-                    <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+                    <main
+                        className={
+                            mainClassName
+                                ? mainClassName
+                                : isPosMode
+                                ? 'flex-1 h-[calc(100vh-64px)] overflow-hidden overflow-x-hidden p-2 sm:p-3 w-full max-w-[1920px] mx-auto flex flex-col min-h-0'
+                                : fullWidth
+                                ? 'flex-1 p-3 sm:p-4 lg:p-5 space-y-4 w-full mx-auto max-w-[1800px]'
+                                : 'flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto'
+                        }
+                    >
                         {children}
                     </main>
                 </div>

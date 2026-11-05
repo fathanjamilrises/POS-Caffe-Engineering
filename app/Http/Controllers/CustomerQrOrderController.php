@@ -34,10 +34,16 @@ class CustomerQrOrderController extends Controller
 
         $categories = Category::orderBy('category_name')->get();
 
+        $activeOrder = Order::where('table_id', $table->id)
+            ->whereNotIn('order_status', ['served', 'cancelled'])
+            ->latest()
+            ->first();
+
         return Inertia::render('CustomerQR/Menu', [
             'table' => $table,
             'categories' => $categories,
             'products' => $products,
+            'active_order' => $activeOrder,
         ]);
     }
 
@@ -94,4 +100,3 @@ class CustomerQrOrderController extends Controller
         ]);
     }
 }
-

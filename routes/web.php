@@ -119,8 +119,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/export/pdf', [AdminDashboardController::class, 'exportPdf'])->name('export.pdf');
     });
 
-    // Kasir POS Suite (Cashier & Admin Access)
-    Route::prefix('pos')->name('cashier.')->middleware('role:kasir,admin')->group(function (): void {
+    // Kasir POS Suite (Cashier Access Only)
+    Route::prefix('pos')->name('cashier.')->middleware('role:kasir')->group(function (): void {
         Route::get('/', [CashierPosController::class, 'index'])->name('pos');
         Route::post('/shift/open', [CashierPosController::class, 'openShift'])->name('shift.open');
         Route::post('/shift/{shift}/close', [CashierPosController::class, 'closeShift'])->name('shift.close');
@@ -137,8 +137,8 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/{diningTable}', [TableManagementController::class, 'destroy'])->name('destroy');
     });
 
-    // Dapur KDS Suite (Kitchen Staff & Admin Access)
-    Route::prefix('kitchen')->name('kitchen.')->middleware('role:dapur,admin')->group(function (): void {
+    // Dapur KDS Suite (Kitchen Staff Access Only)
+    Route::prefix('kitchen')->name('kitchen.')->middleware('role:dapur')->group(function (): void {
         Route::get('/', [KitchenKdsController::class, 'index'])->name('display');
         Route::post('/tickets/{ticket}/status', [KitchenKdsController::class, 'updateStatus'])->name('ticket.status');
         Route::post('/acknowledge-audio', [KitchenKdsController::class, 'acknowledgeAudio'])->name('acknowledge.audio');

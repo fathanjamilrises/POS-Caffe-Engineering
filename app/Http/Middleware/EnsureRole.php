@@ -20,9 +20,26 @@ class EnsureRole
         }
 
         if (! empty($roles) && ! in_array($user->role, $roles, true)) {
-            // If user is admin, allow access to all areas
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Akses ditolak. Fitur ini hanya untuk peran: '.implode(', ', $roles),
+                ], 403);
+            }
+
+            // Redirect based on user role to their dedicated area
             if ($user->role === 'admin') {
-                return $next($request);
+                return redirect()->route('admin.dashboard')
+                    ->with('error', 'Layar operasional Kasir dan Dapur dipisahkan khusus untuk staf operasional.');
+            }
+
+            if ($user->role === 'kasir') {
+                return redirect()->route('cashier.pos')
+                    ->with('error', 'Akses ditolak: Menu administrasi hanya dapat diakses oleh Admin.');
+            }
+
+            if ($user->role === 'dapur') {
+                return redirect()->route('kitchen.display')
+                    ->with('error', 'Akses ditolak: Menu administrasi hanya dapat diakses oleh Admin.');
             }
 
             abort(403, 'Akses ditolak. Halaman ini hanya untuk peran: '.implode(', ', $roles));

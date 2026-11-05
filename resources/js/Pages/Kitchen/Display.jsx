@@ -19,6 +19,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useAudioAlert } from '@/Hooks/useAudioAlert';
+import { toast } from '@/Services/toast';
 
 export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
     const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'waiting' | 'cooking' | 'delivered_to_cashier'
@@ -43,10 +44,16 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         return () => clearInterval(poll);
     }, []);
 
-    // Trigger audio chime when new unnotified tickets arrive
+    // Trigger audio chime & toast alert when new unnotified tickets arrive
     useEffect(() => {
-        if (unnotified_count > 0 && !audioMuted) {
-            playChime();
+        if (unnotified_count > 0) {
+            if (!audioMuted) {
+                playChime();
+            }
+            toast.info(`${unnotified_count} pesanan baru masuk ke antrean koki!`, {
+                title: 'Pesanan Dapur',
+                duration: 5000,
+            });
         }
     }, [unnotified_count, audioMuted, playChime]);
 
