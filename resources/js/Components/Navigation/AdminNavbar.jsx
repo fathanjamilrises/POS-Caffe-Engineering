@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePage } from '@inertiajs/react';
+import ThemeToggle from '@/Components/Theme/ThemeToggle';
 import {
     Search,
     Menu,
@@ -84,7 +85,7 @@ export default function AdminNavbar({
     const StationIcon = getStationIcon();
 
     return (
-        <header className="sticky top-0 z-30 h-16 border-b border-white/[0.08] bg-[#08090D]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3 sm:gap-4 select-none shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]">
+        <header className="sticky top-0 z-30 h-16 border-b border-slate-200 dark:border-white/[0.08] bg-white/95 dark:bg-[#08090D]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-3 sm:gap-4 select-none shadow-xs dark:shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)]">
             {/* Left: Mobile Toggle + Station Icon + Title */}
             <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
                 {/* Mobile / Tablet Drawer Toggle Button */}
@@ -92,7 +93,7 @@ export default function AdminNavbar({
                     <button
                         type="button"
                         onClick={onToggleMobileMenu}
-                        className="lg:hidden w-11 h-11 text-slate-300 hover:text-white rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] flex items-center justify-center transition-all shrink-0 active:scale-95"
+                        className="lg:hidden w-11 h-11 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] flex items-center justify-center transition-all shrink-0 active:scale-95"
                         title="Buka Menu Navigasi"
                         aria-label="Buka Menu Navigasi"
                     >
@@ -101,13 +102,13 @@ export default function AdminNavbar({
                 )}
 
                 {/* Station Icon Container */}
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4338CA]/40 to-[#1E1B4B]/60 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-sm shrink-0">
-                    <StationIcon className="w-4 h-4 text-indigo-200" />
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 dark:bg-[#1E1B4B] dark:bg-gradient-to-br dark:from-[#4338CA]/40 dark:to-[#1E1B4B] dark:border-indigo-400/25 dark:text-indigo-300 flex items-center justify-center shadow-xs shrink-0">
+                    <StationIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-200" />
                 </div>
 
                 {/* Page Title */}
                 <div className="min-w-0">
-                    <h1 className="text-base sm:text-lg font-bold text-white tracking-tight truncate leading-tight">
+                    <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight truncate leading-tight">
                         {title}
                     </h1>
                 </div>
@@ -126,13 +127,13 @@ export default function AdminNavbar({
                             if (onQuickSearch) onQuickSearch(e.target.value);
                         }}
                         placeholder={searchPlaceholder}
-                        className="w-full h-10 bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm text-white placeholder-slate-500 focus:outline-none transition-colors"
+                        className="w-full h-10 bg-slate-50 dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
                     />
                     {searchQuery && (
                         <button
                             type="button"
                             onClick={handleClearSearch}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-colors"
                             title="Hapus pencarian"
                         >
                             <X className="w-3.5 h-3.5" />
@@ -149,10 +150,10 @@ export default function AdminNavbar({
                         className="hidden sm:flex flex-col items-end text-right"
                         title={`Tanggal Operasional: ${currentDate}`}
                     >
-                        <div className="font-mono text-xs font-bold text-slate-200 tabular-nums leading-none">
+                        <div className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 tabular-nums leading-none">
                             {currentTime}
                         </div>
-                        <div className="text-[10px] text-slate-400 font-medium mt-1 leading-none">
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1 leading-none">
                             {currentDate}
                         </div>
                     </div>
@@ -160,7 +161,7 @@ export default function AdminNavbar({
 
                 {/* Subtle Divider between Clock & Actions */}
                 {currentTime && (actions || user) && (
-                    <div className="hidden sm:block h-6 w-px bg-white/[0.08]" />
+                    <div className="hidden sm:block h-6 w-px bg-slate-200 dark:bg-white/[0.08]" />
                 )}
 
                 {/* Page Specific Actions Slot (PDF / Excel / Custom) */}
@@ -170,20 +171,23 @@ export default function AdminNavbar({
                     </div>
                 )}
 
+                {/* Dark / Light / System Theme Switcher */}
+                <ThemeToggle />
+
                 {/* Staff Avatar (Clean, minimal, no bulky pill wrapper) */}
                 {user && (
                     <div
                         className="flex items-center gap-2.5 pl-1"
                         title={`Masuk sebagai: ${user.full_name || 'Staff'} (${user.role?.toUpperCase() || 'KASIR'})`}
                     >
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-400/30 text-indigo-200 font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-400/30 text-white font-bold text-xs flex items-center justify-center shadow-sm shrink-0">
                             {user.full_name?.substring(0, 2).toUpperCase() || 'ST'}
                         </div>
                         <div className="hidden xl:block text-left min-w-0">
-                            <div className="text-xs font-semibold text-slate-200 truncate leading-tight">
+                            <div className="text-xs font-semibold text-slate-900 dark:text-slate-200 truncate leading-tight">
                                 {user.full_name || 'Staff'}
                             </div>
-                            <div className="text-[10px] text-slate-400 capitalize leading-tight mt-0.5">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 capitalize leading-tight mt-0.5">
                                 {user.role || 'kasir'}
                             </div>
                         </div>

@@ -58,20 +58,20 @@ export default function AcrylicModal({
 
             {/* Modal Dialog Card */}
             <div
-                className={`relative w-full ${maxWidth} bg-[#0C0E16] border border-white/[0.1] shadow-2xl rounded-2xl text-slate-100 z-10 overflow-hidden my-4 sm:my-6 animate-in zoom-in-95 duration-150`}
+                className={`relative w-full ${maxWidth} bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.1] shadow-2xl rounded-2xl text-slate-900 dark:text-slate-100 z-10 overflow-hidden my-4 sm:my-6 animate-in zoom-in-95 duration-150`}
                 role="dialog"
                 aria-modal="true"
             >
                 {/* Header */}
-                <div className="px-6 py-5 border-b border-white/[0.08] flex items-start justify-between gap-4">
+                <div className="px-6 py-5 border-b border-slate-200 dark:border-white/[0.08] flex items-start justify-between gap-4 bg-white dark:bg-[#0C0E16]">
                     <div className="space-y-1">
                         {title && (
-                            <h2 className="text-lg font-bold tracking-tight text-white">
+                            <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                                 {title}
                             </h2>
                         )}
                         {subtitle && (
-                            <p className="text-sm text-slate-400 leading-relaxed">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                                 {subtitle}
                             </p>
                         )}
@@ -79,7 +79,7 @@ export default function AcrylicModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-2 -mr-1 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.08] transition-colors shrink-0"
+                        className="p-2 -mr-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors shrink-0"
                         title="Tutup (Esc)"
                         aria-label="Tutup jendela"
                     >
@@ -88,13 +88,13 @@ export default function AcrylicModal({
                 </div>
 
                 {/* Content Body */}
-                <div className="px-6 py-5 sm:py-6 max-h-[calc(85vh-160px)] overflow-y-auto">
+                <div className="px-6 py-5 sm:py-6 max-h-[calc(85vh-160px)] overflow-y-auto bg-white dark:bg-[#0C0E16]">
                     {children}
                 </div>
 
                 {/* Optional Footer */}
                 {footer && (
-                    <div className="px-6 py-4 border-t border-white/[0.08] bg-[#090B12] flex items-center justify-end gap-3">
+                    <div className="px-6 py-4 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#090B12] flex items-center justify-end gap-3">
                         {footer}
                     </div>
                 )}

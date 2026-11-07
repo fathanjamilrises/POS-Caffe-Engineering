@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\AdminProductController;
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CashierPosController;
@@ -114,9 +115,22 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
         Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
 
+        // Aliases & Redirects to Prevent 404s
+        Route::get('/tables', fn () => redirect()->route('tables.index'))->name('tables.redirect');
+        Route::get('/pos', fn () => redirect()->route('cashier.pos'))->name('pos.redirect');
+        Route::get('/kitchen', fn () => redirect()->route('kitchen.display'))->name('kitchen.redirect');
+
         // Exports
         Route::get('/export/excel', [AdminDashboardController::class, 'exportExcel'])->name('export.excel');
         Route::get('/export/pdf', [AdminDashboardController::class, 'exportPdf'])->name('export.pdf');
+
+        // System Settings, Health & Maintenance
+        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/security', [AdminSettingsController::class, 'updateSecurity'])->name('settings.security');
+        Route::post('/settings/maintenance', [AdminSettingsController::class, 'toggleMaintenance'])->name('settings.maintenance');
+        Route::post('/settings/artisan', [AdminSettingsController::class, 'runArtisan'])->name('settings.artisan');
+        Route::post('/settings/clear-logs', [AdminSettingsController::class, 'clearLogs'])->name('settings.clear-logs');
+        Route::post('/settings/regenerate-all-qr', [AdminSettingsController::class, 'regenerateAllQr'])->name('settings.regenerate-all-qr');
     });
 
     // Kasir POS Suite (Cashier Access Only)

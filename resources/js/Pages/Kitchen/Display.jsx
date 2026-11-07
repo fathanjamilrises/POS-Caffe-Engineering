@@ -8,12 +8,11 @@ import {
     VolumeX,
     RefreshCw,
     ChefHat,
-    AlertTriangle,
     Check,
-    Utensils,
     Bell,
-    Sparkles,
-    CheckCircle,
+    Search,
+    ChevronDown,
+    Filter,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -22,7 +21,13 @@ import { useAudioAlert } from '@/Hooks/useAudioAlert';
 import { toast } from '@/Services/toast';
 
 export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
-    const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'waiting' | 'cooking' | 'delivered_to_cashier'
+    // Smart default: 'active' if active orders exist, otherwise 'all' so screen is never blank
+    const [statusFilter, setStatusFilter] = useState(() => {
+        const hasActive = tickets.some((t) => t.ticket_status !== 'completed');
+        return hasActive ? 'active' : 'all';
+    });
+
+    const [searchQuery, setSearchQuery] = useState('');
     const [now, setNow] = useState(Date.now());
     const [audioMuted, setAudioMuted] = useState(false);
 
@@ -50,8 +55,8 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
             if (!audioMuted) {
                 playChime();
             }
-            toast.info(`${unnotified_count} pesanan baru masuk ke antrean koki!`, {
-                title: 'Pesanan Dapur',
+            toast.info(`${unnotified_count} pesanan baru masuk ke antrean dapur!`, {
+                title: 'Pesanan Dapur Baru',
                 duration: 5000,
             });
         }
@@ -69,10 +74,30 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         );
     };
 
-    // Calculate elapsed minutes and seconds with ergonomic warning thresholds
-    const getElapsedTime = (sentAt) => {
-        if (!sentAt) return { text: '00:00', minutes: 0, isUrgent: false, isWarning: false };
+    // Calculate elapsed time or completed duration
+    const getElapsedTime = (ticket) => {
+        const sentAt = ticket.sent_to_kds_at;
+        if (!sentAt) return { text: '00:00', minutes: 0, isUrgent: false, isWarning: false, isCompleted: false };
+
         const sentTime = new Date(sentAt).getTime();
+
+        if (ticket.ticket_status === 'completed' && ticket.completed_at) {
+            const completedTime = new Date(ticket.completed_at).getTime();
+            const totalSecs = Math.max(0, Math.floor((completedTime - sentTime) / 1000));
+            const mins = Math.floor(totalSecs / 60);
+            const secs = totalSecs % 60;
+
+            // Only show cooking duration if reasonable (< 120 minutes)
+            const text = mins < 120 ? `${mins}m ${secs}d` : '';
+            return {
+                text,
+                minutes: mins,
+                isUrgent: false,
+                isWarning: false,
+                isCompleted: true,
+            };
+        }
+
         const diffSecs = Math.max(0, Math.floor((now - sentTime) / 1000));
         const mins = Math.floor(diffSecs / 60);
         const secs = diffSecs % 60;
@@ -82,58 +107,95 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
             minutes: mins,
             isWarning: mins >= 5 && mins < 10,
             isUrgent: mins >= 10,
+            isCompleted: false,
         };
     };
 
-    // Filter tickets
-    const filteredTickets = useMemo(() => {
-        if (statusFilter === 'all') return tickets;
-        return tickets.filter((t) => t.ticket_status === statusFilter);
-    }, [tickets, statusFilter]);
-
-    // Status counts
+    // Status counts based on actual live data
     const counts = useMemo(() => {
+        const waiting = tickets.filter((t) => t.ticket_status === 'waiting').length;
+        const cooking = tickets.filter((t) => t.ticket_status === 'cooking').length;
+        const delivered = tickets.filter((t) => t.ticket_status === 'delivered_to_cashier').length;
+        const completed = tickets.filter((t) => t.ticket_status === 'completed').length;
+        const active = waiting + cooking + delivered;
+        const kitchenQueue = waiting + cooking;
+
         return {
             all: tickets.length,
-            waiting: tickets.filter((t) => t.ticket_status === 'waiting').length,
-            cooking: tickets.filter((t) => t.ticket_status === 'cooking').length,
-            delivered: tickets.filter((t) => t.ticket_status === 'delivered_to_cashier').length,
+            active,
+            kitchenQueue,
+            waiting,
+            cooking,
+            delivered,
+            completed,
         };
     }, [tickets]);
 
-    // Top Metric Cards (Consistent with Beranda, Produk, & Meja)
+    // Filter tickets by dropdown selection and search query
+    const filteredTickets = useMemo(() => {
+        return tickets.filter((t) => {
+            // Dropdown filter
+            if (statusFilter === 'active') {
+                if (t.ticket_status === 'completed') return false;
+            } else if (statusFilter !== 'all') {
+                if (t.ticket_status !== statusFilter) return false;
+            }
+
+            // Search query filter
+            if (searchQuery.trim()) {
+                const q = searchQuery.toLowerCase().trim();
+                const tokenMatch = String(t.token_number).includes(q);
+                const tableMatch = t.order?.table?.table_number && String(t.order.table.table_number).includes(q);
+                const customerMatch = t.order?.customer_name && t.order.customer_name.toLowerCase().includes(q);
+                const productMatch = t.order_item?.product?.product_name && t.order_item.product.product_name.toLowerCase().includes(q);
+                const notesMatch = t.order_item?.notes && t.order_item.notes.toLowerCase().includes(q);
+
+                if (!tokenMatch && !tableMatch && !customerMatch && !productMatch && !notesMatch) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, [tickets, statusFilter, searchQuery]);
+
+    // Top Metric Cards
     const metricCards = [
         {
-            label: 'Total Antrean Dapur',
-            value: counts.all,
-            subtext: 'Seluruh pesanan makanan aktif',
+            label: 'Perlu Dimasak',
+            value: counts.kitchenQueue,
+            subtext: `${counts.waiting} menunggu • ${counts.cooking} dimasak`,
             icon: ChefHat,
             iconBg: 'bg-indigo-500/10',
             iconColor: 'text-indigo-400',
+            valueColor: counts.kitchenQueue > 0 ? 'text-white' : 'text-slate-400',
         },
         {
             label: 'Menunggu Dimasak',
             value: counts.waiting,
-            subtext: 'Tiket baru belum diolah',
+            subtext: counts.waiting > 0 ? 'Tiket baru belum diolah' : 'Tidak ada tiket menunggu',
             icon: Clock,
             iconBg: 'bg-rose-500/10',
             iconColor: 'text-rose-400',
+            valueColor: counts.waiting > 0 ? 'text-rose-300' : 'text-slate-400',
         },
         {
             label: 'Sedang Dimasak',
             value: counts.cooking,
-            subtext: 'Sedang di kompor / penggorengan',
+            subtext: counts.cooking > 0 ? 'Sedang di proses kompor' : 'Kompor senggang',
             icon: Flame,
             iconBg: 'bg-amber-500/10',
             iconColor: 'text-amber-400',
+            valueColor: counts.cooking > 0 ? 'text-amber-300' : 'text-slate-400',
         },
         {
-            label: 'Diantar ke Kasir',
-            value: counts.delivered,
-            subtext: 'Selesai masak, siap disajikan',
+            label: 'Siap di Kasir / Selesai',
+            value: `${counts.delivered} / ${counts.completed}`,
+            subtext: `${counts.delivered} di kasir • ${counts.completed} selesai saji`,
             icon: CheckCircle2,
             iconBg: 'bg-emerald-500/10',
             iconColor: 'text-emerald-400',
+            valueColor: counts.delivered > 0 ? 'text-emerald-300' : 'text-slate-300',
         },
     ];
 
@@ -167,7 +229,7 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                             {audioMuted ? (
                                 <>
                                     <VolumeX className="w-4 h-4 text-rose-400" />
-                                    <span className="hidden sm:inline">Bell Mati</span>
+                                    <span className="hidden sm:inline">Bell Senyap</span>
                                 </>
                             ) : (
                                 <>
@@ -190,33 +252,33 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         >
             <Head title="Dapur KDS - Kitchen Display System" />
 
-            <div className="space-y-6">
+            <div className="space-y-5">
                 {/* ============================================================
-                    TOP METRIC CARDS (KONSISTEN DENGAN BERANDA & PRODUK)
+                    TOP METRIC CARDS (RINGKASAN DATA DAPUR)
                 ============================================================ */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                     {metricCards.map((card, idx) => {
                         const Icon = card.icon;
                         return (
                             <div
                                 key={idx}
-                                className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-5 flex flex-col justify-between"
+                                className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-4 flex flex-col justify-between shadow-sm"
                             >
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-400 font-medium">
+                                    <span className="text-xs text-slate-400 font-medium">
                                         {card.label}
                                     </span>
                                     <div
-                                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.iconBg} ${card.iconColor}`}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center ${card.iconBg} ${card.iconColor}`}
                                     >
-                                        <Icon className="w-4 h-4" />
+                                        <Icon className="w-3.5 h-3.5" />
                                     </div>
                                 </div>
-                                <div className="mt-4">
-                                    <div className="text-2xl lg:text-3xl font-bold font-mono tabular-nums text-white">
+                                <div className="mt-3">
+                                    <div className={`text-2xl font-bold font-mono tabular-nums ${card.valueColor}`}>
                                         {card.value}
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1">
+                                    <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
                                         {card.subtext}
                                     </p>
                                 </div>
@@ -226,171 +288,226 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                 </div>
 
                 {/* ============================================================
-                    TOOLBAR & FILTER TABS (RAMAH USIA 40-60 TAHUN)
+                    TOOLBAR: DROPDOWN FILTER & SEARCH (TANPA SCROLLBAR)
                 ============================================================ */}
-                <div className="bg-[#0C0E16] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-                    {/* Status Tabs */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 select-none">
-                        {[
-                            { id: 'all', label: 'Semua Antrean', count: counts.all },
-                            { id: 'waiting', label: 'Menunggu Dimasak', count: counts.waiting },
-                            { id: 'cooking', label: 'Sedang Dimasak', count: counts.cooking },
-                            { id: 'delivered_to_cashier', label: 'Diantar ke Kasir', count: counts.delivered },
-                        ].map((tab) => (
-                            <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => setStatusFilter(tab.id)}
-                                className={`min-h-[42px] flex items-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                                    statusFilter === tab.id
-                                        ? 'bg-indigo-600 text-white font-semibold shadow-sm'
-                                        : 'bg-white/[0.03] text-slate-300 hover:text-white hover:bg-white/[0.07] border border-white/[0.06]'
-                                }`}
+                <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    {/* Status Filter Dropdown */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 shrink-0">
+                            <Filter className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Filter Status:</span>
+                        </div>
+                        <div className="relative flex-1 sm:w-64">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full h-10 pl-3 pr-8 rounded-lg bg-[#06070A] border border-white/[0.1] text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none transition-colors"
                             >
-                                <span>{tab.label}</span>
-                                <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold tabular-nums ${
-                                        statusFilter === tab.id
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-white/[0.06] text-slate-400'
-                                    }`}
-                                >
-                                    {tab.count}
-                                </span>
-                            </button>
-                        ))}
+                                <option value="all">Semua Tiket ({counts.all})</option>
+                                <option value="active">Antrean Aktif ({counts.active})</option>
+                                <option value="waiting">Menunggu Dimasak ({counts.waiting})</option>
+                                <option value="cooking">Sedang Dimasak ({counts.cooking})</option>
+                                <option value="delivered_to_cashier">Di Meja Kasir ({counts.delivered})</option>
+                                <option value="completed">Selesai Hari Ini ({counts.completed})</option>
+                            </select>
+                            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                     </div>
 
-                    {/* Auto-Sync Status Indicator */}
-                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400 self-end sm:self-center shrink-0">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>Sinkronisasi Dapur: Otomatis (6 dtk)</span>
+                    {/* Search & Auto-Sync Indicator */}
+                    <div className="flex items-center gap-3">
+                        <div className="relative flex-1 sm:w-56">
+                            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Cari token, meja, menu..."
+                                className="w-full h-10 pl-8 pr-7 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors font-mono"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white px-1 text-sm"
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400 shrink-0">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="hidden md:inline">Sinkron Otomatis (6s)</span>
+                        </div>
                     </div>
                 </div>
 
                 {/* ============================================================
-                    KDS LARGE SCREEN GRID (TERBACA JELAS DARI JARAK 2 METER)
+                    KDS MINIMALIST CARD GRID (FOKUS KOKI, TATA LETAK RAPI)
                 ============================================================ */}
                 {filteredTickets.length === 0 ? (
-                    <div className="py-24 text-center bg-[#0C0E16] rounded-xl border border-white/[0.08] p-8 space-y-3">
-                        <ChefHat className="w-16 h-16 mx-auto text-slate-500 opacity-50" />
-                        <h3 className="text-lg font-bold text-white">
-                            Semua Pesanan Dapur Selesai
+                    <div className="py-20 text-center bg-[#0B0D13] rounded-xl border border-white/[0.07] p-8 space-y-3">
+                        <ChefHat className="w-14 h-14 mx-auto text-slate-600 opacity-40" />
+                        <h3 className="text-base font-bold text-white">
+                            {searchQuery
+                                ? 'Tidak Ditemukan Tiket yang Cocok'
+                                : statusFilter === 'active'
+                                ? 'Semua Antrean Dapur Sedang Kosong'
+                                : 'Tidak Ada Tiket di Kategori Ini'}
                         </h3>
-                        <p className="text-sm text-slate-400 max-w-md mx-auto">
-                            Tidak ada antrean tiket makanan yang perlu dimasak saat ini. Tiket baru dari kasir atau pemesanan QR meja akan otomatis muncul di sini.
+                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                            {searchQuery
+                                ? `Tidak ada tiket dengan kata kunci "${searchQuery}". Coba bersihkan pencarian.`
+                                : statusFilter === 'active'
+                                ? 'Tidak ada masakan aktif yang perlu dimasak saat ini. Tiket baru dari kasir atau QR meja akan otomatis muncul.'
+                                : 'Gunakan tombol di bawah untuk menampilkan seluruh riwayat tiket hari ini.'}
                         </p>
+                        {statusFilter !== 'all' && (
+                            <div>
+                                <button
+                                    type="button"
+                                    onClick={() => setStatusFilter('all')}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/30 text-indigo-200 text-xs font-semibold transition-colors shadow-sm"
+                                >
+                                    <span>Tampilkan Semua Tiket ({counts.all})</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {filteredTickets.map((ticket) => {
-                            const elapsed = getElapsedTime(ticket.sent_to_kds_at);
+                            const elapsed = getElapsedTime(ticket);
                             const isWaiting = ticket.ticket_status === 'waiting';
                             const isCooking = ticket.ticket_status === 'cooking';
                             const isDelivered = ticket.ticket_status === 'delivered_to_cashier';
+                            const isCompleted = ticket.ticket_status === 'completed';
 
                             return (
                                 <div
                                     key={ticket.id}
-                                    className={`rounded-xl border bg-[#0C0E16] flex flex-col justify-between overflow-hidden shadow-sm transition-all duration-200 relative ${
+                                    className={`rounded-xl border bg-[#0B0D13] flex flex-col justify-between overflow-hidden shadow-sm transition-all duration-200 ${
                                         isWaiting
-                                            ? 'border-white/[0.08] border-t-4 border-t-rose-500'
+                                            ? 'border-white/[0.08] border-t-2 border-t-rose-500'
                                             : isCooking
-                                            ? 'border-white/[0.08] border-t-4 border-t-amber-400'
-                                            : 'border-white/[0.08] border-t-4 border-t-emerald-400'
+                                            ? 'border-white/[0.08] border-t-2 border-t-amber-400'
+                                            : isDelivered
+                                            ? 'border-white/[0.08] border-t-2 border-t-indigo-400'
+                                            : 'border-white/[0.08] border-t-2 border-t-emerald-500 opacity-75'
                                     }`}
                                 >
-                                    {/* Ticket Header: Token & Live Timer */}
-                                    <div className="p-4 border-b border-white/[0.08] flex items-center justify-between gap-3 bg-[#08090D]">
-                                        <div className="min-w-0">
-                                            <div className="flex items-baseline gap-2.5">
-                                                <span className="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
-                                                    #{ticket.token_number}
+                                    {/* 1. Header: 2 Baris Bersih & Bebas Tabrakan */}
+                                    <div className="p-3.5 border-b border-white/[0.06] bg-[#07080C] space-y-2">
+                                        {/* Baris 1: Token & Status Badge (Hanya 2 elemen, tidak akan bertumpuk) */}
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">
+                                                #{ticket.token_number}
+                                            </span>
+
+                                            {/* Status Badge + Live Timer */}
+                                            <div className="shrink-0">
+                                                {isWaiting && (
+                                                    <div
+                                                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold ${
+                                                            elapsed.isUrgent
+                                                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                                                                : 'bg-rose-500/10 text-rose-300 border border-rose-500/25'
+                                                        }`}
+                                                    >
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                                        <span>Menunggu</span>
+                                                        <span className="text-slate-400">•</span>
+                                                        <span>{elapsed.text}</span>
+                                                    </div>
+                                                )}
+
+                                                {isCooking && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                                        <span>Dimasak</span>
+                                                        <span className="text-slate-400">•</span>
+                                                        <span>{elapsed.text}</span>
+                                                    </div>
+                                                )}
+
+                                                {isDelivered && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                                        <span>Di Kasir</span>
+                                                        <span className="text-slate-400">•</span>
+                                                        <span>{elapsed.text}</span>
+                                                    </div>
+                                                )}
+
+                                                {isCompleted && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span>Selesai</span>
+                                                        {elapsed.text && (
+                                                            <span className="text-slate-400 font-normal">
+                                                                ({elapsed.text})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Baris 2: Badge Meja/Bungkus & Nama Pelanggan (Terpisah jelas) */}
+                                        <div className="flex items-center gap-2 pt-1 border-t border-white/[0.04]">
+                                            {ticket.order?.table ? (
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 shrink-0">
+                                                    Meja #{ticket.order.table.table_number}
                                                 </span>
-                                                <span className="text-sm font-bold text-indigo-300 truncate">
-                                                    {ticket.order?.table
-                                                        ? `Meja ${ticket.order.table.table_number}`
-                                                        : 'Bungkus / Takeaway'}
+                                            ) : (
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/25 shrink-0">
+                                                    Bungkus
                                                 </span>
-                                            </div>
-                                            <div className="text-xs font-mono text-slate-400 mt-0.5 truncate">
-                                                {ticket.order?.invoice_number || 'INV-POS'} • {ticket.order?.customer_name || 'Pelanggan'}
-                                            </div>
-                                        </div>
-
-                                        {/* Elapsed Timer Badge (Kontras Tinggi) */}
-                                        <div
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 tabular-nums shrink-0 ${
-                                                elapsed.isUrgent
-                                                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
-                                                    : elapsed.isWarning
-                                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                                    : 'bg-white/[0.06] text-slate-300 border border-white/[0.08]'
-                                            }`}
-                                            title="Durasi waktu sejak pesanan dikirim ke dapur"
-                                        >
-                                            <Clock className="w-4 h-4" />
-                                            <span className="text-sm">{elapsed.text}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Ticket Body: Item Name, Quantity, and Special Notes */}
-                                    <div className="p-5 space-y-4 flex-1">
-                                        {/* Quantity & Product Name */}
-                                        <div className="flex items-start gap-3.5">
-                                            <div className="w-10 h-10 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg font-black font-mono text-indigo-300 shrink-0">
-                                                {ticket.order_item?.quantity}x
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="text-base sm:text-lg font-bold text-white leading-snug">
-                                                    {ticket.order_item?.product?.product_name || 'Menu Dapur'}
-                                                </h4>
-                                                <div className="text-xs text-slate-400 mt-0.5 font-medium">
-                                                    {ticket.order_item?.product?.category?.category_name || 'Makanan Masak'}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Special Notes (Sangat Jelas & Menonjol) */}
-                                        {ticket.order_item?.notes && (
-                                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-1">
-                                                <strong className="block text-[11px] uppercase tracking-wider text-amber-300 font-mono font-bold flex items-center gap-1.5">
-                                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                                    <span>Catatan Khusus Pelanggan:</span>
-                                                </strong>
-                                                <p className="text-sm font-semibold text-white leading-relaxed">
-                                                    "{ticket.order_item.notes}"
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Operational Status Indicator */}
-                                        <div className="pt-2 flex items-center gap-2 text-xs font-medium text-slate-300">
-                                            <span
-                                                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                                    isWaiting ? 'bg-rose-500' : isCooking ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-                                                }`}
-                                            />
-                                            <span>
-                                                {isWaiting && 'Menunggu Antrean (Belum Diolah)'}
-                                                {isCooking && 'Sedang Dimasak di Kompor'}
-                                                {isDelivered && 'Sudah Diserahkan ke Meja Kasir'}
+                                            )}
+                                            <span className="text-[11px] font-mono text-slate-400 truncate">
+                                                {ticket.order?.customer_name || 'Pelanggan'} •{' '}
+                                                {ticket.order?.order_source === 'qr_table'
+                                                    ? 'QR HP'
+                                                    : 'Kasir'}
                                             </span>
                                         </div>
                                     </div>
 
-                                    {/* Action Progression Button (Tingkat Sentuh Nyaman Min 48px) */}
-                                    <div className="p-4 border-t border-white/[0.08] bg-[#08090D]">
+                                    {/* 2. Body: Menu & Catatan Khusus */}
+                                    <div className="p-4 flex-1 space-y-3">
+                                        {/* Quantity & Product Name */}
+                                        <div className="flex items-start gap-3">
+                                            <span className="text-2xl font-black font-mono text-indigo-400 shrink-0 leading-none mt-0.5">
+                                                {ticket.order_item?.quantity}x
+                                            </span>
+                                            <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
+                                                {ticket.order_item?.product?.product_name || 'Menu Dapur'}
+                                            </h3>
+                                        </div>
+
+                                        {/* Catatan Khusus (Hanya tampil jika ada) */}
+                                        {ticket.order_item?.notes && (
+                                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs">
+                                                <span className="font-bold text-amber-300 font-mono text-[10px] uppercase block mb-0.5">
+                                                    Catatan:
+                                                </span>
+                                                "{ticket.order_item.notes}"
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* 3. Footer: Tombol Aksi Koki (Min 44px) */}
+                                    <div className="p-3 border-t border-white/[0.06] bg-[#07080C]">
                                         {isWaiting && (
-                                            <SpecularButton
-                                                variant="primary"
-                                                size="lg"
-                                                icon={Flame}
+                                            <button
+                                                type="button"
                                                 onClick={() => handleUpdateStatus(ticket.id, 'cooking')}
-                                                className="w-full min-h-[48px] text-sm font-bold"
+                                                className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-gradient-to-b from-[#4338CA] to-[#312E81] hover:from-[#4F46E5] hover:to-[#3730A3] text-white font-bold text-xs flex items-center justify-center gap-2 border border-indigo-400/25 shadow-sm active:scale-[0.99] transition-all"
                                             >
-                                                Mulai Masak
-                                            </SpecularButton>
+                                                <Flame className="w-4 h-4 text-amber-300" />
+                                                <span>Mulai Masak</span>
+                                            </button>
                                         )}
 
                                         {isCooking && (
@@ -399,17 +516,33 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                                 onClick={() =>
                                                     handleUpdateStatus(ticket.id, 'delivered_to_cashier')
                                                 }
-                                                className="w-full min-h-[48px] px-4 py-2.5 rounded-lg bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-sm shadow-md border border-amber-400/30 flex items-center justify-center gap-2 transition-all active:scale-[0.99] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]"
+                                                className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-xs flex items-center justify-center gap-2 border border-amber-400/30 shadow-sm active:scale-[0.99] transition-all"
                                             >
-                                                <Check className="w-5 h-5" />
+                                                <Check className="w-4 h-4" />
                                                 <span>Selesai Masak &rarr; Bawa ke Kasir</span>
                                             </button>
                                         )}
 
                                         {isDelivered && (
-                                            <div className="min-h-[48px] rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 flex items-center justify-center gap-2 text-xs font-mono font-bold">
-                                                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                                <span>Menunggu Konfirmasi Kasir</span>
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="min-h-[40px] flex-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center gap-1.5 text-xs font-mono font-medium px-2 text-center">
+                                                    <span>Di Meja Kasir</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleUpdateStatus(ticket.id, 'completed')}
+                                                    className="min-h-[40px] px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                                                    title="Tandai tiket ini selesai jika sudah diserahkan langsung"
+                                                >
+                                                    Selesaikan
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {isCompleted && (
+                                            <div className="min-h-[40px] rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center gap-1.5 text-xs font-mono font-bold">
+                                                <Check className="w-4 h-4" />
+                                                <span>Pesanan Selesai Disajikan</span>
                                             </div>
                                         )}
                                     </div>

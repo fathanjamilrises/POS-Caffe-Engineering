@@ -26,6 +26,9 @@ import {
     ScanBarcode,
     Bell,
     Receipt,
+    History,
+    Printer,
+    RefreshCw,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -55,6 +58,7 @@ export default function CashierPos({
     categories = [],
     dining_tables = [],
     fulfillment_orders = [],
+    recent_transactions = [],
 }) {
     // Category & Search filter
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -72,7 +76,65 @@ export default function CashierPos({
     const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState(false);
     const [isClearCartModalOpen, setIsClearCartModalOpen] = useState(false);
     const [isFulfillmentModalOpen, setIsFulfillmentModalOpen] = useState(false);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+    const [selectedOrderForReprint, setSelectedOrderForReprint] = useState(null);
+    const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'unprocessed' | 'processing' | 'ready' | 'served'
+    const [historySearchQuery, setHistorySearchQuery] = useState('');
     const [expandedNotesId, setExpandedNotesId] = useState(null);
+
+    // Auto-polling interval (every 6s) to sync kitchen readiness & transaction status in real-time
+    useEffect(() => {
+        const poll = setInterval(() => {
+            router.reload({
+                only: ['fulfillment_orders', 'recent_transactions', 'active_shift'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 6000);
+        return () => clearInterval(poll);
+    }, []);
+
+    // Transaction breakdown by status for cashier tracking
+    const unprocessedTransactions = useMemo(() => {
+        return recent_transactions.filter((tx) => tx.order_status !== 'served' && tx.order_status !== 'cancelled');
+    }, [recent_transactions]);
+
+    const processingTransactions = useMemo(() => {
+        return recent_transactions.filter((tx) => tx.order_status === 'processing');
+    }, [recent_transactions]);
+
+    const readyTransactions = useMemo(() => {
+        return recent_transactions.filter((tx) => tx.order_status === 'ready');
+    }, [recent_transactions]);
+
+    const servedTransactions = useMemo(() => {
+        return recent_transactions.filter((tx) => tx.order_status === 'served');
+    }, [recent_transactions]);
+
+    const filteredTransactions = useMemo(() => {
+        return recent_transactions.filter((tx) => {
+            // Status tab filter
+            if (historyFilter === 'unprocessed') {
+                if (tx.order_status === 'served' || tx.order_status === 'cancelled') return false;
+            } else if (historyFilter !== 'all') {
+                if (tx.order_status !== historyFilter) return false;
+            }
+
+            // Search query filter
+            if (!historySearchQuery.trim()) return true;
+            const query = historySearchQuery.toLowerCase();
+            const tokenMatch = String(tx.token_number || '').toLowerCase().includes(query);
+            const invoiceMatch = String(tx.invoice_number || '').toLowerCase().includes(query);
+            const customerMatch = String(tx.customer_name || '').toLowerCase().includes(query);
+            const tableMatch = tx.table ? String(tx.table.table_number || '').toLowerCase().includes(query) : false;
+            const itemMatch = (tx.items || []).some((item) =>
+                item.product?.product_name?.toLowerCase().includes(query)
+            );
+
+            return tokenMatch || invoiceMatch || customerMatch || tableMatch || itemMatch;
+        });
+    }, [recent_transactions, historyFilter, historySearchQuery]);
 
     // Non-blocking toast notification alert
     const showNotice = (title, message, type = 'warning') => {
@@ -398,21 +460,43 @@ export default function CashierPos({
                         </div>
                     )}
 
-                    {/* Center: Kitchen Fulfillment Badge (Doesn't push screen down!) */}
-                    {fulfillment_orders.length > 0 && (
+                    {/* Right: Unified Action Buttons Group */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        {/* 1. Riwayat Transaksi Button */}
                         <button
                             type="button"
-                            onClick={() => setIsFulfillmentModalOpen(true)}
-                            className="h-8 px-3 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm animate-pulse"
-                            title="Buka daftar pesanan siap antar dari dapur"
+                            onClick={() => setIsHistoryModalOpen(true)}
+                            className="h-8 px-3 rounded-lg bg-white hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:border-white/[0.08] dark:text-slate-200 dark:hover:text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-xs dark:shadow-sm"
+                            title="Buka riwayat transaksi kasir dan tracking status pesanan"
                         >
-                            <Bell className="w-3.5 h-3.5" />
-                            <span>{fulfillment_orders.length} Pesanan Dapur Siap Saji</span>
+                            <History className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                            <span className="hidden sm:inline">Riwayat Transaksi</span>
+                            <span className="sm:hidden">Riwayat</span>
+                            {unprocessedTransactions.length > 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                    {unprocessedTransactions.length} Belum Selesai
+                                </span>
+                            ) : (
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.06]">
+                                    {recent_transactions.length}
+                                </span>
+                            )}
                         </button>
-                    )}
 
-                    {/* Right: Shift Action */}
-                    <div className="flex items-center gap-2 shrink-0">
+                        {/* 2. Kitchen Fulfillment Handshake Badge (HANYA muncul saat dapur sudah konfirmasi selesai masak / 'ready') */}
+                        {fulfillment_orders.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => setIsFulfillmentModalOpen(true)}
+                                className="h-8 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 dark:border-emerald-500/40 dark:text-emerald-300 active:scale-95 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs animate-pulse"
+                                title="Pesanan telah selesai dimasak dapur dan siap diserahkan ke pelanggan"
+                            >
+                                <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{fulfillment_orders.length} Siap Saji</span>
+                            </button>
+                        )}
+
+                        {/* 3. Shift Open/Close Action */}
                         {active_shift ? (
                             <button
                                 type="button"
@@ -424,9 +508,9 @@ export default function CashierPos({
                                     );
                                     setIsCloseShiftModalOpen(true);
                                 }}
-                                className="h-8 px-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] active:scale-95 border border-white/[0.08] text-slate-200 hover:text-white font-semibold text-xs transition-all flex items-center gap-1.5"
+                                className="h-8 px-3 rounded-lg bg-white hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:border-white/[0.08] dark:text-slate-200 dark:hover:text-white font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs"
                             >
-                                <Banknote className="w-3.5 h-3.5 text-amber-400" />
+                                <Banknote className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
                                 <span>Tutup Shift</span>
                             </button>
                         ) : (
@@ -449,9 +533,9 @@ export default function CashierPos({
                     {/* =====================================================
                         KOLOM KIRI: MENU CATALOG STATION (7/8 COLS)
                        ===================================================== */}
-                    <div className="col-span-7 xl:col-span-8 flex flex-col h-full min-h-0 bg-[#0C0E16] border border-white/[0.08] rounded-2xl overflow-hidden overflow-x-hidden p-3 shadow-sm">
+                    <div className="col-span-7 xl:col-span-8 flex flex-col h-full min-h-0 bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden overflow-x-hidden p-3 shadow-xs dark:shadow-sm">
                         {/* Pinned Search & Category Filters (Fixed on Top) */}
-                        <div className="shrink-0 space-y-2.5 pb-2.5 border-b border-white/[0.06]">
+                        <div className="shrink-0 space-y-2.5 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
                             {/* Search Input Bar (42px) */}
                             <div className="relative">
                                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -460,13 +544,13 @@ export default function CashierPos({
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Cari nama menu atau scan barcode..."
-                                    className="w-full h-10 bg-[#08090D] border border-white/[0.08] rounded-xl pl-10 pr-9 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full h-10 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-10 pr-9 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors shadow-xs dark:shadow-none"
                                 />
                                 {searchQuery && (
                                     <button
                                         type="button"
                                         onClick={() => setSearchQuery('')}
-                                        className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-colors"
+                                        className="w-7 h-7 absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-200 dark:hover:bg-white/[0.06] transition-colors"
                                         aria-label="Hapus pencarian"
                                     >
                                         <X className="w-3.5 h-3.5" />
@@ -482,7 +566,7 @@ export default function CashierPos({
                                     className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                                         selectedCategory === 'all'
                                             ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500'
-                                            : 'bg-[#08090D] text-slate-300 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]'
+                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 dark:bg-[#08090D] dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06] dark:border-white/[0.08]'
                                     }`}
                                 >
                                     <Layers className="w-3.5 h-3.5" />
@@ -501,7 +585,7 @@ export default function CashierPos({
                                             className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                                                 isSelected
                                                     ? 'bg-indigo-600 text-white shadow-sm border border-indigo-500'
-                                                    : 'bg-[#08090D] text-slate-300 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 dark:bg-[#08090D] dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.06] dark:border-white/[0.08]'
                                             }`}
                                         >
                                             <span>{c.category_name}</span>
@@ -509,7 +593,7 @@ export default function CashierPos({
                                                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
                                                     isSelected
                                                         ? 'bg-white/20 text-white'
-                                                        : 'bg-white/[0.06] text-slate-400'
+                                                        : 'bg-slate-200 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400'
                                                 }`}
                                             >
                                                 {count}
@@ -524,7 +608,7 @@ export default function CashierPos({
                         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain pr-1.5 pt-2.5">
                             {filteredProducts.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
-                                    <p className="text-sm font-bold text-slate-300">
+                                    <p className="text-sm font-bold text-slate-800 dark:text-slate-300">
                                         Menu Tidak Ditemukan
                                     </p>
                                     <p className="text-xs text-slate-500 max-w-xs">
@@ -546,25 +630,25 @@ export default function CashierPos({
                                                 onClick={() => addToCart(p)}
                                                 className={`p-3 rounded-xl text-left border flex flex-col justify-between min-h-[135px] relative overflow-hidden select-none transition-all group ${
                                                     isOutOfStock
-                                                        ? 'bg-[#0C0E16]/40 border-white/[0.04] opacity-50 cursor-not-allowed'
+                                                        ? 'bg-slate-100 dark:bg-[#0C0E16]/40 border-slate-200 dark:border-white/[0.04] opacity-50 cursor-not-allowed'
                                                         : inCartQty > 0
-                                                        ? 'bg-indigo-950/30 border-indigo-500 ring-1 ring-indigo-500/60 active:scale-[0.97]'
-                                                        : 'bg-[#08090D] hover:bg-[#121524] border-white/[0.08] hover:border-indigo-500/50 active:scale-[0.97] cursor-pointer shadow-sm'
+                                                        ? 'bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-400/50 dark:bg-indigo-950/30 dark:border-indigo-500 dark:ring-1 dark:ring-indigo-500/60 active:scale-[0.97]'
+                                                        : 'bg-slate-50/70 hover:bg-white border-slate-200 hover:border-indigo-400 dark:bg-[#08090D] dark:hover:bg-[#121524] dark:border-white/[0.08] dark:hover:border-indigo-500/50 active:scale-[0.97] cursor-pointer shadow-xs dark:shadow-none'
                                                 }`}
                                             >
                                                 <div>
                                                     <div className="flex items-center justify-between text-xs mb-1.5 gap-1.5 min-w-0">
-                                                        <span className="font-mono text-slate-400 text-[10px] tracking-wider truncate min-w-0 flex-1">
+                                                        <span className="font-mono text-slate-500 dark:text-slate-400 text-[10px] tracking-wider truncate min-w-0 flex-1">
                                                             {p.barcode || 'NO-BARCODE'}
                                                         </span>
                                                         <div className="flex items-center gap-1.5 shrink-0">
                                                             {p.requires_kitchen ? (
-                                                                <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                                                <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 flex items-center gap-1">
                                                                     <UtensilsCrossed className="w-2.5 h-2.5" />
                                                                     <span>Dapur</span>
                                                                 </span>
                                                             ) : (
-                                                                <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-white/[0.06] text-slate-300 border border-white/[0.08] flex items-center gap-1">
+                                                                <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/[0.08] flex items-center gap-1">
                                                                     <Coffee className="w-2.5 h-2.5" />
                                                                     <span>Instan</span>
                                                                 </span>
@@ -577,25 +661,25 @@ export default function CashierPos({
                                                         </div>
                                                     </div>
 
-                                                    <h4 className="text-xs sm:text-sm font-bold text-slate-100 line-clamp-2 leading-snug group-hover:text-white transition-colors">
+                                                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-indigo-600 dark:group-hover:text-white transition-colors">
                                                         {p.product_name}
                                                     </h4>
                                                 </div>
 
-                                                <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between mt-2">
-                                                    <span className="font-mono font-bold text-xs sm:text-sm text-white tabular-nums">
+                                                <div className="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between mt-2">
+                                                    <span className="font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white tabular-nums">
                                                         {formatRupiah(p.selling_price)}
                                                     </span>
                                                     {isOutOfStock ? (
-                                                        <span className="text-[10px] font-mono font-bold text-rose-400">
+                                                        <span className="text-[10px] font-mono font-bold text-rose-500 dark:text-rose-400">
                                                             Habis
                                                         </span>
                                                     ) : isLowStock ? (
-                                                        <span className="text-[10px] font-mono font-bold text-amber-300 tabular-nums">
+                                                        <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-300 tabular-nums">
                                                             Sisa {p.stock_qty}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-[10px] font-mono font-medium text-slate-400 tabular-nums">
+                                                        <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400 tabular-nums">
                                                             {p.stock_qty} unit
                                                         </span>
                                                     )}
@@ -611,17 +695,17 @@ export default function CashierPos({
                     {/* =====================================================
                         KOLOM KANAN: DIGITAL ORDER REGISTER / CART (4/5 COLS)
                        ===================================================== */}
-                    <div className="col-span-5 xl:col-span-4 flex flex-col h-full min-h-0 bg-[#0C0E16] border border-white/[0.08] rounded-2xl overflow-hidden shadow-sm">
+                    <div className="col-span-5 xl:col-span-4 flex flex-col h-full min-h-0 bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden shadow-xs dark:shadow-sm">
                         {/* Pinned Header & Service Mode Selector */}
-                        <div className="shrink-0 p-3 border-b border-white/[0.08] bg-[#0E101A] space-y-2.5">
+                        <div className="shrink-0 p-3 border-b border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0E101A] space-y-2.5">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <Receipt className="w-4 h-4 text-indigo-400" />
-                                    <h3 className="text-xs sm:text-sm font-bold text-white tracking-tight">
+                                    <Receipt className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight">
                                         Struk Transaksi
                                     </h3>
                                     {cart.length > 0 && (
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30">
                                             {cartTotals.totalItems} unit
                                         </span>
                                     )}
@@ -630,7 +714,7 @@ export default function CashierPos({
                                     <button
                                         type="button"
                                         onClick={() => setIsClearCartModalOpen(true)}
-                                        className="text-xs text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1 transition-colors"
+                                        className="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1 transition-colors"
                                     >
                                         <Trash2 className="w-3.5 h-3.5" />
                                         <span>Kosongkan</span>
@@ -639,14 +723,14 @@ export default function CashierPos({
                             </div>
 
                             {/* Service Type Switcher (40px) */}
-                            <div className="grid grid-cols-2 gap-1 p-0.5 bg-[#08090D] border border-white/[0.08] rounded-xl">
+                            <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl">
                                 <button
                                     type="button"
                                     onClick={() => setOrderSource('cashier_direct')}
                                     className={`min-h-[38px] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                                         orderSource === 'cashier_direct'
                                             ? 'bg-indigo-600 text-white shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                     }`}
                                 >
                                     <ShoppingBag className="w-3.5 h-3.5" />
@@ -658,7 +742,7 @@ export default function CashierPos({
                                     className={`min-h-[38px] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                                         orderSource === 'qr_table'
                                             ? 'bg-indigo-600 text-white shadow-sm'
-                                            : 'text-slate-400 hover:text-white'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                     }`}
                                 >
                                     <Store className="w-3.5 h-3.5" />
@@ -672,7 +756,7 @@ export default function CashierPos({
                                     <select
                                         value={selectedTableId}
                                         onChange={(e) => setSelectedTableId(e.target.value)}
-                                        className="w-full h-9 bg-[#08090D] border border-white/[0.08] rounded-lg px-2 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                                        className="w-full h-9 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-lg px-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-mono shadow-xs"
                                     >
                                         <option value="">Pilih Nomor Meja...</option>
                                         {dining_tables.map((t) => (
@@ -688,13 +772,13 @@ export default function CashierPos({
                                         orderSource === 'qr_table' ? 'sm:col-span-1' : 'col-span-full'
                                     }`}
                                 >
-                                    <User className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                    <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                                     <input
                                         type="text"
                                         value={customerName}
                                         onChange={(e) => setCustomerName(e.target.value)}
                                         placeholder="Nama Tamu (Walk-in)"
-                                        className="w-full h-9 bg-[#08090D] border border-white/[0.08] rounded-lg pl-8 pr-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+                                        className="w-full h-9 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-lg pl-8 pr-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-xs"
                                     />
                                 </div>
                             </div>
@@ -704,10 +788,10 @@ export default function CashierPos({
                         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2">
                             {cart.length === 0 ? (
                                 <div className="h-full flex flex-col items-center justify-center text-center p-4 space-y-2">
-                                    <div className="w-10 h-10 rounded-full bg-white/[0.04] flex items-center justify-center text-slate-500">
+                                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/[0.04] flex items-center justify-center text-slate-400">
                                         <ShoppingCart className="w-5 h-5" />
                                     </div>
-                                    <p className="text-xs font-bold text-slate-300">
+                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         Belum Ada Menu Dipilih
                                     </p>
                                     <p className="text-[11px] text-slate-500 max-w-[180px]">
@@ -722,20 +806,20 @@ export default function CashierPos({
                                     return (
                                         <div
                                             key={item.id}
-                                            className="p-2.5 rounded-xl bg-[#08090D] border border-white/[0.06] space-y-2 shadow-sm"
+                                            className="p-2.5 rounded-xl bg-slate-50/80 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.06] space-y-2 shadow-xs"
                                         >
                                             {/* Line 1: Item Name & Remove */}
                                             <div className="flex items-start justify-between gap-1.5">
                                                 <div className="min-w-0 flex-1">
-                                                    <h4 className="text-xs font-bold text-white truncate">
+                                                    <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                                                         {item.product_name}
                                                     </h4>
                                                     <div className="flex items-center gap-1.5 mt-0.5">
-                                                        <span className="text-[11px] font-mono text-slate-400">
+                                                        <span className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
                                                             {formatRupiah(item.selling_price)}
                                                         </span>
                                                         {item.requires_kitchen && (
-                                                            <span className="text-[9px] font-semibold text-amber-300 bg-amber-500/15 px-1 py-0.2 rounded">
+                                                            <span className="text-[9px] font-semibold text-amber-700 bg-amber-50 dark:text-amber-300 dark:bg-amber-500/15 px-1 py-0.2 rounded border border-amber-200 dark:border-amber-500/20">
                                                                 Dapur
                                                             </span>
                                                         )}
@@ -745,7 +829,7 @@ export default function CashierPos({
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFromCart(item.id)}
-                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors shrink-0"
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0"
                                                     title="Hapus menu"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
@@ -753,18 +837,18 @@ export default function CashierPos({
                                             </div>
 
                                             {/* Line 2: Touch Stepper & Subtotal */}
-                                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/[0.04]">
+                                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200 dark:border-white/[0.04]">
                                                 {/* Tactile Stepper (36px min touch target) */}
-                                                <div className="flex items-center gap-1 bg-[#0C0E16] border border-white/[0.08] rounded-lg p-0.5">
+                                                <div className="flex items-center gap-1 bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] rounded-lg p-0.5 shadow-xs">
                                                     <button
                                                         type="button"
                                                         onClick={() => updateCartQty(item.id, -1)}
-                                                        className="w-8 h-8 rounded-md bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 text-white flex items-center justify-center transition-all"
+                                                        className="w-8 h-8 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] active:scale-95 text-slate-700 dark:text-white flex items-center justify-center transition-all"
                                                         aria-label="Kurangi"
                                                     >
                                                         <Minus className="w-3.5 h-3.5" />
                                                     </button>
-                                                    <span className="w-8 text-center font-mono font-bold text-xs sm:text-sm text-white tabular-nums">
+                                                    <span className="w-8 text-center font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white tabular-nums">
                                                         {item.quantity}
                                                     </span>
                                                     <button
@@ -777,7 +861,7 @@ export default function CashierPos({
                                                     </button>
                                                 </div>
 
-                                                <span className="text-xs sm:text-sm font-bold font-mono text-emerald-400 tabular-nums">
+                                                <span className="text-xs sm:text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
                                                     {formatRupiah(itemSubtotal)}
                                                 </span>
                                             </div>
@@ -791,7 +875,7 @@ export default function CashierPos({
                                                             isNotesOpen ? null : item.id
                                                         )
                                                     }
-                                                    className="text-[10px] text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+                                                    className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium flex items-center gap-1"
                                                 >
                                                     <FileText className="w-3 h-3" />
                                                     <span>
@@ -808,7 +892,7 @@ export default function CashierPos({
                                                             updateCartNotes(item.id, e.target.value)
                                                         }
                                                         placeholder="Misal: Es sedikit, tidak pedas"
-                                                        className="w-full h-7 bg-[#0C0E16] border border-white/[0.08] rounded px-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 mt-1"
+                                                        className="w-full h-7 bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] rounded px-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 mt-1 shadow-xs"
                                                     />
                                                 )}
                                             </div>
@@ -821,18 +905,18 @@ export default function CashierPos({
                         {/* =====================================================
                             PERMANENTLY PINNED PAY DOCK (NEVER SCROLLS AWAY!)
                            ===================================================== */}
-                        <div className="shrink-0 p-3 border-t border-white/[0.08] bg-[#08090D] space-y-2.5">
+                        <div className="shrink-0 p-3 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#08090D] space-y-2.5">
                             {/* Grand Total Display (Massive 28px Monospace) */}
-                            <div className="p-3 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex items-center justify-between">
+                            <div className="p-3 rounded-xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] flex items-center justify-between shadow-xs">
                                 <div>
-                                    <span className="text-[11px] uppercase font-bold text-slate-400 tracking-wider block">
+                                    <span className="text-[11px] uppercase font-bold text-slate-600 dark:text-slate-400 tracking-wider block">
                                         Total Tagihan:
                                     </span>
                                     <span className="text-[10px] text-slate-500 block">
                                         {cartTotals.totalItems} item dipilih
                                     </span>
                                 </div>
-                                <span className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-white">
+                                <span className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-slate-900 dark:text-white">
                                     {formatRupiah(cartTotals.totalAmount)}
                                 </span>
                             </div>
@@ -845,11 +929,11 @@ export default function CashierPos({
                                     onClick={() => handleOpenPayment('tunai')}
                                     className={`min-h-[46px] px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                                         cart.length === 0
-                                            ? 'bg-white/[0.02] border-white/[0.05] text-slate-500 cursor-not-allowed'
-                                            : 'bg-[#1E1B4B] hover:bg-[#312E81] border-indigo-500/50 text-indigo-100 active:scale-[0.98] shadow-sm'
+                                            ? 'bg-slate-100 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.05] text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                            : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-950 dark:bg-[#1E1B4B] dark:hover:bg-[#312E81] dark:border-indigo-500/50 dark:text-indigo-100 active:scale-[0.98] shadow-xs'
                                     }`}
                                 >
-                                    <DollarSign className="w-4 h-4 text-emerald-400" />
+                                    <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                     <span>Bayar Tunai</span>
                                 </button>
                                 <button
@@ -858,11 +942,11 @@ export default function CashierPos({
                                     onClick={() => handleOpenPayment('qris')}
                                     className={`min-h-[46px] px-3 py-2 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                                         cart.length === 0
-                                            ? 'bg-white/[0.02] border-white/[0.05] text-slate-500 cursor-not-allowed'
-                                            : 'bg-[#1E1B4B] hover:bg-[#312E81] border-indigo-500/50 text-indigo-100 active:scale-[0.98] shadow-sm'
+                                            ? 'bg-slate-100 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.05] text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                            : 'bg-indigo-50 hover:bg-indigo-100 border-indigo-200 text-indigo-950 dark:bg-[#1E1B4B] dark:hover:bg-[#312E81] dark:border-indigo-500/50 dark:text-indigo-100 active:scale-[0.98] shadow-xs'
                                     }`}
                                 >
-                                    <QrCode className="w-4 h-4 text-indigo-300" />
+                                    <QrCode className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
                                     <span>Bayar QRIS</span>
                                 </button>
                             </div>
@@ -1086,7 +1170,7 @@ export default function CashierPos({
 
                             {/* Tombol Pecahan Uang Cepat (Min 42px Touch Targets) */}
                             <div>
-                                <label className="text-xs text-slate-400 block mb-1.5 font-medium">
+                                <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1.5 font-bold">
                                     Pecahan Uang Cepat:
                                 </label>
                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -1096,7 +1180,7 @@ export default function CashierPos({
                                         className={`min-h-[42px] px-2.5 py-2 rounded-lg text-xs font-mono font-bold border transition-colors ${
                                             Number(checkoutData.amount_received) === cartTotals.totalAmount
                                                 ? 'bg-indigo-600 text-white border-indigo-500'
-                                                : 'bg-[#08090D] hover:bg-white/[0.08] text-slate-200 border-white/[0.08]'
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-[#08090D] dark:hover:bg-white/[0.08] dark:text-slate-200 dark:border-white/[0.08]'
                                         }`}
                                     >
                                         Uang Pas
@@ -1112,7 +1196,7 @@ export default function CashierPos({
                                                 className={`min-h-[42px] px-2.5 py-2 rounded-lg text-xs font-mono font-bold border transition-colors ${
                                                     isSelected
                                                         ? 'bg-indigo-600 text-white border-indigo-500'
-                                                        : 'bg-[#08090D] hover:bg-white/[0.08] text-slate-200 border-white/[0.08]'
+                                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-[#08090D] dark:hover:bg-white/[0.08] dark:text-slate-200 dark:border-white/[0.08]'
                                                 }`}
                                             >
                                                 {formatRupiah(nominal)}
@@ -1124,11 +1208,11 @@ export default function CashierPos({
 
                             {/* Kotak Peringatan Uang Kurang */}
                             {isUnderpaid && (
-                                <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs sm:text-sm flex items-start gap-2.5">
-                                    <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs sm:text-sm flex items-start gap-2.5">
+                                    <AlertCircle className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0 mt-0.5" />
                                     <div>
                                         <span className="font-bold block">Uang Diterima Masih Kurang!</span>
-                                        <span className="text-xs text-rose-300/90 block mt-0.5">
+                                        <span className="text-xs text-rose-700 dark:text-rose-300/90 block mt-0.5">
                                             Kurang {formatRupiah(shortfallAmount)} dari total tagihan ({formatRupiah(cartTotals.totalAmount)}).
                                         </span>
                                     </div>
@@ -1136,16 +1220,16 @@ export default function CashierPos({
                             )}
 
                             {/* Kotak Kembalian Besar (30px Monospace Emerald Display) */}
-                            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                            <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-between">
                                 <div>
-                                    <span className="text-xs uppercase tracking-wider font-bold text-emerald-400 block">
+                                    <span className="text-xs uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-400 block">
                                         Kembalian:
                                     </span>
-                                    <span className="text-[11px] text-slate-400 block">
+                                    <span className="text-[11px] text-slate-600 dark:text-slate-400 block">
                                         Wajib diserahkan ke tamu
                                     </span>
                                 </div>
-                                <span className="text-2xl sm:text-3xl font-mono font-black text-emerald-400 tabular-nums">
+                                <span className="text-2xl sm:text-3xl font-mono font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
                                     {formatRupiah(changeAmount)}
                                 </span>
                             </div>
@@ -1415,6 +1499,349 @@ export default function CashierPos({
                         <strong className="text-white font-mono">{formatRupiah(cartTotals.totalAmount)}</strong> akan dihapus dari transaksi saat ini.
                     </p>
                 </div>
+            </AcrylicModal>
+
+            {/* =========================================================
+                MODAL 6: RIWAYAT TRANSAKSI KASIR & TRACKING PROSES
+               ========================================================= */}
+            <AcrylicModal
+                isOpen={isHistoryModalOpen}
+                onClose={() => setIsHistoryModalOpen(false)}
+                title="Riwayat Transaksi Kasir Hari Ini"
+                subtitle="Pantau status transaksi: proses dapur, siap saji, dan pesanan yang belum selesai."
+                maxWidth="max-w-3xl"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-slate-400 font-mono">
+                            Total: <strong className="text-white font-bold">{recent_transactions.length}</strong> transaksi hari ini
+                        </div>
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setIsHistoryModalOpen(false)}
+                            className="min-h-[42px] px-5"
+                        >
+                            Tutup
+                        </SpecularButton>
+                    </div>
+                }
+            >
+                <div className="space-y-3.5">
+                    {/* Controls: Search Bar & Refresh */}
+                    <div className="flex items-center gap-2.5">
+                        <div className="relative flex-1">
+                            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                value={historySearchQuery}
+                                onChange={(e) => setHistorySearchQuery(e.target.value)}
+                                placeholder="Cari nomor token (#042), meja, nama pelanggan, atau invoice..."
+                                className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#08090D] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400/50"
+                            />
+                            {historySearchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setHistorySearchQuery('')}
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                router.reload({
+                                    only: ['recent_transactions', 'fulfillment_orders'],
+                                    preserveScroll: true,
+                                })
+                            }
+                            className="h-9 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
+                            title="Segarkan data transaksi"
+                        >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Segarkan</span>
+                        </button>
+                    </div>
+
+                    {/* Filter Status Tabs */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 select-none">
+                        {[
+                            { id: 'all', label: 'Semua', count: recent_transactions.length },
+                            {
+                                id: 'unprocessed',
+                                label: 'Belum Selesai',
+                                count: unprocessedTransactions.length,
+                                highlight: true,
+                            },
+                            { id: 'processing', label: 'Sedang Dimasak', count: processingTransactions.length },
+                            { id: 'ready', label: 'Siap Diserahkan', count: readyTransactions.length },
+                            { id: 'served', label: 'Selesai', count: servedTransactions.length },
+                        ].map((tab) => {
+                            const isActive = historyFilter === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setHistoryFilter(tab.id)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                                        isActive
+                                            ? 'bg-white/[0.1] text-white border border-white/[0.16] shadow-sm'
+                                            : 'bg-white/[0.02] text-slate-400 hover:text-white border border-transparent hover:border-white/[0.06]'
+                                    }`}
+                                >
+                                    <span>{tab.label}</span>
+                                    <span
+                                        className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${
+                                            tab.highlight && tab.count > 0
+                                                ? 'bg-amber-500/20 text-amber-300 font-bold'
+                                                : 'bg-white/[0.06] text-slate-400'
+                                        }`}
+                                    >
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Transaction Cards List */}
+                    <div className="space-y-2.5 max-h-[440px] overflow-y-auto pr-1">
+                        {filteredTransactions.length === 0 ? (
+                            <div className="py-12 text-center text-slate-400 space-y-2">
+                                <Receipt className="w-8 h-8 mx-auto text-slate-600" />
+                                <p className="text-xs">Tidak ada data transaksi yang sesuai filter.</p>
+                            </div>
+                        ) : (
+                            filteredTransactions.map((tx) => {
+                                const isReady = tx.order_status === 'ready';
+                                const isProcessing = tx.order_status === 'processing';
+                                const isServed = tx.order_status === 'served';
+
+                                return (
+                                    <div
+                                        key={tx.id}
+                                        className={`p-3.5 rounded-xl border transition-all ${
+                                            isReady
+                                                ? 'bg-[#09121E] border-emerald-500/40 shadow-sm'
+                                                : isProcessing
+                                                ? 'bg-[#0E0F17] border-amber-500/30'
+                                                : 'bg-[#08090D] border-white/[0.06]'
+                                        }`}
+                                    >
+                                        {/* Card Header */}
+                                        <div className="flex items-start justify-between gap-3 flex-wrap border-b border-white/[0.06] pb-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-base font-bold font-mono text-white">
+                                                    #{tx.token_number}
+                                                </span>
+                                                <span className="text-xs font-mono text-slate-400">
+                                                    {new Date(tx.created_at).toLocaleTimeString('id-ID', {
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                    })}{' '}
+                                                    WIB
+                                                </span>
+                                                <span className="text-slate-600">•</span>
+                                                <span className="text-xs font-semibold text-indigo-300">
+                                                    {tx.table ? `Meja ${tx.table.table_number}` : 'Bungkus / Takeaway'}
+                                                </span>
+                                                {tx.customer_name && tx.customer_name !== 'Pelanggan Walk-in' && (
+                                                    <span className="text-xs text-slate-400">
+                                                        ({tx.customer_name})
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Status Badge */}
+                                            <div>
+                                                {isProcessing && (
+                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1.5">
+                                                        <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                                        <span>Sedang Dimasak Dapur</span>
+                                                    </span>
+                                                )}
+                                                {isReady && (
+                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 animate-pulse">
+                                                        <Bell className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span>Siap Diserahkan</span>
+                                                    </span>
+                                                )}
+                                                {isServed && (
+                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/[0.04] border border-white/[0.08] text-slate-400 flex items-center gap-1.5">
+                                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <span>Pesanan Selesai</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Card Items */}
+                                        <div className="py-2 space-y-1 text-xs">
+                                            {(tx.items || []).map((item) => (
+                                                <div key={item.id} className="flex items-center justify-between text-slate-300 font-mono">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-white">{item.quantity}x</span>
+                                                        <span className="text-slate-200">{item.product?.product_name || 'Menu'}</span>
+                                                        {item.notes && (
+                                                            <span className="text-[11px] text-amber-400/90 italic">
+                                                                ("{item.notes}")
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-slate-400">{formatRupiah(item.subtotal)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Card Footer */}
+                                        <div className="flex items-center justify-between border-t border-white/[0.06] pt-2 text-xs flex-wrap gap-2">
+                                            <div className="flex items-center gap-3 font-mono">
+                                                <span className="text-slate-400">Total:</span>
+                                                <span className="text-sm font-bold text-white">
+                                                    {formatRupiah(tx.total_amount)}
+                                                </span>
+                                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-white/[0.04] border border-white/[0.08] text-slate-300">
+                                                    {tx.payment_method}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                {/* Button Cetak Struk */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedOrderForReprint(tx);
+                                                        setIsReprintModalOpen(true);
+                                                    }}
+                                                    className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                                                >
+                                                    <Printer className="w-3.5 h-3.5 text-slate-400" />
+                                                    <span>Struk</span>
+                                                </button>
+
+                                                {/* If Ready: Button Serahkan */}
+                                                {isReady && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleServeOrder(tx.id)}
+                                                        className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                                    >
+                                                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                                        <span>Konfirmasi Serahkan</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            </AcrylicModal>
+
+            {/* =========================================================
+                MODAL 7: PREVIEW & CETAK ULANG STRUK TRANSAKSI
+               ========================================================= */}
+            <AcrylicModal
+                isOpen={isReprintModalOpen}
+                onClose={() => setIsReprintModalOpen(false)}
+                title="Struk Bukti Pembayaran"
+                subtitle={selectedOrderForReprint ? `Invoice: ${selectedOrderForReprint.invoice_number}` : ''}
+                maxWidth="max-w-sm"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setIsReprintModalOpen(false)}
+                            className="min-h-[42px] px-4"
+                        >
+                            Tutup
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            icon={Printer}
+                            onClick={() => window.print()}
+                            className="min-h-[42px] px-5 font-bold"
+                        >
+                            Cetak Struk
+                        </SpecularButton>
+                    </div>
+                }
+            >
+                {selectedOrderForReprint && (
+                    <div className="p-4 rounded-xl bg-white text-slate-900 font-mono text-xs space-y-3 shadow-inner">
+                        <div className="text-center border-b border-dashed border-slate-300 pb-3">
+                            <h4 className="font-bold text-sm tracking-wider uppercase">KASIR APP CANTEEN</h4>
+                            <p className="text-[11px] text-slate-600">Sistem Kasir & Dapur Terintegrasi</p>
+                            <p className="text-[10px] text-slate-500 mt-1">
+                                {selectedOrderForReprint.invoice_number}
+                            </p>
+                        </div>
+
+                        <div className="space-y-1 text-[11px]">
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Nomor Token:</span>
+                                <span className="font-bold text-sm">#{selectedOrderForReprint.token_number}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Tanggal/Jam:</span>
+                                <span>{new Date(selectedOrderForReprint.created_at).toLocaleString('id-ID')}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Layanan:</span>
+                                <span>{selectedOrderForReprint.table ? `Meja ${selectedOrderForReprint.table.table_number}` : 'Takeaway / Bungkus'}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Pelanggan:</span>
+                                <span>{selectedOrderForReprint.customer_name || 'Pelanggan'}</span>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-1">
+                            {(selectedOrderForReprint.items || []).map((item) => (
+                                <div key={item.id} className="flex justify-between">
+                                    <span>
+                                        {item.quantity}x {item.product?.product_name || 'Item'}
+                                    </span>
+                                    <span>{formatRupiah(item.subtotal)}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="space-y-1 text-[11px]">
+                            <div className="flex justify-between font-bold text-xs pt-1">
+                                <span>Total Belanja:</span>
+                                <span>{formatRupiah(selectedOrderForReprint.total_amount)}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600">
+                                <span>Metode Bayar:</span>
+                                <span className="uppercase">{selectedOrderForReprint.payment_method}</span>
+                            </div>
+                            {selectedOrderForReprint.payment_method === 'tunai' && (
+                                <>
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Tunai Diterima:</span>
+                                        <span>{formatRupiah(selectedOrderForReprint.amount_received)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-600">
+                                        <span>Kembalian:</span>
+                                        <span>{formatRupiah(selectedOrderForReprint.change_amount)}</span>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="text-center border-t border-dashed border-slate-300 pt-3 text-[10px] text-slate-500">
+                            <p>Terima Kasih Atas Kunjungan Anda!</p>
+                            <p>Pesanan Segar dari Dapur Kantin</p>
+                        </div>
+                    </div>
+                )}
             </AcrylicModal>
         </AuthenticatedLayout>
     );

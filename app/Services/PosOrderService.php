@@ -9,10 +9,12 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class PosOrderService
@@ -174,7 +176,9 @@ class PosOrderService
             $tokenNumber = $this->generateTokenNumber();
             $invoiceNumber = 'INV-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -5));
 
-            $orderStatus = $requiresKitchenAny ? 'processing' : 'ready';
+            $orderStatus = $requiresKitchenAny
+                ? 'processing'
+                : ($data['order_source'] === 'cashier_direct' ? 'served' : 'ready');
 
             // Create Order
             $order = Order::create([
@@ -262,16 +266,35 @@ class PosOrderService
 
     /**
      * Orders ready for cashier fulfillment (handshake with kitchen).
+     * Strictly orders where kitchen has confirmed cooking and delivered to cashier ('ready').
      *
      * @return Collection<int, Order>
      */
     public function getFulfillmentOrders(): Collection
     {
-        return Order::with(['items.product', 'table'])
-            ->whereIn('order_status', ['processing', 'ready'])
+        return Order::with(['items.product', 'table', 'kitchenTickets.orderItem.product'])
+            ->where('order_status', 'ready')
+            ->whereHas('kitchenTickets')
             ->latest()
-            ->limit(15)
+            ->limit(25)
             ->get();
+    }
+
+    /**
+     * Recent transactions for cashier workstation (today / current shift).
+     *
+     * @return Collection<int, Order>
+     */
+    public function getRecentTransactions(?int $shiftId = null): Collection
+    {
+        $query = Order::with(['items.product', 'table', 'cashier', 'kitchenTickets.orderItem.product'])
+            ->whereDate('created_at', Carbon::today());
+
+        if ($shiftId) {
+            $query->where('shift_id', $shiftId);
+        }
+
+        return $query->latest()->limit(50)->get();
     }
 
     /**
@@ -279,10 +302,24 @@ class PosOrderService
      */
     public function markOrderServed(int $orderId): Order
     {
-        $order = Order::findOrFail($orderId);
-        $order->update(['order_status' => 'served']);
-        $order->items()->update(['item_status' => 'served']);
+        return DB::transaction(function () use ($orderId) {
+            $order = Order::findOrFail($orderId);
+            $order->update(['order_status' => 'served']);
+            $order->items()->update(['item_status' => 'served']);
+            $order->kitchenTickets()->update([
+                'ticket_status' => 'completed',
+                'completed_at' => now(),
+            ]);
 
-        return $order;
+            // Auto-rotate table QR token to prevent "customer iseng" from ordering using old photos
+            if ($order->table_id && SystemSetting::get('qr_auto_rotate_token', true)) {
+                $order->table?->update([
+                    'qr_code_token' => Str::random(32),
+                    'status' => 'available',
+                ]);
+            }
+
+            return $order;
+        });
     }
 }

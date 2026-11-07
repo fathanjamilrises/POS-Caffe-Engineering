@@ -28,6 +28,7 @@ class CashierPosController extends Controller
         $categories = Category::orderBy('category_name')->get();
         $diningTables = $this->posService->getDiningTables();
         $fulfillmentOrders = $this->posService->getFulfillmentOrders();
+        $recentTransactions = $this->posService->getRecentTransactions($activeShift?->id);
 
         return Inertia::render('Cashier/Pos', [
             'active_shift' => $activeShift,
@@ -35,6 +36,7 @@ class CashierPosController extends Controller
             'categories' => $categories,
             'dining_tables' => $diningTables,
             'fulfillment_orders' => $fulfillmentOrders,
+            'recent_transactions' => $recentTransactions,
         ]);
     }
 

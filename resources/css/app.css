@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views/**/*.blade.php';
@@ -8,6 +10,233 @@
 @theme {
     --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ============================================================
+   Global Smooth Scrolling & Color Scheme Definitions
+============================================================ */
+html {
+    scroll-behavior: smooth;
+}
+
+:root {
+    --scrollbar-thumb: rgba(99, 102, 241, 0.35);
+    --scrollbar-thumb-hover: rgba(129, 140, 248, 0.65);
+    --scrollbar-track: rgba(6, 7, 10, 0.45);
+    color-scheme: dark;
+}
+
+html.light,
+:root[data-theme="light"] {
+    --scrollbar-thumb: rgba(99, 102, 241, 0.45);
+    --scrollbar-thumb-hover: rgba(67, 56, 202, 0.75);
+    --scrollbar-track: rgba(226, 232, 240, 0.75);
+    color-scheme: light;
+}
+
+/* Standard Cross-Browser Scrollbar (Firefox, Chrome 121+, Safari 18.2+) */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit / Chromium Legacy Custom Smooth Scrollbar for ALL elements */
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Utility to hide scrollbars cleanly while preserving touch/trackpad/mousewheel scroll */
+.scrollbar-none,
+.no-scrollbar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none *::-webkit-scrollbar,
+.no-scrollbar *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* ============================================================
+   Light Theme Adaptive Surface Rules
+   Smoothly flips dark carbon surfaces to Crisp Alabaster
+============================================================ */
+html.light body,
+:root[data-theme="light"] body {
+    background-color: #F8FAFC !important;
+    color: #0F172A !important;
+}
+
+html.light header,
+:root[data-theme="light"] header {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+html.light aside,
+:root[data-theme="light"] aside {
+    background-color: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 1px 0 3px 0 rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Card, modal, and drawer surfaces in light mode */
+html.light .bg-\[\#0B0D13\],
+html.light .bg-\[\#0C0E16\],
+html.light .bg-\[\#08090D\],
+html.light .bg-\[\#0A0C13\],
+html.light .bg-\[\#090B12\],
+html.light .bg-\[\#0E1017\],
+html.light .bg-\[\#0E101A\],
+html.light .bg-\[\#121524\],
+html.light .bg-\[\#141824\],
+html.light .bg-\[\#16192B\],
+:root[data-theme="light"] .bg-\[\#0B0D13\],
+:root[data-theme="light"] .bg-\[\#0C0E16\],
+:root[data-theme="light"] .bg-\[\#08090D\],
+:root[data-theme="light"] .bg-\[\#0A0C13\],
+:root[data-theme="light"] .bg-\[\#090B12\],
+:root[data-theme="light"] .bg-\[\#0E1017\],
+:root[data-theme="light"] .bg-\[\#0E101A\],
+:root[data-theme="light"] .bg-\[\#121524\],
+:root[data-theme="light"] .bg-\[\#141824\],
+:root[data-theme="light"] .bg-\[\#16192B\] {
+    background-color: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Neutral canvas backdrops */
+html.light .bg-\[\#06070A\],
+html.light .bg-\[\#07080C\],
+html.light .bg-\[\#07080D\],
+:root[data-theme="light"] .bg-\[\#06070A\],
+:root[data-theme="light"] .bg-\[\#07080C\],
+:root[data-theme="light"] .bg-\[\#07080D\] {
+    background-color: #F8FAFC !important;
+    border-color: #E2E8F0 !important;
+}
+
+/* Secondary muted surfaces in light mode (e.g. steppers, inputs, table strips) */
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\],
+:root[data-theme="light"] .bg-white\/\[0\.02\],
+:root[data-theme="light"] .bg-white\/\[0\.03\],
+:root[data-theme="light"] .bg-white\/\[0\.04\],
+:root[data-theme="light"] .bg-white\/\[0\.05\],
+:root[data-theme="light"] .bg-white\/\[0\.06\] {
+    background-color: #F1F5F9 !important;
+    border-color: #E2E8F0 !important;
+}
+
+/* High-contrast typography for light mode */
+html.light h1:not(button *):not(a *),
+html.light h2:not(button *):not(a *),
+html.light h3:not(button *):not(a *),
+html.light h4:not(button *):not(a *) {
+    color: #0F172A !important;
+}
+
+/* Card titles and prominent monospace prices in light mode */
+html.light span.text-white:not(button *):not([class*="bg-indigo"] *):not([class*="bg-emerald"] *):not([class*="bg-rose"] *):not([class*="bg-amber"] *),
+html.light div.text-white:not(button *):not([class*="bg-indigo"] *):not([class*="bg-emerald"] *):not([class*="bg-rose"] *):not([class*="bg-amber"] *),
+html.light h1.text-white,
+html.light h2.text-white,
+html.light h3.text-white,
+html.light h4.text-white,
+html.light p.text-white {
+    color: #0F172A !important;
+}
+
+/* Muted / secondary text: Upgrade slate-400 & slate-500 from washed-out gray to crisp slate-600 */
+html.light .text-slate-400:not(button[class*="bg-indigo"] *):not([class*="bg-rose"] *):not([class*="bg-emerald"] *),
+html.light .text-slate-500:not(button[class*="bg-indigo"] *):not([class*="bg-rose"] *):not([class*="bg-emerald"] *) {
+    color: #475569 !important;
+}
+
+html.light .text-slate-300:not(button[class*="bg-indigo"] *):not([class*="bg-rose"] *):not([class*="bg-emerald"] *),
+html.light .text-slate-200:not(button[class*="bg-indigo"] *):not([class*="bg-rose"] *):not([class*="bg-emerald"] *),
+html.light .text-slate-100:not(button[class*="bg-indigo"] *):not([class*="bg-rose"] *):not([class*="bg-emerald"] *) {
+    color: #1E293B !important;
+}
+
+/* Inputs, textareas, and selects in light mode */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.light textarea,
+html.light select {
+    background-color: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+    color: #94A3B8 !important;
+}
+
+/* Explicitly preserve crisp white text on interactive primary action buttons & specular elements */
+button.text-white,
+button.text-white *,
+a.text-white,
+a.text-white *,
+.specular-button-primary,
+.specular-button-primary * {
+    color: #FFFFFF !important;
+}
+
+html.light .border-white\/\[0\.04\],
+html.light .border-white\/\[0\.05\],
+html.light .border-white\/\[0\.06\],
+html.light .border-white\/\[0\.07\],
+html.light .border-white\/\[0\.08\],
+html.light .border-white\/\[0\.1\],
+html.light .border-white\/\[0\.12\],
+html.light .border-white\/\[0\.14\],
+html.light .border-white\/\[0\.15\],
+html.light .border-white\/\[0\.2\],
+:root[data-theme="light"] .border-white\/\[0\.04\],
+:root[data-theme="light"] .border-white\/\[0\.05\],
+:root[data-theme="light"] .border-white\/\[0\.06\],
+:root[data-theme="light"] .border-white\/\[0\.07\],
+:root[data-theme="light"] .border-white\/\[0\.08\],
+:root[data-theme="light"] .border-white\/\[0\.1\],
+:root[data-theme="light"] .border-white\/\[0\.12\],
+:root[data-theme="light"] .border-white\/\[0\.14\],
+:root[data-theme="light"] .border-white\/\[0\.15\],
+:root[data-theme="light"] .border-white\/\[0\.2\] {
+    border-color: #E2E8F0 !important;
 }
 
 /* Custom Smoked Acrylic utility classes */
@@ -93,4 +322,3 @@
 .animate-toast-progress {
     animation: toast-progress linear forwards;
 }
-

@@ -213,85 +213,85 @@ export default function TablesIndex({ tables = [] }) {
                 ============================================================ */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Card 1: Total Meja */}
-                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div className="p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all shadow-xs dark:shadow-sm flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between mb-2.5">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Total Meja
                                 </span>
-                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                                     <Utensils className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-slate-900 dark:text-white tracking-tight">
                                 {totalTables}
                             </div>
                         </div>
-                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] text-xs text-slate-400 font-mono">
+                        <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] text-xs text-slate-600 dark:text-slate-400 font-mono">
                             <span>Kapasitas meja makan terdaftar</span>
                         </div>
                     </div>
 
                     {/* Card 2: Meja Tersedia */}
-                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div className="p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all shadow-xs dark:shadow-sm flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between mb-2.5">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Meja Tersedia
                                 </span>
-                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-emerald-400 tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight">
                                 {availableTables}
                             </div>
                         </div>
-                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-mono">
                             <span>Status Meja:</span>
-                            <span className="text-emerald-400 font-semibold font-mono">Kosong & Bersih</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">Kosong & Bersih</span>
                         </div>
                     </div>
 
                     {/* Card 3: Meja Terisi */}
-                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div className="p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all shadow-xs dark:shadow-sm flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between mb-2.5">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Meja Terisi
                                 </span>
-                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                                     <Users className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-amber-400 tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-amber-600 dark:text-amber-400 tracking-tight">
                                 {occupiedTables}
                             </div>
                         </div>
-                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-mono">
                             <span>Status Meja:</span>
-                            <span className="text-amber-400 font-semibold font-mono">Tamu Duduk</span>
+                            <span className="text-amber-600 dark:text-amber-400 font-semibold font-mono">Tamu Duduk</span>
                         </div>
                     </div>
 
                     {/* Card 4: Pesanan Meja Aktif */}
-                    <div className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between">
+                    <div className="p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all shadow-xs dark:shadow-sm flex flex-col justify-between">
                         <div>
                             <div className="flex items-center justify-between mb-2.5">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Pesanan Aktif
                                 </span>
-                                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                                     <Clock className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-black font-mono tabular-nums text-slate-900 dark:text-white tracking-tight">
                                 {activeOrdersCount}
                             </div>
                         </div>
-                        <div className="mt-3.5 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <div className="mt-3.5 pt-2.5 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-mono">
                             <span>Antrean:</span>
-                            <span className="text-indigo-300 font-semibold font-mono">Dapur & Kasir</span>
+                            <span className="text-indigo-600 dark:text-indigo-300 font-semibold font-mono">Dapur & Kasir</span>
                         </div>
                     </div>
                 </section>
@@ -299,7 +299,7 @@ export default function TablesIndex({ tables = [] }) {
                 {/* ============================================================
                     3. FILTER & PENCARIAN (ERGONOMIS DENGAN TOUCH TARGET BESAR)
                 ============================================================ */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] shadow-xs dark:shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
                     {/* Search Input with Clear Button */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -308,13 +308,13 @@ export default function TablesIndex({ tables = [] }) {
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Cari nomor meja (cth: Meja 1, VIP 2)..."
-                            className="w-full h-11 bg-[#08090D] border border-white/[0.08] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition-colors"
+                            className="w-full h-11 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm sm:text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors shadow-xs"
                         />
                         {searchQuery && (
                             <button
                                 type="button"
                                 onClick={() => setSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-colors"
                                 title="Hapus pencarian"
                             >
                                 <X className="w-4 h-4" />
@@ -325,7 +325,7 @@ export default function TablesIndex({ tables = [] }) {
                     {/* Controls: Status Tabs, View Switcher, & Reset */}
                     <div className="flex flex-wrap items-center gap-2.5">
                         {/* Status Filter Tabs (Large 42px touch targets) */}
-                        <div className="flex items-center gap-1.5 p-1 bg-[#08090D] border border-white/[0.08] rounded-xl">
+                        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl">
                             {[
                                 { id: 'all', label: `Semua (${totalTables})` },
                                 { id: 'available', label: `Tersedia (${availableTables})` },
@@ -338,7 +338,7 @@ export default function TablesIndex({ tables = [] }) {
                                     className={`min-h-[42px] px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all active:scale-95 ${
                                         statusFilter === tab.id
                                             ? 'bg-gradient-to-r from-[#4338CA] to-[#3730A3] text-white border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18)]'
-                                            : 'text-slate-400 hover:text-white'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                     }`}
                                 >
                                     {tab.label}
@@ -347,14 +347,14 @@ export default function TablesIndex({ tables = [] }) {
                         </div>
 
                         {/* View Mode Switcher (Grid vs List Barcode) */}
-                        <div className="flex items-center p-1 bg-[#08090D] border border-white/[0.08] rounded-xl">
+                        <div className="flex items-center p-1 bg-slate-100 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl">
                             <button
                                 type="button"
                                 onClick={() => setViewMode('grid')}
                                 className={`min-h-[42px] px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                                     viewMode === 'grid'
-                                        ? 'bg-white/[0.1] text-white'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-white/[0.1] dark:text-white'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                 }`}
                                 title="Tampilan Kartu QR Meja"
                             >
@@ -366,8 +366,8 @@ export default function TablesIndex({ tables = [] }) {
                                 onClick={() => setViewMode('list')}
                                 className={`min-h-[42px] px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                                     viewMode === 'list'
-                                        ? 'bg-white/[0.1] text-white'
-                                        : 'text-slate-400 hover:text-white'
+                                        ? 'bg-white text-slate-900 shadow-xs dark:bg-white/[0.1] dark:text-white'
+                                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                 }`}
                                 title="Tampilan Tabel List Barcode"
                             >
@@ -395,22 +395,22 @@ export default function TablesIndex({ tables = [] }) {
                     4. KATALOG MEJA (GRID KARTU QR ATAU TABEL LIST)
                 ============================================================ */}
                 {filteredTables.length === 0 ? (
-                    <div className="p-12 sm:p-16 rounded-2xl bg-[#0C0E16] border border-white/[0.08] text-center shadow-sm">
+                    <div className="p-12 sm:p-16 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] text-center shadow-xs dark:shadow-sm">
                         <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-1">
+                            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1">
                                 <Utensils className="w-6 h-6" />
                             </div>
-                            <div className="text-base sm:text-lg font-bold text-white tracking-tight">
+                            <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                                 Tidak ada meja yang sesuai
                             </div>
-                            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                                 Coba ubah kata kunci pencarian atau daftarkan meja baru menggunakan tombol "Tambah Meja".
                             </p>
                             {isFilterActive && (
                                 <button
                                     type="button"
                                     onClick={handleResetFilter}
-                                    className="mt-3 px-4 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 rounded-xl transition-colors active:scale-95"
+                                    className="mt-3 px-4 py-2 text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 dark:text-indigo-300 dark:hover:text-white dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:border-indigo-500/30 rounded-xl transition-colors active:scale-95"
                                 >
                                     Bersihkan Filter
                                 </button>
@@ -430,18 +430,18 @@ export default function TablesIndex({ tables = [] }) {
                             return (
                                 <div
                                     key={table.id}
-                                    className="p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14] transition-all shadow-sm flex flex-col justify-between gap-4 group"
+                                    className="p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] transition-all shadow-xs dark:shadow-sm flex flex-col justify-between gap-4 group"
                                 >
                                     {/* 1. Header: Nomor Meja & Toggle Status Cepat (Touch Friendly) */}
-                                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                                    <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
                                         <div className="min-w-0">
                                             <h3
-                                                className="text-lg font-bold text-white tracking-tight leading-tight truncate"
+                                                className="text-lg font-bold text-slate-900 dark:text-white tracking-tight leading-tight truncate"
                                                 title={table.table_number}
                                             >
                                                 {table.table_number}
                                             </h3>
-                                            <span className="text-xs font-mono text-slate-400 block mt-0.5">
+                                            <span className="text-xs font-mono text-slate-600 dark:text-slate-400 block mt-0.5">
                                                 ID Meja #{table.id}
                                             </span>
                                         </div>
@@ -453,13 +453,13 @@ export default function TablesIndex({ tables = [] }) {
                                             title="Ketuk untuk mengganti status meja"
                                             className={`shrink-0 min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 active:scale-95 ${
                                                 isOccupied
-                                                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/35 hover:bg-amber-500/25'
-                                                    : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35 hover:bg-emerald-500/25'
+                                                    ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/35 dark:hover:bg-amber-500/25'
+                                                    : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/35 dark:hover:bg-emerald-500/25'
                                             }`}
                                         >
                                             <span
                                                 className={`w-2 h-2 rounded-full shrink-0 ${
-                                                    isOccupied ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                                                    isOccupied ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
                                                 }`}
                                             />
                                             <span>{isOccupied ? 'Terisi Tamu' : 'Tersedia'}</span>
@@ -470,7 +470,7 @@ export default function TablesIndex({ tables = [] }) {
                                     <div className="flex flex-col items-center justify-center py-1">
                                         <div
                                             onClick={() => setPrintModalTable(table)}
-                                            className="group/qr relative cursor-pointer bg-white p-3 rounded-2xl shadow-md border border-white/20 transition-all hover:scale-[1.02]"
+                                            className="group/qr relative cursor-pointer bg-white p-3 rounded-2xl shadow-md border border-slate-200 dark:border-white/20 transition-all hover:scale-[1.02]"
                                             title="Ketuk untuk melihat pratinjau kartu tenda & mencetak"
                                         >
                                             {qrUrl ? (
@@ -491,22 +491,22 @@ export default function TablesIndex({ tables = [] }) {
                                             </div>
                                         </div>
 
-                                        {/* Quick Link & Copy Bar (Clean Inline, Tanpa Box Input Monoton) */}
+                                        {/* Quick Link & Copy Bar (Clean Inline, High Contrast) */}
                                         <div className="flex items-center gap-2 mt-3">
                                             <button
                                                 type="button"
                                                 onClick={() => handleCopyUrl(table)}
-                                                className="min-h-[36px] px-3 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] flex items-center gap-1.5 transition-colors"
+                                                className="min-h-[36px] px-3 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 dark:text-slate-300 dark:hover:text-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.08] flex items-center gap-1.5 transition-colors shadow-xs dark:shadow-none"
                                                 title="Salin tautan web pemesanan"
                                             >
                                                 {copiedToken === table.id ? (
                                                     <>
-                                                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                                        <span className="text-emerald-400 font-semibold">Tersalin</span>
+                                                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Tersalin</span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                                                        <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                                                         <span>Salin Link</span>
                                                     </>
                                                 )}
@@ -516,7 +516,7 @@ export default function TablesIndex({ tables = [] }) {
                                                 href={customerWebUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="min-h-[36px] px-3 rounded-lg text-xs font-medium text-indigo-300 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 flex items-center gap-1.5 transition-colors"
+                                                className="min-h-[36px] px-3 rounded-lg text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 dark:text-indigo-300 dark:hover:text-white dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 dark:border-indigo-500/25 flex items-center gap-1.5 transition-colors shadow-xs dark:shadow-none"
                                                 title="Buka menu pelanggan di tab baru"
                                             >
                                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -527,18 +527,18 @@ export default function TablesIndex({ tables = [] }) {
 
                                     {/* 3. Pesanan Aktif (Hanya Muncul Jika Sedang Terisi Tamu) */}
                                     {isOccupied && table.orders && table.orders.length > 0 && (
-                                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-200 text-xs space-y-1">
+                                        <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/25 text-amber-900 dark:text-amber-200 text-xs space-y-1">
                                             <div className="flex items-center justify-between font-semibold">
-                                                <span className="font-mono text-amber-300 font-bold">
+                                                <span className="font-mono text-amber-700 dark:text-amber-300 font-bold">
                                                     Token #{table.orders[0].token_number}
                                                 </span>
-                                                <span className="px-2 py-0.5 rounded text-[10px] uppercase font-mono bg-amber-500/20 text-amber-200 border border-amber-500/30">
+                                                <span className="px-2 py-0.5 rounded text-[10px] uppercase font-mono bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-500/30">
                                                     {table.orders[0].order_status}
                                                 </span>
                                             </div>
-                                            <div className="text-slate-300 font-medium truncate">
+                                            <div className="text-slate-700 dark:text-slate-300 font-medium truncate">
                                                 {table.orders[0].customer_name} •{' '}
-                                                <span className="font-mono font-bold text-white">
+                                                <span className="font-mono font-bold text-slate-900 dark:text-white">
                                                     {formatRupiah(table.orders[0].total_amount)}
                                                 </span>
                                             </div>
@@ -546,7 +546,7 @@ export default function TablesIndex({ tables = [] }) {
                                     )}
 
                                     {/* 4. Action Buttons (Cetak Tenda & Manajemen) */}
-                                    <div className="pt-3 border-t border-white/[0.06] space-y-2">
+                                    <div className="pt-3 border-t border-slate-100 dark:border-white/[0.06] space-y-2">
                                         <button
                                             type="button"
                                             onClick={() => setPrintModalTable(table)}
@@ -557,11 +557,11 @@ export default function TablesIndex({ tables = [] }) {
                                             <span>Cetak Kartu Tenda QR</span>
                                         </button>
 
-                                        <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+                                        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
                                             <button
                                                 type="button"
                                                 onClick={() => setRegenerateModalTable(table)}
-                                                className="min-h-[36px] px-2.5 rounded-lg hover:text-amber-300 hover:bg-amber-500/10 flex items-center gap-1.5 transition-colors"
+                                                className="min-h-[36px] px-2.5 rounded-lg hover:text-amber-600 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10 flex items-center gap-1.5 transition-colors"
                                                 title="Perbarui token QR baru"
                                             >
                                                 <RefreshCw className="w-3.5 h-3.5" />
@@ -571,7 +571,7 @@ export default function TablesIndex({ tables = [] }) {
                                             <button
                                                 type="button"
                                                 onClick={() => setDeleteModalTable(table)}
-                                                className="min-h-[36px] px-2.5 rounded-lg hover:text-rose-400 hover:bg-rose-500/10 flex items-center gap-1.5 transition-colors"
+                                                className="min-h-[36px] px-2.5 rounded-lg hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center gap-1.5 transition-colors"
                                                 title="Hapus meja ini dari sistem"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
@@ -587,10 +587,10 @@ export default function TablesIndex({ tables = [] }) {
                     /* ============================================================
                         TAMPILAN 2: TABEL LIST BARCODE MEJA (TERSTRUKTUR & RAPI)
                     ============================================================ */
-                    <div className="rounded-2xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
+                    <div className="rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] overflow-hidden shadow-xs dark:shadow-sm">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm text-slate-300 min-w-[850px]">
-                                <thead className="bg-[#090A10] text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-white/[0.08]">
+                            <table className="w-full text-left text-sm text-slate-800 dark:text-slate-300 min-w-[850px]">
+                                <thead className="bg-slate-50 dark:bg-[#090A10] text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-white/[0.08]">
                                     <tr>
                                         <th className="py-4 px-4 w-[90px] text-center whitespace-nowrap">
                                             QR Mini
@@ -612,19 +612,19 @@ export default function TablesIndex({ tables = [] }) {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/[0.04]">
+                                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                                     {filteredTables.map((table) => {
                                         const isOccupied = table.status === 'occupied';
                                         const qrUrl = qrImages[table.id];
                                         const customerWebUrl = `/table/${table.qr_code_token}`;
 
                                         return (
-                                            <tr key={table.id} className="hover:bg-white/[0.025] transition-colors group">
+                                            <tr key={table.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.025] transition-colors group">
                                                 {/* Mini QR Preview */}
                                                 <td className="py-4 px-4 text-center">
                                                     <div
                                                         onClick={() => setPrintModalTable(table)}
-                                                        className="w-12 h-12 bg-white rounded-xl p-1 mx-auto cursor-pointer border border-white/20 hover:scale-105 transition-transform"
+                                                        className="w-12 h-12 bg-white rounded-xl p-1 mx-auto cursor-pointer border border-slate-200 dark:border-white/20 hover:scale-105 transition-transform shadow-xs"
                                                         title="Klik untuk mencetak kartu tenda"
                                                     >
                                                         {qrUrl ? (
@@ -641,10 +641,10 @@ export default function TablesIndex({ tables = [] }) {
 
                                                 {/* Table Number */}
                                                 <td className="py-4 px-4">
-                                                    <div className="font-bold text-white text-base tracking-tight">
+                                                    <div className="font-bold text-slate-900 dark:text-white text-base tracking-tight">
                                                         {table.table_number}
                                                     </div>
-                                                    <div className="text-xs text-slate-400 font-mono mt-0.5">
+                                                    <div className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-0.5">
                                                         ID Meja: #{table.id}
                                                     </div>
                                                 </td>
@@ -652,17 +652,17 @@ export default function TablesIndex({ tables = [] }) {
                                                 {/* Token Barcode */}
                                                 <td className="py-4 px-4">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-mono text-xs text-indigo-300 font-semibold bg-indigo-950/40 border border-indigo-500/25 px-2.5 py-1 rounded-lg">
+                                                        <span className="font-mono text-xs text-indigo-700 dark:text-indigo-300 font-semibold bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-500/25 px-2.5 py-1 rounded-lg">
                                                             {table.qr_code_token.substring(0, 16)}...
                                                         </span>
                                                         <button
                                                             type="button"
                                                             onClick={() => handleCopyUrl(table)}
-                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                                                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.06] transition-colors"
                                                             title="Salin link QR pelanggan"
                                                         >
                                                             {copiedToken === table.id ? (
-                                                                <Check className="w-4 h-4 text-emerald-400" />
+                                                                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                                                             ) : (
                                                                 <Copy className="w-4 h-4" />
                                                             )}
@@ -677,13 +677,13 @@ export default function TablesIndex({ tables = [] }) {
                                                         onClick={() => handleToggleStatus(table)}
                                                         className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 active:scale-95 ${
                                                             isOccupied
-                                                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/35 hover:bg-amber-500/25'
-                                                                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35 hover:bg-emerald-500/25'
+                                                                ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/35 dark:hover:bg-amber-500/25'
+                                                                : 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/35 dark:hover:bg-emerald-500/25'
                                                         }`}
                                                     >
                                                         <span
                                                             className={`w-2 h-2 rounded-full ${
-                                                                isOccupied ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                                                                isOccupied ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
                                                             }`}
                                                         />
                                                         <span>{isOccupied ? 'Terisi' : 'Tersedia'}</span>
@@ -694,15 +694,15 @@ export default function TablesIndex({ tables = [] }) {
                                                 <td className="py-4 px-4">
                                                     {isOccupied && table.orders && table.orders.length > 0 ? (
                                                         <div className="text-xs">
-                                                            <span className="font-mono font-bold text-amber-300 mr-2">
+                                                            <span className="font-mono font-bold text-amber-700 dark:text-amber-300 mr-2">
                                                                 #{table.orders[0].token_number}
                                                             </span>
-                                                            <span className="text-slate-300 font-medium">
+                                                            <span className="text-slate-800 dark:text-slate-300 font-medium">
                                                                 {table.orders[0].customer_name}
                                                             </span>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-xs text-slate-500 italic">
+                                                        <span className="text-xs text-slate-500 dark:text-slate-500 italic">
                                                             Tidak ada pesanan aktif
                                                         </span>
                                                     )}
@@ -715,7 +715,7 @@ export default function TablesIndex({ tables = [] }) {
                                                             href={customerWebUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="h-9 px-3 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/60 text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1 text-xs font-semibold transition-colors active:scale-95"
+                                                            className="h-9 px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-900 border border-indigo-200 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 dark:text-indigo-300 dark:hover:text-white dark:border-indigo-500/30 flex items-center gap-1 text-xs font-semibold transition-colors active:scale-95"
                                                             title="Buka menu QR pelanggan"
                                                         >
                                                             <ExternalLink className="w-3.5 h-3.5" />
@@ -724,7 +724,7 @@ export default function TablesIndex({ tables = [] }) {
                                                         <button
                                                             type="button"
                                                             onClick={() => setPrintModalTable(table)}
-                                                            className="h-9 px-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] flex items-center gap-1 text-xs font-semibold transition-colors active:scale-95"
+                                                            className="h-9 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white dark:border-white/[0.08] flex items-center gap-1 text-xs font-semibold transition-colors active:scale-95"
                                                             title="Cetak kartu tenda QR"
                                                         >
                                                             <Printer className="w-3.5 h-3.5" />
@@ -733,7 +733,7 @@ export default function TablesIndex({ tables = [] }) {
                                                         <button
                                                             type="button"
                                                             onClick={() => setRegenerateModalTable(table)}
-                                                            className="h-9 w-9 rounded-lg bg-white/[0.02] hover:bg-amber-500/10 text-slate-400 hover:text-amber-300 border border-white/[0.06] hover:border-amber-500/30 flex items-center justify-center transition-colors active:scale-95"
+                                                            className="h-9 w-9 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700 border border-slate-200 hover:border-amber-300 dark:bg-white/[0.02] dark:hover:bg-amber-500/10 dark:text-slate-400 dark:hover:text-amber-300 dark:border-white/[0.06] dark:hover:border-amber-500/30 flex items-center justify-center transition-colors active:scale-95"
                                                             title="Reset token QR"
                                                         >
                                                             <RefreshCw className="w-3.5 h-3.5" />
@@ -741,7 +741,7 @@ export default function TablesIndex({ tables = [] }) {
                                                         <button
                                                             type="button"
                                                             onClick={() => setDeleteModalTable(table)}
-                                                            className="h-9 w-9 rounded-lg bg-white/[0.02] hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/30 flex items-center justify-center transition-colors active:scale-95"
+                                                            className="h-9 w-9 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-300 dark:bg-white/[0.02] dark:hover:bg-rose-500/10 dark:text-slate-400 dark:hover:text-rose-400 dark:border-white/[0.06] dark:hover:border-rose-500/30 flex items-center justify-center transition-colors active:scale-95"
                                                             title="Hapus meja"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
@@ -808,7 +808,7 @@ export default function TablesIndex({ tables = [] }) {
 
                     {/* Quick Preset Chips for Table Name (Min 40px Height) */}
                     <div>
-                        <span className="text-xs text-slate-400 block mb-1.5 font-medium">
+                        <span className="text-xs text-slate-600 dark:text-slate-400 block mb-1.5 font-semibold">
                             Pilihan Cepat Nomor Meja:
                         </span>
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -820,7 +820,7 @@ export default function TablesIndex({ tables = [] }) {
                                     className={`min-h-[38px] px-3 py-1 text-xs font-semibold rounded-xl border transition-all active:scale-95 ${
                                         data.table_number === preset
                                             ? 'bg-gradient-to-r from-[#4338CA] to-[#3730A3] border-indigo-400/40 text-white shadow-sm'
-                                            : 'bg-[#08090D] border-white/[0.08] text-slate-300 hover:text-white hover:bg-white/[0.04]'
+                                            : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#08090D] dark:border-white/[0.08] dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/[0.04]'
                                     }`}
                                 >
                                     {preset}
@@ -829,8 +829,8 @@ export default function TablesIndex({ tables = [] }) {
                         </div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-[#08090D] border border-white/[0.08] text-xs text-slate-300 flex items-start gap-3">
-                        <Sparkles className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-700 dark:text-slate-300 flex items-start gap-3">
+                        <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
                         <span className="leading-relaxed">
                             Sistem akan secara otomatis membuat token QR unik 32 karakter untuk pemesanan mandiri di meja ini.
                         </span>
