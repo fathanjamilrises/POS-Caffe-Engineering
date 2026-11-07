@@ -26,6 +26,22 @@ class EnsureRole
                 ], 403);
             }
 
+            // Graceful redirection based on user role to their dedicated operational view
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard')
+                    ->with('error', 'Layar operasional Kasir dan Dapur dipisahkan khusus untuk staf operasional.');
+            }
+
+            if ($user->role === 'kasir') {
+                return redirect()->route('cashier.pos')
+                    ->with('error', 'Akses ditolak: Menu administrasi hanya dapat diakses oleh Admin.');
+            }
+
+            if ($user->role === 'dapur') {
+                return redirect()->route('kitchen.display')
+                    ->with('error', 'Akses ditolak: Menu administrasi hanya dapat diakses oleh Admin.');
+            }
+
             abort(403, 'Akses ditolak. Halaman ini hanya untuk peran: '.implode(', ', $roles));
         }
 

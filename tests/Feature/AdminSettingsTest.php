@@ -48,7 +48,10 @@ class AdminSettingsTest extends TestCase
     public function test_non_admin_cannot_access_settings_page(): void
     {
         $response = $this->actingAs($this->cashier)->get('/admin/settings');
-        $response->assertStatus(403);
+        $response->assertRedirect(route('cashier.pos'));
+
+        $responseJson = $this->actingAs($this->cashier)->getJson('/admin/settings');
+        $responseJson->assertStatus(403);
     }
 
     public function test_admin_can_update_security_settings(): void

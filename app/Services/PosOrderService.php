@@ -101,9 +101,11 @@ class PosOrderService
      */
     public function generateTokenNumber(): string
     {
-        $todayCount = Order::whereDate('created_at', Carbon::today())->count();
+        $todayOrders = Order::whereDate('created_at', Carbon::today())->pluck('token_number');
+        $maxToken = $todayOrders->map(fn ($t) => (int) $t)->max() ?? 0;
+        $nextNumber = max($todayOrders->count() + 1, $maxToken + 1);
 
-        return str_pad((string) ($todayCount + 1), 3, '0', STR_PAD_LEFT);
+        return str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -131,6 +133,12 @@ class PosOrderService
 
                 if ($qty <= 0) {
                     continue;
+                }
+
+                if (! $product->is_available || $product->stock_qty <= 0) {
+                    throw ValidationException::withMessages([
+                        'stock' => "Menu '{$product->product_name}' saat ini tidak aktif untuk dijual atau sedang habis.",
+                    ]);
                 }
 
                 if ($product->stock_qty < $qty) {
@@ -258,6 +266,11 @@ class PosOrderService
                         $shift->increment('total_qris_sales', $totalAmount);
                     }
                 }
+            }
+
+            // Mark dining table occupied if table_id is associated
+            if (! empty($data['table_id'])) {
+                DiningTable::where('id', $data['table_id'])->update(['status' => 'occupied']);
             }
 
             return $order->load(['items.product', 'table', 'cashier']);

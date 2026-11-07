@@ -77,7 +77,11 @@ class KitchenKdsService
         return DB::transaction(function () use ($ticketId, $status, $chefId) {
             $ticket = KitchenTicket::lockForUpdate()->findOrFail($ticketId);
 
-            $updateData = ['ticket_status' => $status];
+            $updateData = [
+                'ticket_status' => $status,
+                'is_audio_notified' => true,
+            ];
+
             if ($status === 'cooking' && $chefId) {
                 $updateData['chef_id'] = $chefId;
             }
@@ -99,15 +103,16 @@ class KitchenKdsService
                 $ticket->orderItem->update(['item_status' => $itemStatus]);
             }
 
-            // If all kitchen tickets for this order are delivered_to_cashier or completed, update order to 'ready'
+            // Synchronize parent Order status (ready if all tickets delivered, processing if any pending)
             $order = Order::find($ticket->order_id);
-            if ($order) {
+            if ($order && $order->order_status !== 'served') {
                 $hasPendingKitchenTickets = KitchenTicket::where('order_id', $order->id)
                     ->whereIn('ticket_status', ['waiting', 'cooking'])
                     ->exists();
 
-                if (! $hasPendingKitchenTickets && $order->order_status !== 'served') {
-                    $order->update(['order_status' => 'ready']);
+                $targetStatus = $hasPendingKitchenTickets ? 'processing' : 'ready';
+                if ($order->order_status !== $targetStatus) {
+                    $order->update(['order_status' => $targetStatus]);
                 }
             }
 

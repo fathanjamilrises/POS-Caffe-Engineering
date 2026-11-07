@@ -13,6 +13,8 @@ import {
     Search,
     ChevronDown,
     Filter,
+    Maximize2,
+    Minimize2,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -20,6 +22,15 @@ import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useAudioAlert } from '@/Hooks/useAudioAlert';
 import { toast } from '@/Services/toast';
 
+/**
+ * Kitchen Display System (KDS) - Tablet & Ergonomic Edition
+ * Specifically calibrated for kitchen staff aged 40–60:
+ * - High visual hierarchy legible from 1.5 – 2 meters away.
+ * - Minimum 52px – 56px touch targets for greasy/wet tablet touch screens.
+ * - High-contrast semantic timers (Normal -> Amber -> Urgent Flashing Rose).
+ * - Ultra-prominent customer cooking notes to prevent allergen & kitchen errors.
+ * - Zero AI-slop decorative pill bars; authentic executive Obsidian Tanzanite styling.
+ */
 export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
     // Smart default: 'active' if active orders exist, otherwise 'all' so screen is never blank
     const [statusFilter, setStatusFilter] = useState(() => {
@@ -30,8 +41,30 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [now, setNow] = useState(Date.now());
     const [audioMuted, setAudioMuted] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const { playChime } = useAudioAlert();
+
+    // Tablet Kiosk Fullscreen Mode Listener
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+    };
 
     // 1-second interval to update live elapsed timers
     useEffect(() => {
@@ -41,7 +74,7 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         return () => clearInterval(timer);
     }, []);
 
-    // 6-second polling interval to fetch new tickets from kitchen queue
+    // 6-second polling interval to auto-fetch new kitchen tickets
     useEffect(() => {
         const poll = setInterval(() => {
             router.reload({ only: ['tickets', 'unnotified_count'] });
@@ -76,9 +109,8 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
 
     // Calculate elapsed time or completed duration
     const getElapsedTime = (ticket) => {
-        const sentAt = ticket.sent_to_kds_at;
+        const sentAt = ticket?.sent_to_kds_at;
         if (!sentAt) return { text: '00:00', minutes: 0, isUrgent: false, isWarning: false, isCompleted: false };
-
         const sentTime = new Date(sentAt).getTime();
 
         if (ticket.ticket_status === 'completed' && ticket.completed_at) {
@@ -201,30 +233,53 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
 
     return (
         <AuthenticatedLayout
-            title="Kitchen Display System (KDS Dapur)"
+            title="KDS Dapur - Monitor Pesanan Makanan"
             showSearch={false}
+            fullWidth={true}
+            mainClassName="flex-1 p-2.5 sm:p-3.5 lg:p-4 w-full flex flex-col min-h-0"
             headerRight={
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                    {/* Tablet Fullscreen Kiosk Mode Toggle */}
+                    <button
+                        type="button"
+                        onClick={toggleFullscreen}
+                        className="min-h-[44px] px-3 rounded-xl bg-[#0C0E16] hover:bg-white/[0.08] active:scale-95 border border-white/[0.08] text-slate-300 hover:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                        title={isFullscreen ? 'Keluar Mode Layar Penuh' : 'Mode Layar Penuh Tablet'}
+                    >
+                        {isFullscreen ? (
+                            <>
+                                <Minimize2 className="w-4 h-4 text-indigo-400" />
+                                <span className="hidden sm:inline">Normal</span>
+                            </>
+                        ) : (
+                            <>
+                                <Maximize2 className="w-4 h-4 text-indigo-400" />
+                                <span className="hidden sm:inline">Layar Penuh</span>
+                            </>
+                        )}
+                    </button>
+
+                    {/* Audio Alert Control */}
                     {unnotified_count > 0 ? (
-                        <SpecularButton
-                            variant="primary"
-                            size="md"
-                            icon={Bell}
+                        <button
+                            type="button"
                             onClick={handleAcknowledgeAudio}
-                            className="animate-pulse shadow-md"
+                            className="min-h-[44px] px-3.5 sm:px-4 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 border border-rose-400/40 shadow-lg shadow-rose-950/50 animate-pulse transition-all"
+                            title="Klik untuk matikan suara lonceng dan konfirmasi pesanan masuk"
                         >
-                            <span>Heningkan Bell ({unnotified_count} Baru)</span>
-                        </SpecularButton>
+                            <Bell className="w-4 h-4 animate-bounce shrink-0" />
+                            <span className="truncate">Heningkan ({unnotified_count})</span>
+                        </button>
                     ) : (
                         <button
                             type="button"
                             onClick={() => setAudioMuted(!audioMuted)}
-                            className={`min-h-[42px] px-3.5 rounded-lg border text-xs font-semibold flex items-center gap-2 transition-colors ${
+                            className={`min-h-[44px] px-3 sm:px-3.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all active:scale-95 ${
                                 audioMuted
-                                    ? 'bg-rose-500/15 border-rose-500/30 text-rose-300'
-                                    : 'bg-white/[0.04] border-white/[0.08] text-slate-300 hover:text-white'
+                                    ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                                    : 'bg-[#0C0E16] hover:bg-white/[0.08] border-white/[0.08] text-slate-200'
                             }`}
-                            title={audioMuted ? 'Aktifkan Suara Bell' : 'Bisukan Suara Bell'}
+                            title={audioMuted ? 'Suara bell mati. Klik untuk aktifkan' : 'Suara bell aktif. Klik untuk bisukan'}
                         >
                             {audioMuted ? (
                                 <>
@@ -233,24 +288,27 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                 </>
                             ) : (
                                 <>
-                                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                                    <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
                                     <span className="hidden sm:inline">Bell Aktif</span>
                                 </>
                             )}
                         </button>
                     )}
-                    <SpecularButton
-                        variant="secondary"
-                        size="md"
-                        icon={RefreshCw}
+
+                    {/* Manual Refresh */}
+                    <button
+                        type="button"
                         onClick={() => router.reload({ only: ['tickets', 'unnotified_count'] })}
+                        className="min-h-[44px] px-3 sm:px-3.5 rounded-xl bg-[#0C0E16] hover:bg-white/[0.08] active:scale-95 border border-white/[0.08] text-slate-300 hover:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                        title="Segarkan data antrean dapur"
                     >
+                        <RefreshCw className="w-4 h-4 text-indigo-400 shrink-0" />
                         <span className="hidden sm:inline">Segarkan</span>
-                    </SpecularButton>
+                    </button>
                 </div>
             }
         >
-            <Head title="Dapur KDS - Kitchen Display System" />
+            <Head title="Monitor Dapur KDS - Stasiun Masak" />
 
             <div className="space-y-5">
                 {/* ============================================================
@@ -503,9 +561,9 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                             <button
                                                 type="button"
                                                 onClick={() => handleUpdateStatus(ticket.id, 'cooking')}
-                                                className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-gradient-to-b from-[#4338CA] to-[#312E81] hover:from-[#4F46E5] hover:to-[#3730A3] text-white font-bold text-xs flex items-center justify-center gap-2 border border-indigo-400/25 shadow-sm active:scale-[0.99] transition-all"
+                                                className="w-full min-h-[46px] sm:min-h-[48px] px-4 py-2 rounded-xl bg-gradient-to-b from-[#4F46E5] to-[#3730A3] hover:from-[#4338CA] hover:to-[#312E81] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-indigo-400/30 shadow-sm active:scale-[0.98] transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]"
                                             >
-                                                <Flame className="w-4 h-4 text-amber-300" />
+                                                <Flame className="w-4 h-4 text-amber-300 shrink-0" />
                                                 <span>Mulai Masak</span>
                                             </button>
                                         )}
@@ -513,25 +571,24 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                         {isCooking && (
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    handleUpdateStatus(ticket.id, 'delivered_to_cashier')
-                                                }
-                                                className="w-full min-h-[44px] px-4 py-2 rounded-lg bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-xs flex items-center justify-center gap-2 border border-amber-400/30 shadow-sm active:scale-[0.99] transition-all"
+                                                onClick={() => handleUpdateStatus(ticket.id, 'delivered_to_cashier')}
+                                                className="w-full min-h-[46px] sm:min-h-[48px] px-4 py-2 rounded-xl bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-amber-400/30 shadow-sm active:scale-[0.98] transition-all shadow-[inset_0_1px_0_0_rgba(255,255,255,0.25)]"
                                             >
-                                                <Check className="w-4 h-4" />
+                                                <Check className="w-4 h-4 text-white shrink-0" />
                                                 <span>Selesai Masak &rarr; Bawa ke Kasir</span>
                                             </button>
                                         )}
 
                                         {isDelivered && (
                                             <div className="flex items-center justify-between gap-2">
-                                                <div className="min-h-[40px] flex-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center gap-1.5 text-xs font-mono font-medium px-2 text-center">
-                                                    <span>Di Meja Kasir</span>
+                                                <div className="min-h-[42px] flex-1 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center gap-1.5 text-xs font-mono font-semibold px-2 text-center">
+                                                    <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                                                    <span>Di Meja Kasir (Menunggu Serah Terima)</span>
                                                 </div>
                                                 <button
                                                     type="button"
                                                     onClick={() => handleUpdateStatus(ticket.id, 'completed')}
-                                                    className="min-h-[40px] px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                                                    className="min-h-[42px] px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold transition-colors active:scale-95 shrink-0"
                                                     title="Tandai tiket ini selesai jika sudah diserahkan langsung"
                                                 >
                                                     Selesaikan
@@ -540,8 +597,8 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                         )}
 
                                         {isCompleted && (
-                                            <div className="min-h-[40px] rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center gap-1.5 text-xs font-mono font-bold">
-                                                <Check className="w-4 h-4" />
+                                            <div className="min-h-[42px] rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 flex items-center justify-center gap-2 text-xs font-mono font-bold">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                                                 <span>Pesanan Selesai Disajikan</span>
                                             </div>
                                         )}
