@@ -26,6 +26,16 @@ class CashierShift extends Model
     use HasFactory;
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'expected_cash',
+        'discrepancy',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -40,6 +50,26 @@ class CashierShift extends Model
             'total_qris_sales' => 'decimal:2',
             'closing_cash_actual' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Compute expected physical cash (opening cash + total cash sales).
+     */
+    public function getExpectedCashAttribute(): float
+    {
+        return (float) $this->opening_cash + (float) $this->total_cash_sales;
+    }
+
+    /**
+     * Compute cash discrepancy (closing cash actual - expected cash).
+     */
+    public function getDiscrepancyAttribute(): ?float
+    {
+        if ($this->closing_cash_actual === null) {
+            return null;
+        }
+
+        return (float) $this->closing_cash_actual - $this->expected_cash;
     }
 
     /**

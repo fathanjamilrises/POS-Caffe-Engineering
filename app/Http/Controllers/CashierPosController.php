@@ -90,7 +90,7 @@ class CashierPosController extends Controller
             'items.*.notes' => ['nullable', 'string', 'max:255'],
             'payment_method' => ['required', 'string', 'in:tunai,qris'],
             'amount_received' => ['required', 'numeric', 'min:0'],
-            'table_id' => ['nullable', 'exists:dining_tables,id'],
+            'table_id' => ['required_if:order_source,qr_table', 'nullable', 'exists:dining_tables,id'],
             'customer_name' => ['nullable', 'string', 'max:100'],
             'order_source' => ['required', 'string', 'in:cashier_direct,qr_table'],
         ]);

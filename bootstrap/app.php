@@ -21,6 +21,21 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
+        $middleware->redirectGuestsTo('/login');
+
+        $middleware->redirectUsersTo(function (Request $request) {
+            $user = $request->user();
+            if (! $user) {
+                return '/login';
+            }
+
+            return match ($user->role) {
+                'kasir' => route('cashier.pos'),
+                'dapur' => route('kitchen.display'),
+                default => route('admin.dashboard'),
+            };
+        });
+
         $middleware->alias([
             'role' => EnsureRole::class,
         ]);

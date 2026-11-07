@@ -76,6 +76,7 @@ export default function AdminDashboard({
     } = useForm({
         category_id: '',
         barcode: '',
+        image_url: '',
         product_name: '',
         cost_price: 0,
         selling_price: 0,
@@ -94,6 +95,7 @@ export default function AdminDashboard({
     } = useForm({
         category_id: categories?.[0]?.id || '',
         barcode: '',
+        image_url: '',
         product_name: '',
         cost_price: '',
         selling_price: '',
@@ -192,6 +194,7 @@ export default function AdminDashboard({
         setEditData({
             category_id: product.category_id,
             barcode: product.barcode || '',
+            image_url: product.image_url || '',
             product_name: product.product_name,
             cost_price: product.cost_price,
             selling_price: product.selling_price,
@@ -1130,6 +1133,14 @@ export default function AdminDashboard({
                         />
                     </div>
 
+                    <AcrylicInput
+                        label="URL Foto Produk (Opsional)"
+                        value={editData.image_url}
+                        onChange={(e) => setEditData('image_url', e.target.value)}
+                        placeholder="https://images.unsplash.com/... atau /images/menu.jpg"
+                        error={editErrors.image_url}
+                    />
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-slate-200 block mb-1.5">
@@ -1266,6 +1277,14 @@ export default function AdminDashboard({
                             inputClassName="font-mono text-indigo-300"
                         />
                     </div>
+
+                    <AcrylicInput
+                        label="URL Foto Produk (Opsional)"
+                        value={createData.image_url}
+                        onChange={(e) => setCreateData('image_url', e.target.value)}
+                        placeholder="https://images.unsplash.com/... atau /images/menu.jpg"
+                        error={createErrors.image_url}
+                    />
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>

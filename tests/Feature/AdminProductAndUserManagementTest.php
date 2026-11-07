@@ -48,8 +48,13 @@ class AdminProductAndUserManagementTest extends TestCase
 
     public function test_cashier_forbidden_from_admin_products(): void
     {
+        // Web requests are gracefully redirected to the Cashier POS dashboard
         $response = $this->actingAs($this->cashier)->get('/admin/products');
-        $response->assertStatus(403);
+        $response->assertRedirect(route('cashier.pos'));
+
+        // API/JSON requests receive HTTP 403 Forbidden
+        $responseJson = $this->actingAs($this->cashier)->getJson('/admin/products');
+        $responseJson->assertStatus(403);
     }
 
     public function test_admin_can_store_product_with_barcode(): void
@@ -247,4 +252,3 @@ class AdminProductAndUserManagementTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $targetUser->id]);
     }
 }
-

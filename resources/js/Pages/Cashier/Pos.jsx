@@ -257,6 +257,26 @@ export default function CashierPos({
     // Open Checkout Modal
     const handleOpenPayment = (presetMethod = 'tunai') => {
         if (cart.length === 0) return;
+
+        if (!active_shift) {
+            setIsOpenShiftModalOpen(true);
+            showNotice(
+                'Buka Shift Terlebih Dahulu',
+                'Silakan buka sesi shift kasir dengan memasukkan modal awal sebelum memproses pembayaran.',
+                'warning'
+            );
+            return;
+        }
+
+        if (orderSource === 'qr_table' && !selectedTableId) {
+            showNotice(
+                'Pilih Nomor Meja',
+                'Silakan pilih nomor meja terlebih dahulu untuk pesanan Makan di Meja.',
+                'warning'
+            );
+            return;
+        }
+
         setCheckoutData({
             items: cart.map((i) => ({
                 product_id: i.product_id,
@@ -265,7 +285,7 @@ export default function CashierPos({
             })),
             payment_method: presetMethod,
             amount_received: cartTotals.totalAmount,
-            table_id: orderSource === 'qr_table' ? selectedTableId : null,
+            table_id: orderSource === 'qr_table' && selectedTableId ? selectedTableId : null,
             customer_name: customerName || 'Pelanggan Walk-in',
             order_source: orderSource,
         });
@@ -300,7 +320,7 @@ export default function CashierPos({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cart, isPaymentModalOpen, cartTotals]);
+    }, [cart, isPaymentModalOpen, cartTotals, active_shift, orderSource, selectedTableId, customerName]);
 
     // Handshake: Cashier marks order as served
     const handleServeOrder = (orderId) => {
