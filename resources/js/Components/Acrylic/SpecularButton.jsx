@@ -21,15 +21,15 @@ export default function SpecularButton({
 
     const variants = {
         primary:
-            'bg-gradient-to-b from-[#4F46E5] to-[#3730A3] hover:from-[#4338CA] hover:to-[#312E81] text-white border border-indigo-400/25 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_2px_4px_rgba(0,0,0,0.4)]',
+            'bg-gradient-to-b from-[#4F46E5] to-[#3730A3] hover:from-[#4338CA] hover:to-[#312E81] text-white border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_2px_4px_rgba(0,0,0,0.25)]',
         secondary:
-            'bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
+            'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200 shadow-xs dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-200 dark:hover:text-white dark:border-white/[0.08] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
         accent:
-            'bg-indigo-950/40 hover:bg-indigo-900/50 text-indigo-200 border border-indigo-500/30 shadow-[inset_0_1px_0_0_rgba(165,180,252,0.10)]',
+            'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 shadow-xs dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 dark:text-indigo-200 dark:border-indigo-500/30',
         danger:
-            'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
+            'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 shadow-xs dark:bg-rose-500/15 dark:hover:bg-rose-500/25 dark:text-rose-300 dark:border-rose-500/30',
         ghost:
-            'bg-transparent hover:bg-white/[0.05] text-slate-400 hover:text-white border border-transparent hover:border-white/[0.08]',
+            'bg-transparent hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-transparent hover:border-slate-200 dark:hover:bg-white/[0.05] dark:text-slate-400 dark:hover:text-white dark:border-transparent dark:hover:border-white/[0.08]',
     };
 
     const sizes = {

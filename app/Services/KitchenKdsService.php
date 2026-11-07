@@ -4,29 +4,42 @@ namespace App\Services;
 
 use App\Models\KitchenTicket;
 use App\Models\Order;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class KitchenKdsService
 {
     /**
-     * Retrieve all active kitchen tickets (FIFO sorted by sent_to_kds_at).
+     * Retrieve all active kitchen tickets (waiting, cooking, delivered_to_cashier)
+     * and today's completed tickets for kitchen staff history.
      *
      * @return Collection<int, KitchenTicket>
      */
     public function getActiveTickets(): Collection
     {
+        $today = Carbon::today();
+
         return KitchenTicket::with([
             'order.table',
             'order.cashier',
+            'order.items.product',
             'orderItem.product.category',
             'chef',
         ])
-            ->whereIn('ticket_status', ['waiting', 'cooking', 'delivered_to_cashier'])
-            ->whereHas('order', function ($q): void {
-                $q->whereNotIn('order_status', ['served', 'cancelled']);
+            ->where(function ($query) use ($today) {
+                $query->whereIn('ticket_status', ['waiting', 'cooking', 'delivered_to_cashier'])
+                    ->orWhere(function ($q) use ($today) {
+                        $q->where('ticket_status', 'completed')
+                            ->whereDate('updated_at', $today);
+                    });
             })
-            ->orderByRaw("CASE ticket_status WHEN 'waiting' THEN 1 WHEN 'cooking' THEN 2 WHEN 'delivered_to_cashier' THEN 3 ELSE 4 END")
+            ->orderByRaw("CASE 
+                WHEN ticket_status = 'waiting' THEN 1 
+                WHEN ticket_status = 'cooking' THEN 2 
+                WHEN ticket_status = 'delivered_to_cashier' THEN 3 
+                ELSE 4 
+            END")
             ->orderBy('sent_to_kds_at', 'asc')
             ->get();
     }
@@ -103,7 +116,7 @@ class KitchenKdsService
                 }
             }
 
-            return $ticket->load(['order.table', 'orderItem.product', 'chef']);
+            return $ticket->load(['order.table', 'order.items.product', 'orderItem.product', 'chef']);
         });
     }
 }

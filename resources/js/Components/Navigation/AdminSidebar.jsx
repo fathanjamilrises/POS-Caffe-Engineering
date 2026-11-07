@@ -10,6 +10,7 @@ import {
     X,
     Package,
     Users,
+    Settings,
     PanelLeftClose,
     PanelLeftOpen,
     Maximize2,
@@ -111,6 +112,12 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                             href: '/admin/users',
                             icon: Users,
                         },
+                        {
+                            name: 'Pengaturan',
+                            description: 'Sistem, Log & Keamanan',
+                            href: '/admin/settings',
+                            icon: Settings,
+                        },
                     ],
                 },
             ];
@@ -174,12 +181,12 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
 
             {/* Sidebar Shell */}
             <aside
-                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-white/[0.08] bg-[#08090D] h-screen select-none transition-all duration-300 ease-in-out overflow-hidden ${sidebarWidth} ${
+                className={`fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#08090D] h-screen select-none transition-all duration-300 ease-in-out overflow-hidden shadow-xs dark:shadow-none ${sidebarWidth} ${
                     isOpenMobile ? 'translate-x-0 z-50 w-72' : '-translate-x-full lg:translate-x-0'
                 }`}
             >
                 {/* 1. Header: Store Logo, Title & Always-Visible Open/Close Toggle */}
-                <div className="h-16 px-3.5 flex items-center justify-between border-b border-white/[0.08] shrink-0 bg-[#0A0C13] overflow-hidden">
+                <div className="h-16 px-3.5 flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] shrink-0 bg-white dark:bg-[#0A0C13] overflow-hidden">
                     {/* Left: Logo & Store Title (Cleanly hides/covers when collapsed) */}
                     <div
                         className={`flex items-center gap-3 overflow-hidden transition-all duration-300 ease-in-out ${
@@ -190,10 +197,10 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                             <Store className="w-5 h-5 text-white" />
                         </div>
                         <div className="overflow-hidden whitespace-nowrap min-w-0">
-                            <div className="text-sm font-bold text-slate-100 tracking-tight leading-tight truncate">
+                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-tight truncate">
                                 KASIR CAFE
                             </div>
-                            <div className="text-[11px] text-slate-400 font-medium truncate">
+                            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                                 Sistem POS Tablet
                             </div>
                         </div>
@@ -214,18 +221,18 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                                     setCollapsed(!collapsed);
                                 }
                             }}
-                            className={`rounded-xl text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.15] flex items-center justify-center transition-all active:scale-95 ${
+                            className={`rounded-xl text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.15] flex items-center justify-center transition-all active:scale-95 ${
                                 collapsed ? 'w-11 h-11' : 'w-9 h-9'
                             }`}
                             title={collapsed ? 'Buka panel menu (Perbesar)' : 'Tutup panel menu (Perkecil)'}
                             aria-label={collapsed ? 'Buka panel menu' : 'Tutup panel menu'}
                         >
                             {isOpenMobile ? (
-                                <X className="w-5 h-5" />
+                                <X className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                             ) : collapsed ? (
-                                <PanelLeftOpen className="w-5 h-5 text-indigo-400" />
+                                <PanelLeftOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                             ) : (
-                                <PanelLeftClose className="w-5 h-5 text-slate-400" />
+                                <PanelLeftClose className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                             )}
                         </button>
                     </div>
@@ -236,10 +243,10 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                 {navGroups.map((group, groupIdx) => (
                     <div key={group.title || groupIdx}>
                         {groupIdx > 0 && collapsed ? (
-                            <div className="border-t border-white/[0.06] my-2 mx-3" />
+                            <div className="border-t border-slate-200 dark:border-white/[0.06] my-2 mx-3" />
                         ) : (
                             <div
-                                className={`px-3 mb-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
+                                className={`px-3 mb-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
                                     collapsed ? 'max-w-0 opacity-0 h-0 mb-0' : 'max-w-[200px] opacity-100 h-auto'
                                 }`}
                             >
@@ -263,8 +270,8 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                                             collapsed ? 'px-0 justify-center w-12 mx-auto' : 'px-3 gap-3 w-full'
                                         } ${
                                             isActive
-                                                ? 'bg-gradient-to-r from-indigo-950/70 via-indigo-900/40 to-indigo-950/20 text-white border border-indigo-500/40 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
-                                                : 'bg-[#0C0E16]/40 hover:bg-[#141824] text-slate-300 hover:text-white border border-white/[0.04] hover:border-white/[0.08]'
+                                                ? 'bg-indigo-50/90 text-indigo-950 border border-indigo-200/90 shadow-xs dark:bg-[#1E1B4B] dark:bg-gradient-to-r dark:from-[#1E1B4B] dark:via-[#312E81] dark:to-[#1E1B4B] dark:text-white dark:border-indigo-400/40 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.15)]'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/90 border border-transparent hover:border-slate-200 dark:text-slate-300 dark:hover:text-white dark:bg-transparent dark:hover:bg-white/[0.05] dark:hover:border-white/[0.06]'
                                         }`}
                                     >
                                         {/* Icon Badge */}
@@ -272,7 +279,7 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                                             className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                                                 isActive
                                                     ? 'bg-gradient-to-br from-[#4338CA] to-[#312E81] text-white border border-indigo-400/40 shadow-sm'
-                                                    : 'bg-white/[0.03] border border-white/[0.05] text-slate-400 group-hover:text-slate-200 group-hover:bg-white/[0.06]'
+                                                    : 'bg-slate-100 text-slate-500 border border-slate-200/80 group-hover:bg-slate-200/80 group-hover:text-slate-800 dark:bg-white/[0.03] dark:border-white/[0.05] dark:text-slate-400 dark:group-hover:text-slate-200 dark:group-hover:bg-white/[0.06]'
                                             }`}
                                         >
                                             <Icon className="w-5 h-5" />
@@ -286,14 +293,18 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                                         >
                                             <div
                                                 className={`text-sm truncate ${
-                                                    isActive ? 'font-bold text-white' : 'font-semibold text-slate-200 group-hover:text-white'
+                                                    isActive
+                                                        ? 'font-bold text-indigo-950 dark:text-white'
+                                                        : 'font-semibold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
                                                 }`}
                                             >
                                                 {link.name}
                                             </div>
                                             <div
                                                 className={`text-xs truncate mt-0.5 ${
-                                                    isActive ? 'text-indigo-200/90 font-medium' : 'text-slate-400 group-hover:text-slate-300'
+                                                    isActive
+                                                        ? 'text-indigo-600 dark:text-indigo-200/90 font-medium'
+                                                        : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
                                                 }`}
                                             >
                                                 {link.description}
@@ -308,19 +319,19 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
             </nav>
 
             {/* 3. Tablet Utility Tool: Clean Fullscreen Toggle (No decorative pill badges) */}
-            <div className="px-3 py-2 border-t border-white/[0.06] shrink-0">
+            <div className="px-3 py-2 border-t border-slate-200 dark:border-white/[0.06] shrink-0">
                 <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`flex items-center h-[46px] rounded-xl bg-[#0C0E16] hover:bg-[#151824] border border-white/[0.06] text-slate-300 hover:text-white transition-all duration-300 ease-in-out active:scale-[0.98] ${
+                    className={`flex items-center h-[46px] rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#0C0E16] dark:hover:bg-[#151824] dark:border-white/[0.06] dark:text-slate-300 dark:hover:text-white transition-all duration-300 ease-in-out active:scale-[0.98] ${
                         collapsed ? 'w-12 px-0 justify-center mx-auto' : 'w-full px-3 gap-2.5'
                     }`}
                     title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Tablet'}
                 >
                     {isFullscreen ? (
-                        <Minimize2 className="w-5 h-5 text-indigo-400 shrink-0" />
+                        <Minimize2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                     ) : (
-                        <Maximize2 className="w-5 h-5 text-indigo-400 shrink-0" />
+                        <Maximize2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                     )}
                     <span
                         className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out truncate ${
@@ -333,11 +344,11 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
             </div>
 
             {/* 4. Footer: Staff Profile & Safe Logout Button */}
-            <div className="p-3 border-t border-white/[0.08] bg-[#0A0C13] shrink-0">
+            <div className="p-3 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0C13] shrink-0">
                 {collapsed ? (
                     <div className="flex flex-col items-center gap-2">
                         <div
-                            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-200"
+                            className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-white shadow-sm"
                             title={`${user?.full_name || (user?.role === 'admin' ? 'Administrator' : 'Staff')} (${user?.role?.toUpperCase() || 'PENGGUNA'})`}
                         >
                             {user?.full_name?.substring(0, 2).toUpperCase() || 'ST'}
@@ -346,21 +357,21 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                             type="button"
                             onClick={() => setShowLogoutModal(true)}
                             title="Keluar dari akun"
-                            className="w-11 h-11 rounded-xl bg-white/[0.02] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/30 flex items-center justify-center transition-colors active:scale-95"
+                            className="w-11 h-11 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 dark:bg-white/[0.02] dark:hover:bg-rose-500/15 dark:text-slate-400 dark:hover:text-rose-400 dark:border-white/[0.06] dark:hover:border-rose-500/30 flex items-center justify-center transition-colors active:scale-95"
                         >
                             <LogOut className="w-5 h-5" />
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#0C0E16] border border-white/[0.06]">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-200 shrink-0">
+                    <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-200 dark:bg-[#0C0E16] dark:border-white/[0.06]">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#312E81] to-[#1E1B4B] border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
                             {user?.full_name?.substring(0, 2).toUpperCase() || 'ST'}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-slate-100 truncate">
+                            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                                 {user?.full_name || (user?.role === 'admin' ? 'Administrator' : 'Staff Operasional')}
                             </div>
-                            <div className="text-xs text-slate-400 capitalize mt-0.5 truncate">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-0.5 truncate">
                                 {user?.role === 'admin' ? 'Admin Dashboard' : user?.role === 'kasir' ? 'Staff Kasir' : user?.role === 'dapur' ? 'Staff Dapur' : user?.role}
                             </div>
                         </div>
@@ -368,7 +379,7 @@ export default function AdminSidebar({ isOpenMobile = false, onCloseMobile = () 
                             type="button"
                             onClick={() => setShowLogoutModal(true)}
                             title="Keluar dari akun"
-                            className="w-9 h-9 rounded-xl bg-white/[0.02] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-white/[0.06] hover:border-rose-500/30 flex items-center justify-center transition-colors shrink-0 active:scale-95"
+                            className="w-9 h-9 rounded-xl bg-slate-200/60 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 dark:bg-white/[0.02] dark:hover:bg-rose-500/15 dark:text-slate-400 dark:hover:text-rose-400 dark:border-white/[0.06] dark:hover:border-rose-500/30 flex items-center justify-center transition-colors shrink-0 active:scale-95"
                         >
                             <LogOut className="w-4 h-4" />
                         </button>

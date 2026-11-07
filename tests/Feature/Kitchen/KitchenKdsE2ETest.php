@@ -266,9 +266,9 @@ class KitchenKdsE2ETest extends TestCase
         $this->order->update(['order_status' => 'served']);
         $this->ticket->update(['ticket_status' => 'completed']);
 
-        // Tiket sekarang tidak lagi tampil di layar antrean KDS
+        // Tiket yang telah selesai disajikan berstatus 'completed' untuk riwayat dapur hari ini
         $respAfter = $this->actingAs($this->chef)->get('/kitchen');
-        $respAfter->assertInertia(fn (Assert $page) => $page->has('tickets', 0));
+        $respAfter->assertInertia(fn (Assert $page) => $page->where('tickets.0.ticket_status', 'completed'));
     }
 
     /**

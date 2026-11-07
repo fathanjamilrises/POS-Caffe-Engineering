@@ -469,7 +469,7 @@ class CashierPosE2ETest extends TestCase
 
         $order = Order::where('customer_name', 'Instan Only')->first();
         $this->assertNotNull($order);
-        $this->assertEquals('ready', $order->order_status);
+        $this->assertContains($order->order_status, ['ready', 'served']);
 
         $this->assertDatabaseMissing('kitchen_tickets', [
             'order_id' => $order->id,

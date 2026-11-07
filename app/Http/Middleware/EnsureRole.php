@@ -26,7 +26,7 @@ class EnsureRole
                 ], 403);
             }
 
-            // Redirect based on user role to their dedicated area
+            // Graceful redirection based on user role to their dedicated operational view
             if ($user->role === 'admin') {
                 return redirect()->route('admin.dashboard')
                     ->with('error', 'Layar operasional Kasir dan Dapur dipisahkan khusus untuk staf operasional.');

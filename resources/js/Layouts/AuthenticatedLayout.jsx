@@ -43,7 +43,7 @@ export default function AuthenticatedLayout({
             <div
                 className={`relative ${
                     isPosMode ? 'h-screen max-h-screen overflow-hidden overflow-x-hidden' : 'min-h-screen overflow-x-clip'
-                } bg-[#07080D] text-slate-100 flex flex-col font-sans antialiased`}
+                } bg-[#F8FAFC] dark:bg-[#07080D] text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased`}
             >
                 {/* Dynamic Non-blocking Push Notification Alert Stack */}
                 <ToastContainer />
