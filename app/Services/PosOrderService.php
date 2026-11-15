@@ -170,7 +170,8 @@ class PosOrderService
 
             // Check if this is a QR Table order that requires Cashier Verification
             $isQrOrder = ($data['order_source'] ?? '') === 'qr_table';
-            $requiresVerification = $isQrOrder && (bool) SystemSetting::get('qr_require_cashier_verification', true);
+            // Verification is ONLY required for customer-initiated QR orders (where cashierId is empty/null)
+            $requiresVerification = $isQrOrder && empty($cashierId) && (bool) SystemSetting::get('qr_require_cashier_verification', true);
 
             if ($requiresVerification) {
                 // Pending cashier verification: payment is unpaid, no change calculated yet
@@ -193,9 +194,10 @@ class PosOrderService
                 }
 
                 $changeAmount = max(0, $amountReceived - $totalAmount);
-                $orderStatus = $requiresKitchenAny
-                    ? 'processing'
-                    : ($data['order_source'] === 'cashier_direct' ? 'served' : 'ready');
+
+                // If any item requires kitchen cooking -> 'processing' (sent to kitchen KDS)
+                // If all items are instant (drinks/snacks) -> 'served' (immediately ready and handed over)
+                $orderStatus = $requiresKitchenAny ? 'processing' : 'served';
             }
 
             $tokenNumber = $this->generateTokenNumber();
@@ -369,7 +371,7 @@ class PosOrderService
 
             // Check if any items require kitchen processing
             $requiresKitchenAny = $order->items()->whereHas('product', fn ($q) => $q->where('requires_kitchen', true))->exists();
-            $targetOrderStatus = $requiresKitchenAny ? 'processing' : 'ready';
+            $targetOrderStatus = $requiresKitchenAny ? 'processing' : 'served';
 
             $order->update([
                 'cashier_id' => $cashierId,

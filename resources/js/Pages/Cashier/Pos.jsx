@@ -369,10 +369,16 @@ export default function CashierPos({
         e.preventDefault();
         postCheckout('/pos/checkout', {
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (page) => {
                 setIsPaymentModalOpen(false);
                 setCart([]);
                 resetCheckout();
+                // Pop up the receipt immediately so cashier can review change or print!
+                const latestTx = page.props.recent_transactions?.[0];
+                if (latestTx) {
+                    setSelectedOrderForReprint(latestTx);
+                    setIsReprintModalOpen(true);
+                }
             },
         });
     };
@@ -1789,6 +1795,12 @@ export default function CashierPos({
 
                                             {/* Status Badge */}
                                             <div>
+                                                {tx.order_status === 'pending' && (
+                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center gap-1.5 animate-pulse">
+                                                        <QrCode className="w-3.5 h-3.5 text-indigo-400" />
+                                                        <span>Menunggu Bayar Kasir</span>
+                                                    </span>
+                                                )}
                                                 {isProcessing && (
                                                     <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1.5">
                                                         <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
@@ -1802,9 +1814,13 @@ export default function CashierPos({
                                                     </span>
                                                 )}
                                                 {isServed && (
-                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/[0.04] border border-white/[0.08] text-slate-400 flex items-center gap-1.5">
+                                                    <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/[0.04] border border-white/[0.08] text-slate-300 flex items-center gap-1.5">
                                                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                                                        <span>Pesanan Selesai</span>
+                                                        <span>
+                                                            {(tx.items || []).some((i) => i.product?.requires_kitchen)
+                                                                ? 'Pesanan Selesai'
+                                                                : 'Selesai (Langsung Saji)'}
+                                                        </span>
                                                     </span>
                                                 )}
                                             </div>
@@ -1817,6 +1833,13 @@ export default function CashierPos({
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-bold text-white">{item.quantity}x</span>
                                                         <span className="text-slate-200">{item.product?.product_name || 'Menu'}</span>
+                                                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                                                            item.product?.requires_kitchen
+                                                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                                                                : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
+                                                        }`}>
+                                                            {item.product?.requires_kitchen ? 'Dapur' : 'Instan'}
+                                                        </span>
                                                         {item.notes && (
                                                             <span className="text-[11px] text-amber-400/90 italic">
                                                                 ("{item.notes}")
@@ -1933,6 +1956,26 @@ export default function CashierPos({
                                 <span className="text-slate-600">Pelanggan:</span>
                                 <span>{selectedOrderForReprint.customer_name || 'Pelanggan'}</span>
                             </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Tipe Pesanan:</span>
+                                <span className="font-bold">
+                                    {(selectedOrderForReprint.items || []).some(i => i.product?.requires_kitchen)
+                                        ? 'Masak Dapur'
+                                        : 'Instan (Langsung Saji)'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Status Pesanan:</span>
+                                <span className="font-bold uppercase text-emerald-700">
+                                    {selectedOrderForReprint.order_status === 'served'
+                                        ? 'Selesai / Lunas'
+                                        : selectedOrderForReprint.order_status === 'processing'
+                                        ? 'Sedang Dimasak Dapur'
+                                        : selectedOrderForReprint.order_status === 'ready'
+                                        ? 'Siap Diambil'
+                                        : 'Menunggu Pembayaran'}
+                                </span>
+                            </div>
                         </div>
 
                         <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-1">
@@ -1940,6 +1983,9 @@ export default function CashierPos({
                                 <div key={item.id} className="flex justify-between">
                                     <span>
                                         {item.quantity}x {item.product?.product_name || 'Item'}
+                                        <span className="text-[10px] text-slate-500 ml-1">
+                                            ({item.product?.requires_kitchen ? 'Dapur' : 'Instan'})
+                                        </span>
                                     </span>
                                     <span>{formatRupiah(item.subtotal)}</span>
                                 </div>
