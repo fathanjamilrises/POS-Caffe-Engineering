@@ -1015,24 +1015,24 @@ export default function AdminDashboard({
                 {selectedProduct && (
                     <form onSubmit={handleSubmitAdjustment} className="space-y-5">
                         {/* Ringkasan Perhitungan Stok */}
-                        <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
                             <div>
-                                <span className="text-xs text-slate-400 block mb-1">Stok Saat Ini</span>
-                                <span className="text-2xl font-mono font-bold text-white">
-                                    {selectedProduct.stock_qty} <span className="text-sm font-normal text-slate-400">unit</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Stok Saat Ini</span>
+                                <span className="text-2xl font-mono font-bold text-slate-900 dark:text-white">
+                                    {selectedProduct.stock_qty} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">unit</span>
                                 </span>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs text-slate-400 block mb-1">Perkiraan Stok Baru</span>
-                                <span className="text-2xl font-mono font-bold text-emerald-400">
-                                    {previewCalculatedStock} <span className="text-sm font-normal text-slate-400">unit</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">Perkiraan Stok Baru</span>
+                                <span className="text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                    {previewCalculatedStock} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">unit</span>
                                 </span>
                             </div>
                         </div>
 
                         {/* Pilihan Tipe Mutasi */}
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-2">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 block mb-2">
                                 Tipe Perubahan Stok
                             </label>
                             <div className="grid grid-cols-3 gap-2.5">
@@ -1045,10 +1045,10 @@ export default function AdminDashboard({
                                         key={type.id}
                                         type="button"
                                         onClick={() => setAdjustmentData('movement_type', type.id)}
-                                        className={`py-3 px-2 rounded-lg border transition-all text-center min-h-[52px] flex flex-col items-center justify-center ${
+                                        className={`py-3 px-2 rounded-xl border transition-all text-center min-h-[52px] flex flex-col items-center justify-center ${
                                             adjustmentData.movement_type === type.id
-                                                ? 'bg-indigo-500/20 border-indigo-500/50 text-white font-semibold shadow-sm'
-                                                : 'bg-white/[0.02] border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                                                ? 'bg-indigo-50 dark:bg-indigo-500/20 border-indigo-400 dark:border-indigo-500/50 text-indigo-700 dark:text-white font-semibold shadow-xs'
+                                                : 'bg-slate-100 dark:bg-white/[0.02] border-slate-200 dark:border-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.04]'
                                         }`}
                                     >
                                         <span className="text-sm">{type.label}</span>
@@ -1071,7 +1071,7 @@ export default function AdminDashboard({
 
                         {/* Catatan */}
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 block mb-1.5">
                                 Catatan / Keterangan (Opsional)
                             </label>
                             <textarea
@@ -1079,7 +1079,7 @@ export default function AdminDashboard({
                                 value={adjustmentData.notes}
                                 onChange={(e) => setAdjustmentData('notes', e.target.value)}
                                 placeholder="Contoh: Penerimaan barang dari supplier, barang rusak, atau opname fisik"
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                                className="w-full bg-white dark:bg-[#08090D] border border-slate-300 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-xs"
                             />
                         </div>
                     </form>
@@ -1143,13 +1143,13 @@ export default function AdminDashboard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 block mb-1.5">
                                 Kategori
                             </label>
                             <select
                                 value={editData.category_id}
                                 onChange={(e) => setEditData('category_id', e.target.value)}
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                                className="w-full bg-white dark:bg-[#08090D] border border-slate-300 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 min-h-[44px] shadow-xs"
                             >
                                 {categories.map((c) => (
                                     <option key={c.id} value={c.id}>
@@ -1190,38 +1190,38 @@ export default function AdminDashboard({
                         />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3.5">
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] space-y-3.5">
                         <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={editData.requires_kitchen}
                                 onChange={(e) => setEditData('requires_kitchen', e.target.checked)}
-                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
+                                className="rounded bg-white dark:bg-[#08090D] border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-sm font-semibold text-white block">
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white block">
                                     Perlu dimasak di dapur (Kitchen KDS)
                                 </span>
-                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block mt-0.5">
                                     Centang jika pesanan harus diproses oleh staf dapur (makanan masak).
                                 </span>
                             </div>
                         </label>
 
-                        <div className="h-px bg-white/[0.06]" />
+                        <div className="h-px bg-slate-200 dark:bg-white/[0.06]" />
 
                         <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={editData.is_available}
                                 onChange={(e) => setEditData('is_available', e.target.checked)}
-                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
+                                className="rounded bg-white dark:bg-[#08090D] border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-sm font-semibold text-white block">
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white block">
                                     Status menu aktif dijual
                                 </span>
-                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block mt-0.5">
                                     Jika dinonaktifkan, menu tidak akan muncul di layar kasir maupun QR meja.
                                 </span>
                             </div>
@@ -1288,13 +1288,13 @@ export default function AdminDashboard({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-sm font-medium text-slate-200 block mb-1.5">
+                            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200 block mb-1.5">
                                 Kategori
                             </label>
                             <select
                                 value={createData.category_id}
                                 onChange={(e) => setCreateData('category_id', e.target.value)}
-                                className="w-full bg-[#08090D] border border-white/[0.08] rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 min-h-[44px]"
+                                className="w-full bg-white dark:bg-[#08090D] border border-slate-300 dark:border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 min-h-[44px] shadow-xs"
                                 required
                             >
                                 {categories.map((c) => (
@@ -1338,19 +1338,19 @@ export default function AdminDashboard({
                         />
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06]">
                         <label className="flex items-start gap-3.5 cursor-pointer select-none">
                             <input
                                 type="checkbox"
                                 checked={createData.requires_kitchen}
                                 onChange={(e) => setCreateData('requires_kitchen', e.target.checked)}
-                                className="rounded bg-[#08090D] border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
+                                className="rounded bg-white dark:bg-[#08090D] border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 w-5 h-5 mt-0.5 shrink-0"
                             />
                             <div>
-                                <span className="text-sm font-semibold text-white block">
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white block">
                                     Memerlukan proses memasak di dapur
                                 </span>
-                                <span className="text-xs text-slate-400 leading-normal block mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 leading-normal block mt-0.5">
                                     Centang untuk makanan yang dimasak. Kosongkan untuk minuman atau snack instan.
                                 </span>
                             </div>
