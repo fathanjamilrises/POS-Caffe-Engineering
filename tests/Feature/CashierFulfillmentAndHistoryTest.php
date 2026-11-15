@@ -102,7 +102,7 @@ class CashierFulfillmentAndHistoryTest extends TestCase
             'amount_received' => 40000,
             'table_id' => $this->table->id,
             'customer_name' => 'Pelanggan Meja 5',
-            'order_source' => 'qr_table',
+            'order_source' => 'cashier_direct',
         ], $this->cashier->id);
 
         $this->assertEquals('processing', $order->order_status);
@@ -178,8 +178,8 @@ class CashierFulfillmentAndHistoryTest extends TestCase
             'amount_received' => 50000,
             'table_id' => $this->table->id,
             'customer_name' => 'Meja Tiga KDS',
-            'order_source' => 'qr_table',
-        ]);
+            'order_source' => 'cashier_direct',
+        ], $this->cashier->id);
 
         $ticket = KitchenTicket::where('order_id', $order->id)->first();
         $this->assertNotNull($ticket);

@@ -103,7 +103,7 @@ class CustomerQrOrderController extends Controller
         return redirect()->route('table.order.status', [
             'token' => $token,
             'order' => $order->id,
-        ])->with('success', "Pesanan #{$order->token_number} berhasil dikirim ke kasir & dapur!");
+        ])->with('success', "Pesanan #{$order->token_number} berhasil dikirim! Silakan lakukan pembayaran di kasir agar pesanan segera dimasak.");
     }
 
     /**

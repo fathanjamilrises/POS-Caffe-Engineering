@@ -139,6 +139,8 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/shift/open', [CashierPosController::class, 'openShift'])->name('shift.open');
         Route::post('/shift/{shift}/close', [CashierPosController::class, 'closeShift'])->name('shift.close');
         Route::post('/checkout', [CashierPosController::class, 'checkout'])->name('checkout');
+        Route::post('/orders/{order}/confirm-payment', [CashierPosController::class, 'confirmQrPayment'])->name('order.confirm-payment');
+        Route::post('/orders/{order}/cancel', [CashierPosController::class, 'cancelOrder'])->name('order.cancel');
         Route::post('/orders/{order}/serve', [CashierPosController::class, 'serveOrder'])->name('order.serve');
     });
 

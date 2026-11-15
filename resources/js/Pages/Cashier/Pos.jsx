@@ -58,6 +58,7 @@ export default function CashierPos({
     categories = [],
     dining_tables = [],
     fulfillment_orders = [],
+    pending_qr_orders = [],
     recent_transactions = [],
 }) {
     // Category & Search filter
@@ -76,6 +77,12 @@ export default function CashierPos({
     const [isCloseShiftModalOpen, setIsCloseShiftModalOpen] = useState(false);
     const [isClearCartModalOpen, setIsClearCartModalOpen] = useState(false);
     const [isFulfillmentModalOpen, setIsFulfillmentModalOpen] = useState(false);
+    const [isPendingQrModalOpen, setIsPendingQrModalOpen] = useState(false);
+    const [selectedPendingOrder, setSelectedPendingOrder] = useState(null);
+    const [pendingPaymentMethod, setPendingPaymentMethod] = useState('tunai');
+    const [pendingAmountReceived, setPendingAmountReceived] = useState('');
+    const [pendingCancelReason, setPendingCancelReason] = useState('');
+    const [isCancellingOrder, setIsCancellingOrder] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
     const [selectedOrderForReprint, setSelectedOrderForReprint] = useState(null);
@@ -83,11 +90,11 @@ export default function CashierPos({
     const [historySearchQuery, setHistorySearchQuery] = useState('');
     const [expandedNotesId, setExpandedNotesId] = useState(null);
 
-    // Auto-polling interval (every 6s) to sync kitchen readiness & transaction status in real-time
+    // Auto-polling interval (every 6s) to sync kitchen readiness, pending QR orders & transactions
     useEffect(() => {
         const poll = setInterval(() => {
             router.reload({
-                only: ['fulfillment_orders', 'recent_transactions', 'active_shift'],
+                only: ['fulfillment_orders', 'pending_qr_orders', 'recent_transactions', 'active_shift'],
                 preserveScroll: true,
                 preserveState: true,
             });
@@ -389,6 +396,97 @@ export default function CashierPos({
         router.post(`/pos/orders/${orderId}/serve`, {}, { preserveScroll: true });
     };
 
+    // Handshake: QR Table Order Verification & Cancellation
+    const handleOpenPendingQrOrder = (order) => {
+        setSelectedPendingOrder(order);
+        setPendingPaymentMethod(order.payment_method || 'tunai');
+        setPendingAmountReceived(order.payment_method === 'qris' ? String(order.total_amount) : '');
+        setPendingCancelReason('');
+        setIsCancellingOrder(false);
+        setIsPendingQrModalOpen(true);
+    };
+
+    const handleConfirmQrPayment = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!selectedPendingOrder) return;
+
+        if (
+            pendingPaymentMethod === 'tunai' &&
+            Number(pendingAmountReceived) < Number(selectedPendingOrder.total_amount)
+        ) {
+            toast.error('Uang tunai yang diterima kurang dari total tagihan!');
+            return;
+        }
+
+        router.post(
+            `/pos/orders/${selectedPendingOrder.id}/confirm-payment`,
+            {
+                payment_method: pendingPaymentMethod,
+                amount_received:
+                    pendingPaymentMethod === 'qris'
+                        ? selectedPendingOrder.total_amount
+                        : pendingAmountReceived,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsPendingQrModalOpen(false);
+                    setSelectedPendingOrder(null);
+                    setPendingAmountReceived('');
+                    toast.success('Pembayaran pesanan QR meja berhasil dikonfirmasi dan dikirim ke dapur!');
+                },
+                onError: (errs) => {
+                    const firstMsg = Object.values(errs)[0];
+                    toast.error(firstMsg || 'Gagal memproses pembayaran pesanan.');
+                },
+            }
+        );
+    };
+
+    const handleCancelPendingOrder = (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (!selectedPendingOrder) return;
+
+        router.post(
+            `/pos/orders/${selectedPendingOrder.id}/cancel`,
+            {
+                reason: pendingCancelReason || 'Dibatalkan oleh kasir',
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsPendingQrModalOpen(false);
+                    setSelectedPendingOrder(null);
+                    setPendingCancelReason('');
+                    setIsCancellingOrder(false);
+                    toast.success('Pesanan QR berhasil dibatalkan dan stok telah dikembalikan.');
+                },
+                onError: (errs) => {
+                    const firstMsg = Object.values(errs)[0];
+                    toast.error(firstMsg || 'Gagal membatalkan pesanan.');
+                },
+            }
+        );
+    };
+
+    const pendingTotalAmount = selectedPendingOrder
+        ? Number(selectedPendingOrder.total_amount) || 0
+        : 0;
+
+    const pendingChangeAmount = Math.max(
+        0,
+        Number(pendingAmountReceived) - pendingTotalAmount
+    );
+
+    const pendingIsUnderpaid =
+        pendingPaymentMethod === 'tunai' &&
+        Number(pendingAmountReceived) < pendingTotalAmount;
+
+    const pendingShortfallAmount = Math.max(
+        0,
+        pendingTotalAmount - Number(pendingAmountReceived)
+    );
+
     const handleSubmitOpenShift = (e) => {
         e.preventDefault();
         postOpenShift('/pos/shift/open', {
@@ -503,7 +601,22 @@ export default function CashierPos({
                             )}
                         </button>
 
-                        {/* 2. Kitchen Fulfillment Handshake Badge (HANYA muncul saat dapur sudah konfirmasi selesai masak / 'ready') */}
+                        {/* 2. QR Orders Pending Verification Badge */}
+                        {pending_qr_orders.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    handleOpenPendingQrOrder(pending_qr_orders[0]);
+                                }}
+                                className="h-8 px-3 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-300 text-indigo-800 dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 dark:border-indigo-500/40 dark:text-indigo-300 active:scale-95 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs animate-pulse"
+                                title="Ada pesanan masuk dari QR Meja yang memerlukan verifikasi kasir"
+                            >
+                                <QrCode className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                                <span>{pending_qr_orders.length} Pesanan Meja</span>
+                            </button>
+                        )}
+
+                        {/* 3. Kitchen Fulfillment Handshake Badge (HANYA muncul saat dapur sudah konfirmasi selesai masak / 'ready') */}
                         {fulfillment_orders.length > 0 && (
                             <button
                                 type="button"
@@ -1860,6 +1973,316 @@ export default function CashierPos({
                             <p>Terima Kasih Atas Kunjungan Anda!</p>
                             <p>Pesanan Segar dari Dapur Kantin</p>
                         </div>
+                    </div>
+                )}
+            </AcrylicModal>
+
+            {/* =========================================================
+                MODAL 8: VERIFIKASI & PEMBAYARAN PESANAN QR MEJA
+               ========================================================= */}
+            <AcrylicModal
+                isOpen={isPendingQrModalOpen}
+                onClose={() => {
+                    setIsPendingQrModalOpen(false);
+                    setIsCancellingOrder(false);
+                }}
+                title={isCancellingOrder ? "Batalkan Pesanan QR Meja" : "Verifikasi Pesanan QR Meja"}
+                subtitle={
+                    selectedPendingOrder
+                        ? `Token #${selectedPendingOrder.token_number} • ${selectedPendingOrder.table ? `Meja ${selectedPendingOrder.table.table_number}` : 'Meja Pelanggan'} • Pelanggan: ${selectedPendingOrder.customer_name || 'Tamu'}`
+                        : 'Pilih pesanan QR meja untuk diverifikasi'
+                }
+                maxWidth="max-w-2xl"
+                footer={
+                    selectedPendingOrder ? (
+                        <div className="flex items-center justify-between w-full">
+                            {isCancellingOrder ? (
+                                <>
+                                    <SpecularButton
+                                        variant="secondary"
+                                        size="md"
+                                        onClick={() => setIsCancellingOrder(false)}
+                                        className="min-h-[42px] px-4"
+                                    >
+                                        Kembali
+                                    </SpecularButton>
+                                    <SpecularButton
+                                        variant="danger"
+                                        size="md"
+                                        onClick={handleCancelPendingOrder}
+                                        className="min-h-[42px] px-5 font-bold"
+                                    >
+                                        Konfirmasi Batalkan Pesanan
+                                    </SpecularButton>
+                                </>
+                            ) : (
+                                <>
+                                    <SpecularButton
+                                        variant="danger"
+                                        size="md"
+                                        onClick={() => setIsCancellingOrder(true)}
+                                        className="min-h-[42px] px-4 text-xs"
+                                    >
+                                        Batalkan Pesanan
+                                    </SpecularButton>
+                                    <div className="flex items-center gap-2">
+                                        <SpecularButton
+                                            variant="secondary"
+                                            size="md"
+                                            onClick={() => setIsPendingQrModalOpen(false)}
+                                            className="min-h-[42px] px-4"
+                                        >
+                                            Tutup
+                                        </SpecularButton>
+                                        <SpecularButton
+                                            variant="primary"
+                                            size="md"
+                                            icon={Check}
+                                            disabled={pendingIsUnderpaid}
+                                            onClick={handleConfirmQrPayment}
+                                            className="min-h-[42px] px-5 font-bold"
+                                        >
+                                            Konfirmasi & Kirim ke Dapur
+                                        </SpecularButton>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : null
+                }
+            >
+                {selectedPendingOrder && (
+                    <div className="space-y-4">
+                        {/* Selector Tabs if multiple pending orders */}
+                        {pending_qr_orders.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-white/10">
+                                {pending_qr_orders.map((po) => {
+                                    const isSelected = selectedPendingOrder.id === po.id;
+                                    return (
+                                        <button
+                                            key={po.id}
+                                            type="button"
+                                            onClick={() => handleOpenPendingQrOrder(po)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+                                                isSelected
+                                                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-xs'
+                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]'
+                                            }`}
+                                        >
+                                            {po.table ? `Meja ${po.table.table_number}` : 'Meja'} (#{po.token_number}) - {formatRupiah(po.total_amount)}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {isCancellingOrder ? (
+                            /* Form Pembatalan */
+                            <div className="space-y-4">
+                                <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs sm:text-sm flex items-start gap-2.5">
+                                    <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="font-bold block">Peringatan Pembatalan Pesanan</span>
+                                        <span className="text-xs text-rose-700 dark:text-rose-300/90 block mt-0.5">
+                                            Membatalkan pesanan Token #{selectedPendingOrder.token_number} ini akan mengembalikan stok menu ke sistem secara otomatis dan melepaskan status reservasi meja.
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+                                        Alasan Pembatalan (Wajib):
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        value={pendingCancelReason}
+                                        onChange={(e) => setPendingCancelReason(e.target.value)}
+                                        placeholder="Contoh: Tamu membatalkan pesanan, salah input menu, atau tidak melakukan pembayaran tunai..."
+                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-400/50"
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            /* Review Items & Process Payment */
+                            <div className="space-y-4">
+                                {/* Detail Rincian Menu */}
+                                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] space-y-2">
+                                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-white/[0.08] pb-2">
+                                        <span>Rincian Menu Pesanan Meja</span>
+                                        <span className="font-mono text-indigo-600 dark:text-indigo-400">
+                                            {(selectedPendingOrder.items || []).length} Menu
+                                        </span>
+                                    </div>
+                                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                                        {(selectedPendingOrder.items || []).map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center justify-between text-xs font-mono"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold text-slate-900 dark:text-white">
+                                                        {item.quantity}x
+                                                    </span>
+                                                    <span className="text-slate-700 dark:text-slate-200">
+                                                        {item.product?.product_name || 'Menu'}
+                                                    </span>
+                                                    {item.notes && (
+                                                        <span className="text-[11px] text-amber-600 dark:text-amber-400 italic">
+                                                            ("{item.notes}")
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="font-bold text-slate-900 dark:text-white">
+                                                    {formatRupiah(item.subtotal)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/[0.08] text-xs">
+                                        <span className="font-bold text-slate-600 dark:text-slate-400">Total Tagihan:</span>
+                                        <span className="text-base font-black font-mono text-indigo-600 dark:text-indigo-400 tabular-nums">
+                                            {formatRupiah(pendingTotalAmount)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Pilihan Metode Pembayaran */}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">
+                                        Metode Pembayaran Kasir:
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setPendingPaymentMethod('tunai')}
+                                            className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                                                pendingPaymentMethod === 'tunai'
+                                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 dark:bg-indigo-600/20 dark:border-indigo-500 dark:text-indigo-300 shadow-xs'
+                                                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.08] dark:text-slate-300'
+                                            }`}
+                                        >
+                                            <Banknote className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                                            <div>
+                                                <span className="text-xs font-bold block">Bayar Tunai</span>
+                                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                    Terima uang tunai fisik di kasir
+                                                </span>
+                                            </div>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPendingPaymentMethod('qris');
+                                                setPendingAmountReceived(String(pendingTotalAmount));
+                                            }}
+                                            className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                                                pendingPaymentMethod === 'qris'
+                                                    ? 'bg-indigo-50 border-indigo-500 text-indigo-900 dark:bg-indigo-600/20 dark:border-indigo-500 dark:text-indigo-300 shadow-xs'
+                                                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.08] dark:text-slate-300'
+                                            }`}
+                                        >
+                                            <QrCode className="w-5 h-5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                                            <div>
+                                                <span className="text-xs font-bold block">Bayar QRIS</span>
+                                                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                                                    Pelanggan scan QRIS kasir / meja
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {pendingPaymentMethod === 'tunai' ? (
+                                    <div className="space-y-3">
+                                        <AcrylicInput
+                                            label="Uang Tunai Diterima (Rp)"
+                                            type="number"
+                                            min="0"
+                                            value={pendingAmountReceived}
+                                            onChange={(e) => setPendingAmountReceived(e.target.value)}
+                                            placeholder="Ketik nominal tunai..."
+                                            inputClassName="font-mono text-base font-bold"
+                                            autoFocus
+                                        />
+
+                                        {/* Pecahan Uang Cepat */}
+                                        <div className="space-y-1.5">
+                                            <span className="text-xs text-slate-600 dark:text-slate-400 block font-bold">
+                                                Pecahan Uang Cepat:
+                                            </span>
+                                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPendingAmountReceived(String(pendingTotalAmount))}
+                                                    className={`min-h-[38px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-colors ${
+                                                        Number(pendingAmountReceived) === pendingTotalAmount
+                                                            ? 'bg-indigo-600 text-white border-indigo-500'
+                                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-[#08090D] dark:hover:bg-white/[0.08] dark:text-slate-200 dark:border-white/[0.08]'
+                                                    }`}
+                                                >
+                                                    Uang Pas
+                                                </button>
+                                                {[20000, 50000, 100000, 200000].map((nominal) => {
+                                                    const isSelected = Number(pendingAmountReceived) === nominal;
+                                                    return (
+                                                        <button
+                                                            key={nominal}
+                                                            type="button"
+                                                            onClick={() => setPendingAmountReceived(String(nominal))}
+                                                            className={`min-h-[38px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold border transition-colors ${
+                                                                isSelected
+                                                                    ? 'bg-indigo-600 text-white border-indigo-500'
+                                                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 dark:bg-[#08090D] dark:hover:bg-white/[0.08] dark:text-slate-200 dark:border-white/[0.08]'
+                                                            }`}
+                                                        >
+                                                            {formatRupiah(nominal)}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Warning Kurang */}
+                                        {pendingIsUnderpaid && (
+                                            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-200 text-xs flex items-start gap-2">
+                                                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <span className="font-bold block">Uang Diterima Kurang!</span>
+                                                    <span className="text-xs text-rose-700 dark:text-rose-300 block">
+                                                        Kurang {formatRupiah(pendingShortfallAmount)} dari total tagihan ({formatRupiah(pendingTotalAmount)}).
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Kembalian Display */}
+                                        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-400 block">
+                                                    Kembalian:
+                                                </span>
+                                                <span className="text-[11px] text-slate-600 dark:text-slate-400 block">
+                                                    Wajib diserahkan ke pelanggan
+                                                </span>
+                                            </div>
+                                            <span className="text-xl sm:text-2xl font-mono font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                                                {formatRupiah(pendingChangeAmount)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-900 dark:text-indigo-200 text-xs space-y-1">
+                                        <span className="font-bold block flex items-center gap-1.5">
+                                            <CheckCircle2 className="w-4 h-4 text-indigo-500" />
+                                            Verifikasi Pembayaran QRIS
+                                        </span>
+                                        <p className="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
+                                            Pastikan dana senilai <strong className="font-mono">{formatRupiah(pendingTotalAmount)}</strong> telah berhasil masuk ke rekening/notifikasi merchant sebelum menekan tombol Konfirmasi.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </AcrylicModal>

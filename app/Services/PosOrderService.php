@@ -168,25 +168,38 @@ class PosOrderService
                 ];
             }
 
-            // Payment validation: amount_received must be >= total_amount
-            $amountReceived = (float) ($data['amount_received'] ?? $totalAmount);
-            if ($data['payment_method'] === 'tunai' && $amountReceived < $totalAmount) {
-                throw ValidationException::withMessages([
-                    'amount_received' => 'Uang yang diterima (Rp '.number_format($amountReceived, 0, ',', '.').') kurang dari total belanja (Rp '.number_format($totalAmount, 0, ',', '.').').',
-                ]);
+            // Check if this is a QR Table order that requires Cashier Verification
+            $isQrOrder = ($data['order_source'] ?? '') === 'qr_table';
+            $requiresVerification = $isQrOrder && (bool) SystemSetting::get('qr_require_cashier_verification', true);
+
+            if ($requiresVerification) {
+                // Pending cashier verification: payment is unpaid, no change calculated yet
+                $paymentStatus = 'unpaid';
+                $orderStatus = 'pending';
+                $amountReceived = 0;
+                $changeAmount = 0;
+            } else {
+                // Direct Cashier / Immediate processing
+                $paymentStatus = 'paid';
+                $amountReceived = (float) ($data['amount_received'] ?? $totalAmount);
+                if ($data['payment_method'] === 'tunai' && $amountReceived < $totalAmount) {
+                    throw ValidationException::withMessages([
+                        'amount_received' => 'Uang yang diterima (Rp '.number_format($amountReceived, 0, ',', '.').') kurang dari total belanja (Rp '.number_format($totalAmount, 0, ',', '.').').',
+                    ]);
+                }
+
+                if ($data['payment_method'] === 'qris') {
+                    $amountReceived = $totalAmount;
+                }
+
+                $changeAmount = max(0, $amountReceived - $totalAmount);
+                $orderStatus = $requiresKitchenAny
+                    ? 'processing'
+                    : ($data['order_source'] === 'cashier_direct' ? 'served' : 'ready');
             }
 
-            if ($data['payment_method'] === 'qris') {
-                $amountReceived = $totalAmount;
-            }
-
-            $changeAmount = max(0, $amountReceived - $totalAmount);
             $tokenNumber = $this->generateTokenNumber();
             $invoiceNumber = 'INV-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -5));
-
-            $orderStatus = $requiresKitchenAny
-                ? 'processing'
-                : ($data['order_source'] === 'cashier_direct' ? 'served' : 'ready');
 
             // Create Order
             $order = Order::create([
@@ -199,7 +212,7 @@ class PosOrderService
                 'order_source' => $data['order_source'] ?? 'qr_table',
                 'order_status' => $orderStatus,
                 'payment_method' => $data['payment_method'],
-                'payment_status' => 'paid',
+                'payment_status' => $paymentStatus,
                 'total_cost' => $totalCost,
                 'total_amount' => $totalAmount,
                 'amount_received' => $amountReceived,
@@ -214,7 +227,9 @@ class PosOrderService
                 $product = $prep['product'];
                 $qty = $prep['quantity'];
 
-                $itemStatus = $product->requires_kitchen ? 'queued_kds' : 'instant';
+                $itemStatus = $requiresVerification
+                    ? 'pending_confirmation'
+                    : ($product->requires_kitchen ? 'queued_kds' : 'instant');
 
                 $orderItem = OrderItem::create([
                     'order_id' => $order->id,
@@ -227,7 +242,7 @@ class PosOrderService
                     'item_status' => $itemStatus,
                 ]);
 
-                // Deduct stock atomically
+                // Deduct stock atomically to reserve the items
                 $newStock = max(0, $product->stock_qty - $qty);
                 $product->update([
                     'stock_qty' => $newStock,
@@ -243,8 +258,8 @@ class PosOrderService
                     'notes' => "Penjualan #{$invoiceNumber}",
                 ]);
 
-                // If requires kitchen, dispatch Kitchen Ticket
-                if ($product->requires_kitchen) {
+                // Only dispatch Kitchen Ticket immediately if NOT pending verification
+                if (! $requiresVerification && $product->requires_kitchen) {
                     KitchenTicket::create([
                         'order_id' => $order->id,
                         'order_item_id' => $orderItem->id,
@@ -256,8 +271,8 @@ class PosOrderService
                 }
             }
 
-            // Update shift sales aggregation if shift is open
-            if ($shiftId) {
+            // Update shift sales aggregation only if immediately paid
+            if (! $requiresVerification && $shiftId) {
                 $shift = CashierShift::find($shiftId);
                 if ($shift) {
                     if ($data['payment_method'] === 'tunai') {
@@ -308,6 +323,151 @@ class PosOrderService
         }
 
         return $query->latest()->limit(50)->get();
+    }
+
+    /**
+     * Orders submitted by customers from QR tables waiting for cashier confirmation & payment.
+     *
+     * @return Collection<int, Order>
+     */
+    public function getPendingQrOrders(): Collection
+    {
+        return Order::with(['items.product', 'table'])
+            ->where('order_source', 'qr_table')
+            ->where('order_status', 'pending')
+            ->where('payment_status', 'unpaid')
+            ->latest()
+            ->get();
+    }
+
+    /**
+     * Cashier confirms and accepts payment for a pending QR table order.
+     * Transitions order to paid, dispatches kitchen tickets to KDS, and records shift revenue.
+     */
+    public function confirmQrOrderPayment(int $orderId, int $cashierId, ?int $shiftId, string $paymentMethod, float $amountReceived): Order
+    {
+        return DB::transaction(function () use ($orderId, $cashierId, $shiftId, $paymentMethod, $amountReceived) {
+            $order = Order::lockForUpdate()->findOrFail($orderId);
+
+            if ($order->payment_status === 'paid') {
+                throw ValidationException::withMessages(['order' => 'Pesanan ini sudah dibayar sebelumnya.']);
+            }
+
+            $totalAmount = (float) $order->total_amount;
+
+            if ($paymentMethod === 'tunai' && $amountReceived < $totalAmount) {
+                throw ValidationException::withMessages([
+                    'amount_received' => 'Uang yang diterima (Rp '.number_format($amountReceived, 0, ',', '.').') kurang dari total tagihan (Rp '.number_format($totalAmount, 0, ',', '.').').',
+                ]);
+            }
+
+            if ($paymentMethod === 'qris') {
+                $amountReceived = $totalAmount;
+            }
+
+            $changeAmount = max(0, $amountReceived - $totalAmount);
+
+            // Check if any items require kitchen processing
+            $requiresKitchenAny = $order->items()->whereHas('product', fn ($q) => $q->where('requires_kitchen', true))->exists();
+            $targetOrderStatus = $requiresKitchenAny ? 'processing' : 'ready';
+
+            $order->update([
+                'cashier_id' => $cashierId,
+                'shift_id' => $shiftId,
+                'payment_method' => $paymentMethod,
+                'payment_status' => 'paid',
+                'amount_received' => $amountReceived,
+                'change_amount' => $changeAmount,
+                'order_status' => $targetOrderStatus,
+            ]);
+
+            // Dispatch kitchen tickets for made-to-order items and update item statuses
+            foreach ($order->items as $orderItem) {
+                $product = $orderItem->product;
+                if ($product && $product->requires_kitchen) {
+                    KitchenTicket::firstOrCreate(
+                        ['order_item_id' => $orderItem->id],
+                        [
+                            'order_id' => $order->id,
+                            'token_number' => $order->token_number,
+                            'ticket_status' => 'waiting',
+                            'is_audio_notified' => false,
+                            'sent_to_kds_at' => now(),
+                        ]
+                    );
+                    $orderItem->update(['item_status' => 'queued_kds']);
+                } else {
+                    $orderItem->update(['item_status' => 'instant']);
+                }
+            }
+
+            // Update shift sales aggregation
+            if ($shiftId) {
+                $shift = CashierShift::find($shiftId);
+                if ($shift) {
+                    if ($paymentMethod === 'tunai') {
+                        $shift->increment('total_cash_sales', $totalAmount);
+                    } else {
+                        $shift->increment('total_qris_sales', $totalAmount);
+                    }
+                }
+            }
+
+            return $order->load(['items.product', 'table', 'cashier']);
+        });
+    }
+
+    /**
+     * Cashier rejects or cancels a pending QR table order.
+     * Restores reserved stock, cancels tickets, and releases the table.
+     */
+    public function cancelQrOrder(int $orderId, ?string $reason = null): Order
+    {
+        return DB::transaction(function () use ($orderId, $reason) {
+            $order = Order::lockForUpdate()->findOrFail($orderId);
+
+            if ($order->order_status === 'served') {
+                throw ValidationException::withMessages(['order' => 'Pesanan yang sudah selesai disajikan tidak dapat dibatalkan.']);
+            }
+
+            // Return stock to inventory
+            foreach ($order->items as $item) {
+                if ($item->product) {
+                    $item->product->increment('stock_qty', $item->quantity);
+                    $item->product->update(['is_available' => true]);
+
+                    StockMovement::create([
+                        'product_id' => $item->product_id,
+                        'user_id' => $order->cashier_id ?: User::value('id'),
+                        'movement_type' => 'in',
+                        'quantity_change' => $item->quantity,
+                        'notes' => "Pengembalian stok dari pembatalan pesanan Meja #{$order->invoice_number}".($reason ? " ($reason)" : ''),
+                    ]);
+                }
+            }
+
+            // Cancel any tickets
+            $order->kitchenTickets()->delete();
+
+            $order->update([
+                'order_status' => 'cancelled',
+                'payment_status' => 'unpaid',
+            ]);
+
+            // Release table if no other active orders exist on it
+            if ($order->table_id) {
+                $hasOtherActive = Order::where('table_id', $order->table_id)
+                    ->where('id', '!=', $order->id)
+                    ->whereNotIn('order_status', ['served', 'cancelled'])
+                    ->exists();
+
+                if (! $hasOtherActive) {
+                    $order->table?->update(['status' => 'available']);
+                }
+            }
+
+            return $order;
+        });
     }
 
     /**
