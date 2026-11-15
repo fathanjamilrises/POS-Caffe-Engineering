@@ -28,6 +28,7 @@ class CashierPosController extends Controller
         $categories = Category::orderBy('category_name')->get();
         $diningTables = $this->posService->getDiningTables();
         $fulfillmentOrders = $this->posService->getFulfillmentOrders();
+        $pendingQrOrders = $this->posService->getPendingQrOrders();
         $recentTransactions = $this->posService->getRecentTransactions($activeShift?->id);
 
         return Inertia::render('Cashier/Pos', [
@@ -36,6 +37,7 @@ class CashierPosController extends Controller
             'categories' => $categories,
             'dining_tables' => $diningTables,
             'fulfillment_orders' => $fulfillmentOrders,
+            'pending_qr_orders' => $pendingQrOrders,
             'recent_transactions' => $recentTransactions,
         ]);
     }
@@ -121,5 +123,52 @@ class CashierPosController extends Controller
         $this->posService->markOrderServed($order->id);
 
         return redirect()->back()->with('success', "Pesanan #{$order->token_number} telah diserahkan (Selesai).");
+    }
+
+    /**
+     * Confirm payment for a pending QR table order and dispatch tickets to kitchen KDS.
+     */
+    public function confirmQrPayment(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_method' => ['required', 'string', 'in:tunai,qris'],
+            'amount_received' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $user = $request->user();
+        $activeShift = $this->posService->getActiveShift($user->id);
+
+        $this->posService->confirmQrOrderPayment(
+            $order->id,
+            $user->id,
+            $activeShift?->id,
+            $validated['payment_method'],
+            (float) ($validated['amount_received'] ?? 0)
+        );
+
+        return redirect()->back()->with(
+            'success',
+            "Pesanan Meja #{$order->token_number} berhasil dikonfirmasi! Tiket diteruskan ke dapur koki."
+        );
+    }
+
+    /**
+     * Cancel or reject a pending QR table order and return stock.
+     */
+    public function cancelOrder(Request $request, Order $order): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->posService->cancelQrOrder(
+            $order->id,
+            $validated['reason'] ?? 'Dibatalkan oleh kasir'
+        );
+
+        return redirect()->back()->with(
+            'success',
+            "Pesanan #{$order->token_number} berhasil dibatalkan dan stok dikembalikan ke etalase."
+        );
     }
 }

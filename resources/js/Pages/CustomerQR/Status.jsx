@@ -57,10 +57,12 @@ export default function CustomerQrStatus({ table, order }) {
         return 'upcoming';
     };
 
+    const isUnpaid = order.payment_status === 'unpaid';
+
     const steps = [
         {
-            title: 'Diterima Kasir',
-            desc: 'Pesanan masuk & antrian terbit',
+            title: isUnpaid ? 'Menunggu Pembayaran Kasir' : 'Dikonfirmasi Kasir',
+            desc: isUnpaid ? 'Silakan bayar di meja kasir' : 'Pembayaran diterima & antrean terbit',
             icon: Receipt,
         },
         {
@@ -70,7 +72,7 @@ export default function CustomerQrStatus({ table, order }) {
         },
         {
             title: 'Siap Disajikan',
-            desc: 'Makanan telah siap di counter',
+            desc: 'Makanan telah siap di counter / meja',
             icon: Clock,
         },
         {
@@ -105,28 +107,52 @@ export default function CustomerQrStatus({ table, order }) {
                     <div className="mt-3 flex items-center justify-center gap-2">
                         <AcrylicBadge
                             variant={
-                                order.order_status === 'served'
+                                order.order_status === 'cancelled'
+                                    ? 'rose'
+                                    : order.order_status === 'served'
                                     ? 'emerald'
                                     : order.order_status === 'ready'
                                     ? 'cobalt'
                                     : order.order_status === 'processing'
+                                    ? 'amber'
+                                    : isUnpaid
                                     ? 'amber'
                                     : 'indigo'
                             }
                             size="md"
                             dot={true}
                         >
+                            {order.order_status === 'cancelled' && 'Pesanan Dibatalkan'}
                             {order.order_status === 'served' && 'Pesanan Selesai'}
                             {order.order_status === 'ready' && 'Siap Diantar ke Meja'}
                             {order.order_status === 'processing' && 'Sedang Dimasak Koki'}
-                            {order.order_status === 'pending' && 'Menunggu Antrian Dapur'}
+                            {order.order_status === 'pending' && isUnpaid && 'Menunggu Pembayaran Kasir'}
+                            {order.order_status === 'pending' && !isUnpaid && 'Menunggu Antrean Dapur'}
                         </AcrylicBadge>
                     </div>
 
-                    <p className="text-xs text-slate-400 mt-3 max-w-sm mx-auto">
-                        Silakan duduk santai di meja Anda. Makanan dan minuman akan diantarkan
-                        langsung begitu selesai dipersiapkan.
-                    </p>
+                    {isUnpaid && order.order_status !== 'cancelled' ? (
+                        <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs text-left space-y-1.5">
+                            <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                                <Receipt className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>Menunggu Pembayaran di Meja Kasir</span>
+                            </div>
+                            <p className="leading-relaxed text-[11px] text-amber-200/90">
+                                Total tagihan Anda adalah{' '}
+                                <strong className="text-white font-mono font-bold text-xs">
+                                    Rp {Number(order.total_amount).toLocaleString('id-ID')}
+                                </strong>
+                                . Silakan menuju meja kasir dan sebutkan{' '}
+                                <strong>Meja {table.table_number}</strong> atau Token{' '}
+                                <strong>#{order.token_number}</strong> agar koki segera memasak pesanan Anda.
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="text-xs text-slate-400 mt-3 max-w-sm mx-auto">
+                            Silakan duduk santai di meja Anda. Makanan dan minuman akan diantarkan
+                            langsung begitu selesai dipersiapkan.
+                        </p>
+                    )}
 
                     <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-center gap-3">
                         <button
