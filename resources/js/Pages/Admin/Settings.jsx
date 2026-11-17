@@ -564,7 +564,7 @@ export default function AdminSettings({
                                             className={`p-4 rounded-xl border text-left flex flex-col justify-between space-y-3 transition-all ${
                                                 isSelected
                                                     ? 'bg-indigo-50/90 border-indigo-500 shadow-sm ring-1 ring-indigo-500/30 text-indigo-950 dark:bg-[#1E1B4B] dark:bg-gradient-to-b dark:from-[#4338CA]/30 dark:to-[#1E1B4B] dark:text-white dark:border-indigo-500 dark:ring-indigo-500/50'
-                                                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#06070A] dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:text-slate-400 dark:hover:text-white'
+                                                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#06070A] dark:hover:bg-white/[0.04] dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:text-slate-400 dark:hover:text-white'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
