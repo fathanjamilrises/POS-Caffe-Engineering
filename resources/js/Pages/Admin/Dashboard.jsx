@@ -950,7 +950,7 @@ export default function AdminDashboard({
                                                     {o.order_source === 'qr_table' ? (
                                                         <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium">
                                                             <QrCode className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                                            <span>Meja {o.table?.table_number || 'QR'}</span>
+                                                            <span>{o.table?.table_number ? (o.table.table_number.toLowerCase().startsWith('meja') ? o.table.table_number : `Meja ${o.table.table_number}`) : 'QR Meja'}</span>
                                                         </span>
                                                     ) : (
                                                         <span className="text-slate-500 dark:text-slate-400 font-medium">Kasir Langsung</span>

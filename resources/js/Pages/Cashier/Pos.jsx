@@ -51,6 +51,12 @@ function formatRupiah(amount) {
     return `Rp ${num.toLocaleString('id-ID')}`;
 }
 
+function formatTableName(tableName) {
+    if (!tableName) return '';
+    const clean = String(tableName).trim();
+    return clean.toLowerCase().startsWith('meja') ? clean : `Meja ${clean}`;
+}
+
 /**
  * Modern POS Cashier Terminal - Zero Whole-Page Scroll Edition.
  * Tailored for staff aged 40–60 operating on touchscreen tablets.
@@ -75,8 +81,7 @@ export default function CashierPos({
 
     // Cart state
     const [cart, setCart] = useState([]);
-    const [orderSource, setOrderSource] = useState('cashier_direct'); // 'cashier_direct' | 'qr_table'
-    const [selectedTableId, setSelectedTableId] = useState('');
+    const [diningOption, setDiningOption] = useState('dine_in'); // 'dine_in' | 'takeaway'
     const [customerName, setCustomerName] = useState('Pelanggan Walk-in');
 
     // Modals state
@@ -357,15 +362,6 @@ export default function CashierPos({
             return;
         }
 
-        if (orderSource === 'qr_table' && !selectedTableId) {
-            showNotice(
-                'Pilih Nomor Meja',
-                'Silakan pilih nomor meja terlebih dahulu untuk pesanan Makan di Meja.',
-                'warning'
-            );
-            return;
-        }
-
         setCheckoutData({
             items: cart.map((i) => ({
                 product_id: i.product_id,
@@ -374,9 +370,9 @@ export default function CashierPos({
             })),
             payment_method: presetMethod,
             amount_received: cartTotals.totalAmount,
-            table_id: orderSource === 'qr_table' && selectedTableId ? selectedTableId : null,
-            customer_name: customerName || 'Pelanggan Walk-in',
-            order_source: orderSource,
+            table_id: null,
+            customer_name: customerName || (diningOption === 'takeaway' ? 'Tamu (Bungkus)' : 'Pelanggan Walk-in'),
+            order_source: 'cashier_direct',
         });
         setIsPaymentModalOpen(true);
     };
@@ -448,7 +444,7 @@ export default function CashierPos({
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cart, isPaymentModalOpen, pending_qr_orders, fulfillment_orders, cartTotals, active_shift, orderSource, selectedTableId, customerName]);
+    }, [cart, isPaymentModalOpen, pending_qr_orders, fulfillment_orders, cartTotals, active_shift, diningOption, customerName]);
 
     // Handshake: Cashier marks order as served
     const handleServeOrder = (orderId) => {
@@ -934,9 +930,21 @@ export default function CashierPos({
                             <div className="grid grid-cols-2 gap-1 p-0.5 bg-slate-100 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl">
                                 <button
                                     type="button"
-                                    onClick={() => setOrderSource('cashier_direct')}
+                                    onClick={() => setDiningOption('dine_in')}
                                     className={`min-h-[38px] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                                        orderSource === 'cashier_direct'
+                                        diningOption === 'dine_in'
+                                            ? 'bg-indigo-600 text-white shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                    }`}
+                                >
+                                    <Store className="w-3.5 h-3.5" />
+                                    <span>Makan di Tempat</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDiningOption('takeaway')}
+                                    className={`min-h-[38px] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                                        diningOption === 'takeaway'
                                             ? 'bg-indigo-600 text-white shadow-sm'
                                             : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                                     }`}
@@ -944,48 +952,34 @@ export default function CashierPos({
                                     <ShoppingBag className="w-3.5 h-3.5" />
                                     <span>Bungkus</span>
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setOrderSource('qr_table')}
-                                    className={`min-h-[38px] text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-                                        orderSource === 'qr_table'
-                                            ? 'bg-indigo-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-                                    }`}
-                                >
-                                    <Store className="w-3.5 h-3.5" />
-                                    <span>Makan Meja</span>
-                                </button>
                             </div>
 
-                            {/* Dine-in Table & Customer Input */}
+                            {/* Dine-in Table (Disabled for Cashier Direct Orders) & Customer Input */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {orderSource === 'qr_table' && (
+                                <div className="relative">
                                     <select
-                                        value={selectedTableId}
-                                        onChange={(e) => setSelectedTableId(e.target.value)}
-                                        className="w-full h-9 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-lg px-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-mono shadow-xs"
+                                        disabled
+                                        className="w-full h-9 bg-slate-100 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.06] rounded-lg px-2.5 text-xs text-slate-500 dark:text-slate-500 font-mono cursor-not-allowed shadow-none appearance-none"
+                                        title="Pemesanan langsung di kasir bersifat Self Pick-up (Ambil Mandiri). Konsumen bebas memilih meja setelah pesanan selesai."
                                     >
-                                        <option value="">Pilih Nomor Meja...</option>
-                                        {dining_tables.map((t) => (
-                                            <option key={t.id} value={t.id}>
-                                                Meja {t.table_number} ({t.capacity} org)
-                                            </option>
-                                        ))}
+                                        <option>
+                                            {diningOption === 'dine_in'
+                                                ? 'Bebas Duduk (Pick-up Mandiri)'
+                                                : 'Bawa Pulang (Tanpa Meja)'}
+                                        </option>
                                     </select>
-                                )}
+                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400 dark:text-slate-500 pointer-events-none uppercase">
+                                        Kasir
+                                    </span>
+                                </div>
 
-                                <div
-                                    className={`relative ${
-                                        orderSource === 'qr_table' ? 'sm:col-span-1' : 'col-span-full'
-                                    }`}
-                                >
+                                <div className="relative">
                                     <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                                     <input
                                         type="text"
                                         value={customerName}
                                         onChange={(e) => setCustomerName(e.target.value)}
-                                        placeholder="Nama Tamu (Walk-in)"
+                                        placeholder={diningOption === 'takeaway' ? 'Nama Tamu (Bungkus)' : 'Nama Tamu (Walk-in)'}
                                         className="w-full h-9 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-lg pl-8 pr-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-xs"
                                     />
                                 </div>
@@ -1217,7 +1211,7 @@ export default function CashierPos({
                                         </span>
                                     </div>
                                     <span className="text-xs font-medium text-slate-200 block">
-                                        {ord.table ? `Meja ${ord.table.table_number}` : 'Bungkus / Takeaway'}
+                                        {ord.table ? formatTableName(ord.table.table_number) : (ord.customer_name?.includes('Bungkus') ? 'Bungkus / Takeaway' : 'Kasir (Pick-up Mandiri)')}
                                     </span>
                                     <span className="text-[11px] text-slate-400 block truncate">
                                         {ord.customer_name || 'Pelanggan Walk-in'}
@@ -1286,14 +1280,9 @@ export default function CashierPos({
                             </span>
                         </div>
                         <div className="text-right">
-                            <span className="text-slate-400 block font-medium">Layanan:</span>
-                            <span className="text-indigo-300 font-bold text-sm sm:text-base">
-                                {orderSource === 'qr_table'
-                                    ? `Makan di Meja ${
-                                          dining_tables.find((t) => String(t.id) === String(selectedTableId))
-                                              ?.table_number || '-'
-                                      }`
-                                    : 'Bungkus / Takeaway'}
+                            <span className="text-slate-500 dark:text-slate-400 block font-medium">Layanan:</span>
+                            <span className="text-indigo-600 dark:text-indigo-300 font-bold text-sm sm:text-base">
+                                {diningOption === 'takeaway' ? 'Bungkus / Takeaway' : 'Makan di Tempat (Pick-up Mandiri)'}
                             </span>
                         </div>
                     </div>
@@ -1853,7 +1842,7 @@ export default function CashierPos({
                                                 </span>
                                                 <span className="text-slate-600">•</span>
                                                 <span className="text-xs font-semibold text-indigo-300">
-                                                    {tx.table ? `Meja ${tx.table.table_number}` : 'Bungkus / Takeaway'}
+                                                    {tx.table ? formatTableName(tx.table.table_number) : (tx.customer_name?.includes('Bungkus') ? 'Takeaway' : 'Kasir (Pick-up)')}
                                                 </span>
                                                 {tx.customer_name && tx.customer_name !== 'Pelanggan Walk-in' && (
                                                     <span className="text-xs text-slate-400">
@@ -2057,7 +2046,7 @@ export default function CashierPos({
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-600">Layanan:</span>
-                                    <span>{selectedOrderForReprint.table ? `Meja ${selectedOrderForReprint.table.table_number}` : 'Takeaway / Bungkus'}</span>
+                                    <span>{selectedOrderForReprint.table ? formatTableName(selectedOrderForReprint.table.table_number) : (selectedOrderForReprint.customer_name?.includes('Bungkus') ? 'Bungkus / Takeaway' : 'Kasir (Pick-up Mandiri)')}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-slate-600">Pelanggan:</span>
@@ -2143,7 +2132,7 @@ export default function CashierPos({
                 title={isCancellingOrder ? "Batalkan Pesanan QR Meja" : "Verifikasi Pesanan QR Meja"}
                 subtitle={
                     selectedPendingOrder
-                        ? `Token #${selectedPendingOrder.token_number} • ${selectedPendingOrder.table ? `Meja ${selectedPendingOrder.table.table_number}` : 'Meja Pelanggan'} • Pelanggan: ${selectedPendingOrder.customer_name || 'Tamu'}`
+                        ? `Token #${selectedPendingOrder.token_number} • ${selectedPendingOrder.table ? formatTableName(selectedPendingOrder.table.table_number) : 'Meja Pelanggan'} • Pelanggan: ${selectedPendingOrder.customer_name || 'Tamu'}`
                         : 'Pilih pesanan QR meja untuk diverifikasi'
                 }
                 maxWidth="max-w-2xl"
@@ -2223,7 +2212,7 @@ export default function CashierPos({
                                                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:border-white/[0.08]'
                                             }`}
                                         >
-                                            {po.table ? `Meja ${po.table.table_number}` : 'Meja'} (#{po.token_number}) - {formatRupiah(po.total_amount)}
+                                            {po.table ? formatTableName(po.table.table_number) : 'Meja'} (#{po.token_number}) - {formatRupiah(po.total_amount)}
                                         </button>
                                     );
                                 })}

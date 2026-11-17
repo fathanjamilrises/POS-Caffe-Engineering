@@ -582,11 +582,11 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                         <div className="flex items-center gap-2 pt-1 border-t border-white/[0.04]">
                                             {ticket.order?.table ? (
                                                 <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/25 shrink-0">
-                                                    Meja #{ticket.order.table.table_number}
+                                                    {ticket.order.table.table_number.toLowerCase().startsWith('meja') ? ticket.order.table.table_number : `Meja ${ticket.order.table.table_number}`}
                                                 </span>
                                             ) : (
-                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/25 shrink-0">
-                                                    Bungkus
+                                                <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 shrink-0">
+                                                    {ticket.order?.customer_name?.includes('Bungkus') ? 'Bungkus' : 'Kasir (Ambil Mandiri)'}
                                                 </span>
                                             )}
                                             <span className="text-[11px] font-mono text-slate-400 truncate">

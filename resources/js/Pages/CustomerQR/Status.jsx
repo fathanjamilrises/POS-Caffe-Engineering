@@ -124,7 +124,7 @@ export default function CustomerQrStatus({ table, order }) {
                 >
                     <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-slate-300 text-xs font-mono font-medium mb-3">
                         <QrCode className="w-3.5 h-3.5 text-indigo-400" />
-                        <span>Meja: {table.table_number}</span>
+                        <span>{table.table_number.toLowerCase().startsWith('meja') ? table.table_number : `Meja ${table.table_number}`}</span>
                     </div>
 
                     <div className="text-xs font-medium uppercase tracking-wider text-slate-400">
@@ -172,7 +172,7 @@ export default function CustomerQrStatus({ table, order }) {
                                 Total tagihan: <strong className="text-white font-mono font-bold text-xs">Rp {Number(order.total_amount).toLocaleString('id-ID')}</strong>.
                                 {order.payment_method === 'qris'
                                     ? ' Silakan scan QRIS di meja atau tunjukkan kode Token ke kasir untuk menyelesaikan transaksi.'
-                                    : ` Silakan menuju meja kasir dan sebutkan Meja ${table.table_number} atau Token #${order.token_number}.`}
+                                    : ` Silakan menuju meja kasir dan sebutkan ${table.table_number.toLowerCase().startsWith('meja') ? table.table_number : `Meja ${table.table_number}`} atau Token #${order.token_number}.`}
                             </p>
                         </div>
                     ) : (
