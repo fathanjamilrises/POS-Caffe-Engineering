@@ -12,37 +12,37 @@ const TYPE_CONFIG = {
     success: {
         label: 'BERHASIL',
         Icon: CheckCircle2,
-        badgeStyle: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+        badgeStyle: 'bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
         cardBorder: 'border-emerald-500/30',
-        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(16,185,129,0.12)]',
-        headerText: 'text-emerald-400',
+        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.1),0_0_15px_rgba(16,185,129,0.12)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(16,185,129,0.12)]',
+        headerText: 'text-emerald-600 dark:text-emerald-400',
         progressGradient: 'from-emerald-500 via-emerald-400 to-teal-300',
     },
     error: {
         label: 'KENDALA',
         Icon: AlertCircle,
-        badgeStyle: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
+        badgeStyle: 'bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400',
         cardBorder: 'border-rose-500/30',
-        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(244,63,94,0.12)]',
-        headerText: 'text-rose-400',
+        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.1),0_0_15px_rgba(244,63,94,0.12)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(244,63,94,0.12)]',
+        headerText: 'text-rose-600 dark:text-rose-400',
         progressGradient: 'from-rose-500 via-rose-400 to-red-400',
     },
     warning: {
         label: 'PERINGATAN',
         Icon: AlertTriangle,
-        badgeStyle: 'bg-amber-500/15 border-amber-500/30 text-amber-400',
+        badgeStyle: 'bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400',
         cardBorder: 'border-amber-500/30',
-        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(245,158,11,0.12)]',
-        headerText: 'text-amber-400',
+        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.1),0_0_15px_rgba(245,158,11,0.12)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(245,158,11,0.12)]',
+        headerText: 'text-amber-600 dark:text-amber-400',
         progressGradient: 'from-amber-500 via-amber-400 to-yellow-300',
     },
     info: {
         label: 'INFORMASI',
         Icon: Info,
-        badgeStyle: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300',
+        badgeStyle: 'bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/30 text-indigo-600 dark:text-indigo-300',
         cardBorder: 'border-indigo-500/35',
-        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(99,102,241,0.14)]',
-        headerText: 'text-indigo-300',
+        cardShadow: 'shadow-[0_10px_30px_-5px_rgba(0,0,0,0.1),0_0_15px_rgba(99,102,241,0.14)] dark:shadow-[0_10px_30px_-5px_rgba(0,0,0,0.8),0_0_15px_rgba(99,102,241,0.14)]',
+        headerText: 'text-indigo-600 dark:text-indigo-300',
         progressGradient: 'from-indigo-500 via-blue-400 to-indigo-300',
     },
 };
@@ -86,9 +86,9 @@ export default function ToastItem({ toast, onDismiss }) {
         <div
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className={`w-full max-w-[380px] sm:max-w-[420px] rounded-xl bg-[#0B0D15]/95 backdrop-blur-xl border ${
-                config.cardBorder
-            } ${config.cardShadow} shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] transition-all duration-200 select-none ${
+            className={`w-full max-w-[380px] sm:max-w-[420px] rounded-xl bg-white/95 dark:bg-[#0B0D15]/95 backdrop-blur-xl border border-slate-200 dark:border-white/[0.1] ${
+                config.cardShadow
+            } shadow-[inset_0_1px_0_0_rgba(255,255,255,0.6)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.12)] transition-all duration-200 select-none ${
                 isExiting ? 'animate-toast-exit pointer-events-none' : 'animate-toast-enter pointer-events-auto'
             }`}
             role="alert"
@@ -114,7 +114,7 @@ export default function ToastItem({ toast, onDismiss }) {
                             {timeString}
                         </span>
                     </div>
-                    <p className="text-xs sm:text-[13px] text-slate-200 leading-snug break-words">
+                    <p className="text-xs sm:text-[13px] text-slate-800 dark:text-slate-200 leading-snug break-words">
                         {message}
                     </p>
 
@@ -126,7 +126,7 @@ export default function ToastItem({ toast, onDismiss }) {
                                 action.onClick?.();
                                 onDismiss(id);
                             }}
-                            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] text-slate-200 transition-all active:scale-95 shadow-sm"
+                            className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.14] dark:border-white/[0.1] dark:text-slate-200 transition-all active:scale-95 shadow-xs"
                         >
                             <span>{action.label}</span>
                             <ArrowRight className="w-3 h-3 text-slate-400" />
@@ -138,7 +138,7 @@ export default function ToastItem({ toast, onDismiss }) {
                 <button
                     type="button"
                     onClick={() => onDismiss(id)}
-                    className="w-6 h-6 rounded-md text-slate-400 hover:text-slate-100 hover:bg-white/[0.08] flex items-center justify-center transition-colors shrink-0 active:scale-90"
+                    className="w-6 h-6 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.08] flex items-center justify-center transition-colors shrink-0 active:scale-90"
                     title="Tutup notifikasi"
                     aria-label="Tutup notifikasi"
                 >
@@ -148,7 +148,7 @@ export default function ToastItem({ toast, onDismiss }) {
 
             {/* Bottom Linear Progress Bar */}
             {duration > 0 && (
-                <div className="h-[2px] w-full bg-white/[0.05] overflow-hidden rounded-b-xl">
+                <div className="h-[2px] w-full bg-slate-100 dark:bg-white/[0.05] overflow-hidden rounded-b-xl">
                     <div
                         className={`h-full bg-gradient-to-r ${config.progressGradient} animate-toast-progress`}
                         style={{

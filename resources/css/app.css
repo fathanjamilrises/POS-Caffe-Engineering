@@ -228,10 +228,16 @@ html.light textarea::placeholder {
 }
 
 /* Explicitly preserve crisp white text on interactive primary action buttons & specular elements */
-button.text-white,
-button.text-white *,
-a.text-white,
-a.text-white *,
+html.dark button.text-white,
+html.dark button.text-white *,
+html.dark a.text-white,
+html.dark a.text-white *,
+button.bg-indigo-600,
+button.bg-indigo-600 *,
+button.bg-emerald-600,
+button.bg-emerald-600 *,
+button.bg-rose-600,
+button.bg-rose-600 *,
 .specular-button-primary,
 .specular-button-primary * {
     color: #FFFFFF !important;
