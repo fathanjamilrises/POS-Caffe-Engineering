@@ -113,26 +113,47 @@ html.light aside,
 html.light .bg-\[\#0B0D13\],
 html.light .bg-\[\#0C0E16\],
 html.light .bg-\[\#08090D\],
+html.light .bg-\[\#090A10\],
 html.light .bg-\[\#0A0C13\],
+html.light .bg-\[\#0A0C14\],
 html.light .bg-\[\#090B12\],
 html.light .bg-\[\#0E1017\],
 html.light .bg-\[\#0E101A\],
 html.light .bg-\[\#121524\],
 html.light .bg-\[\#141824\],
 html.light .bg-\[\#16192B\],
+html.light .bg-\[\#0C0E16\]\/60,
 :root[data-theme="light"] .bg-\[\#0B0D13\],
 :root[data-theme="light"] .bg-\[\#0C0E16\],
 :root[data-theme="light"] .bg-\[\#08090D\],
+:root[data-theme="light"] .bg-\[\#090A10\],
 :root[data-theme="light"] .bg-\[\#0A0C13\],
+:root[data-theme="light"] .bg-\[\#0A0C14\],
 :root[data-theme="light"] .bg-\[\#090B12\],
 :root[data-theme="light"] .bg-\[\#0E1017\],
 :root[data-theme="light"] .bg-\[\#0E101A\],
 :root[data-theme="light"] .bg-\[\#121524\],
 :root[data-theme="light"] .bg-\[\#141824\],
-:root[data-theme="light"] .bg-\[\#16192B\] {
+:root[data-theme="light"] .bg-\[\#16192B\],
+:root[data-theme="light"] .bg-\[\#0C0E16\]\/60 {
     background-color: #FFFFFF !important;
     border-color: #E2E8F0 !important;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Table headers and sticky headers in light mode */
+html.light thead,
+:root[data-theme="light"] thead {
+    background-color: #F8FAFC !important;
+    border-color: #E2E8F0 !important;
+    color: #475569 !important;
+}
+
+html.light thead th,
+:root[data-theme="light"] thead th {
+    background-color: #F8FAFC !important;
+    color: #475569 !important;
+    border-color: #E2E8F0 !important;
 }
 
 /* Neutral canvas backdrops */

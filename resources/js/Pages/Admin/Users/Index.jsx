@@ -229,17 +229,17 @@ export default function AdminUsersIndex({
                 {/* ============================================================
                     1. HEADER CARD & ACTION CONTROLS (HIGH ERGONOMICS FOR TABLET)
                 ============================================================ */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] shadow-xs dark:shadow-sm">
                     {/* Left: Icon Badge & Descriptive Title */}
                     <div className="flex items-center gap-4 min-w-0">
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4338CA] via-[#3730A3] to-[#1E1B4B] flex items-center justify-center border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)] shrink-0">
                             <Users className="w-6 h-6 text-white" />
                         </div>
                         <div className="min-w-0">
-                            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight leading-tight truncate">
+                            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight truncate">
                                 Kelola Akun Pengguna & Staff
                             </h2>
-                            <p className="text-xs sm:text-sm text-slate-400 font-medium truncate mt-0.5">
+                            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium truncate mt-0.5">
                                 Atur akun staf kasir, koki dapur, serta hak akses administrator sistem secara terpadu.
                             </p>
                         </div>
@@ -270,29 +270,29 @@ export default function AdminUsersIndex({
                             setRoleFilter('all');
                             triggerFilter({ role: 'all' });
                         }}
-                        className={`p-5 rounded-2xl text-left transition-all shadow-sm flex flex-col justify-between group cursor-pointer ${
+                        className={`p-5 rounded-2xl text-left transition-all shadow-xs dark:shadow-sm flex flex-col justify-between group cursor-pointer ${
                             roleFilter === 'all'
-                                ? 'bg-gradient-to-br from-[#1E1B4B]/70 via-[#141829] to-[#0C0E16] border border-indigo-500/40 ring-1 ring-indigo-500/20'
-                                : 'bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14]'
+                                ? 'bg-indigo-50/80 border border-indigo-400/50 ring-1 ring-indigo-400/30 dark:bg-gradient-to-br dark:from-[#1E1B4B]/70 dark:via-[#141829] dark:to-[#0C0E16] dark:border-indigo-500/40 dark:ring-indigo-500/20'
+                                : 'bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14]'
                         }`}
                         title="Tampilkan semua pengguna"
                     >
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Total Pengguna
                                 </span>
-                                <div className="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/15 border border-indigo-200 dark:border-indigo-500/25 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                                     <Users className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-white tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-slate-900 dark:text-white tracking-tight">
                                 {metrics.total_users}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
-                            <span className="text-slate-400">Aktif</span>
-                            <span className="text-emerald-400 font-semibold font-mono">{metrics.active_count} akun</span>
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs">
+                            <span className="text-slate-500 dark:text-slate-400">Aktif</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">{metrics.active_count} akun</span>
                         </div>
                     </button>
 
@@ -304,30 +304,30 @@ export default function AdminUsersIndex({
                             setRoleFilter(next);
                             triggerFilter({ role: next });
                         }}
-                        className={`p-5 rounded-2xl text-left transition-all shadow-sm flex flex-col justify-between group cursor-pointer ${
+                        className={`p-5 rounded-2xl text-left transition-all shadow-xs dark:shadow-sm flex flex-col justify-between group cursor-pointer ${
                             roleFilter === 'admin'
-                                ? 'bg-gradient-to-br from-indigo-950/60 via-[#141829] to-[#0C0E16] border border-indigo-400/50 ring-1 ring-indigo-500/30'
-                                : 'bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14]'
+                                ? 'bg-indigo-50/80 border border-indigo-400/50 ring-1 ring-indigo-400/30 dark:bg-gradient-to-br dark:from-indigo-950/60 dark:via-[#141829] dark:to-[#0C0E16] dark:border-indigo-400/50 dark:ring-indigo-500/30'
+                                : 'bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14]'
                         }`}
                         title="Filter hanya Administrator"
                     >
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Administrator
                                 </span>
-                                <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0">
                                     <Shield className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-indigo-300 tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-indigo-600 dark:text-indigo-300 tracking-tight">
                                 {metrics.admin_count}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Manajerial</span>
                             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                                roleFilter === 'admin' ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400'
+                                roleFilter === 'admin' ? 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' : 'text-slate-500 dark:text-slate-400'
                             }`}>
                                 {roleFilter === 'admin' ? '✓ Terpilih' : 'Hak Penuh'}
                             </span>
@@ -342,30 +342,30 @@ export default function AdminUsersIndex({
                             setRoleFilter(next);
                             triggerFilter({ role: next });
                         }}
-                        className={`p-5 rounded-2xl text-left transition-all shadow-sm flex flex-col justify-between group cursor-pointer ${
+                        className={`p-5 rounded-2xl text-left transition-all shadow-xs dark:shadow-sm flex flex-col justify-between group cursor-pointer ${
                             roleFilter === 'kasir'
-                                ? 'bg-gradient-to-br from-emerald-950/40 via-[#0F1D1B] to-[#0C0E16] border border-emerald-500/50 ring-1 ring-emerald-500/30'
-                                : 'bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14]'
+                                ? 'bg-emerald-50/80 border border-emerald-400/50 ring-1 ring-emerald-400/30 dark:bg-gradient-to-br dark:from-emerald-950/40 dark:via-[#0F1D1B] dark:to-[#0C0E16] dark:border-emerald-500/50 dark:ring-emerald-500/30'
+                                : 'bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14]'
                         }`}
                         title="Filter hanya Staff Kasir"
                     >
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Kasir POS
                                 </span>
-                                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                                     <UserCheck className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-emerald-400 tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400 tracking-tight">
                                 {metrics.kasir_count}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Front POS</span>
                             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                                roleFilter === 'kasir' ? 'bg-emerald-500/20 text-emerald-300' : 'text-slate-400'
+                                roleFilter === 'kasir' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'
                             }`}>
                                 {roleFilter === 'kasir' ? '✓ Terpilih' : 'Kasir & Shift'}
                             </span>
@@ -380,30 +380,30 @@ export default function AdminUsersIndex({
                             setRoleFilter(next);
                             triggerFilter({ role: next });
                         }}
-                        className={`p-5 rounded-2xl text-left transition-all shadow-sm flex flex-col justify-between group cursor-pointer ${
+                        className={`p-5 rounded-2xl text-left transition-all shadow-xs dark:shadow-sm flex flex-col justify-between group cursor-pointer ${
                             roleFilter === 'dapur'
-                                ? 'bg-gradient-to-br from-amber-950/40 via-[#1C160F] to-[#0C0E16] border border-amber-500/50 ring-1 ring-amber-500/30'
-                                : 'bg-[#0C0E16] border border-white/[0.08] hover:border-white/[0.14]'
+                                ? 'bg-amber-50/80 border border-amber-400/50 ring-1 ring-amber-400/30 dark:bg-gradient-to-br dark:from-amber-950/40 dark:via-[#1C160F] dark:to-[#0C0E16] dark:border-amber-500/50 dark:ring-amber-500/30'
+                                : 'bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14]'
                         }`}
                         title="Filter hanya Koki Dapur"
                     >
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     Koki Dapur
                                 </span>
-                                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                                     <ChefHat className="w-4 h-4" />
                                 </div>
                             </div>
-                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-amber-400 tracking-tight">
+                            <div className="text-2xl sm:text-3xl font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400 tracking-tight">
                                 {metrics.dapur_count}
                             </div>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+                        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>KDS Dapur</span>
                             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                                roleFilter === 'dapur' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400'
+                                roleFilter === 'dapur' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'
                             }`}>
                                 {roleFilter === 'dapur' ? '✓ Terpilih' : 'Display KDS'}
                             </span>
@@ -414,7 +414,7 @@ export default function AdminUsersIndex({
                 {/* ============================================================
                     3. FILTER & PENCARIAN (ERGONOMIS DENGAN TOUCH TARGET BESAR)
                 ============================================================ */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] shadow-xs dark:shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
                     {/* Search Input with Clear Button */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -426,7 +426,7 @@ export default function AdminUsersIndex({
                                 if (e.key === 'Enter') triggerFilter({ search: e.target.value });
                             }}
                             placeholder="Cari nama staf atau @username..."
-                            className="w-full h-11 bg-[#08090D] border border-white/[0.08] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm sm:text-base text-white placeholder-slate-500 focus:outline-none transition-colors"
+                            className="w-full h-11 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] focus:border-indigo-500 rounded-xl pl-10 pr-9 text-sm sm:text-base text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition-colors"
                         />
                         {searchQuery && (
                             <button
@@ -435,7 +435,7 @@ export default function AdminUsersIndex({
                                     setSearchQuery('');
                                     triggerFilter({ search: '' });
                                 }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-white/[0.1] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-400 hover:text-slate-700 dark:hover:text-white flex items-center justify-center transition-colors"
                                 title="Hapus pencarian"
                             >
                                 <X className="w-4 h-4" />
@@ -451,7 +451,7 @@ export default function AdminUsersIndex({
                                 setRoleFilter(e.target.value);
                                 triggerFilter({ role: e.target.value });
                             }}
-                            className="h-11 bg-[#08090D] border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 text-sm font-medium text-slate-200 focus:outline-none transition-colors"
+                            className="h-11 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none transition-colors"
                         >
                             <option value="all">Semua Peran (Role)</option>
                             <option value="admin">Administrator</option>
@@ -465,7 +465,7 @@ export default function AdminUsersIndex({
                                 setStatusFilter(e.target.value);
                                 triggerFilter({ status: e.target.value });
                             }}
-                            className="h-11 bg-[#08090D] border border-white/[0.08] hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 text-sm font-medium text-slate-200 focus:outline-none transition-colors"
+                            className="h-11 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] focus:border-indigo-500 rounded-xl px-3.5 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none transition-colors"
                         >
                             <option value="all">Semua Status Akun</option>
                             <option value="active">Status Aktif</option>
@@ -490,10 +490,10 @@ export default function AdminUsersIndex({
                 {/* ============================================================
                     4. TABEL PENGGUNA (HIGH CONTRAST & TOUCH FRIENDLY 60PX+)
                 ============================================================ */}
-                <div className="rounded-2xl bg-[#0C0E16] border border-white/[0.08] overflow-hidden shadow-sm">
+                <div className="rounded-2xl bg-white dark:bg-[#0C0E16] border border-slate-200 dark:border-white/[0.08] overflow-hidden shadow-xs dark:shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-slate-300 min-w-[850px]">
-                            <thead className="bg-[#090A10] text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-white/[0.08]">
+                        <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300 min-w-[850px]">
+                            <thead className="bg-slate-50 dark:bg-[#090A10] text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-white/[0.08]">
                                 <tr>
                                     <th className="py-4 px-4 sm:px-5 whitespace-nowrap min-w-[240px]">
                                         Profil Pengguna
@@ -515,25 +515,25 @@ export default function AdminUsersIndex({
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/[0.04]">
+                            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
                                 {users.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="py-16 text-center text-slate-400">
+                                        <td colSpan={6} className="py-16 text-center text-slate-500 dark:text-slate-400">
                                             <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                                                <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-1">
+                                                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1">
                                                     <Users className="w-6 h-6" />
                                                 </div>
-                                                <div className="text-base sm:text-lg font-bold text-white tracking-tight">
+                                                <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                                                     Tidak ada pengguna yang cocok
                                                 </div>
-                                                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                                                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                                                     Coba periksa kata kunci pencarian atau sesuaikan filter yang sedang aktif.
                                                 </p>
                                                 {isFilterActive && (
                                                     <button
                                                         type="button"
                                                         onClick={handleResetFilter}
-                                                        className="mt-3 px-4 py-2 text-xs font-semibold text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 rounded-xl transition-colors active:scale-95"
+                                                        className="mt-3 px-4 py-2 text-xs font-semibold text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-white bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-500/30 rounded-xl transition-colors active:scale-95"
                                                     >
                                                         Bersihkan Filter
                                                     </button>
@@ -547,23 +547,23 @@ export default function AdminUsersIndex({
                                         const initial = u.full_name?.substring(0, 2).toUpperCase() || 'US';
 
                                         return (
-                                            <tr key={u.id} className="hover:bg-white/[0.025] transition-colors group">
+                                            <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.025] transition-colors group">
                                                 {/* Profile Name & Username */}
                                                 <td className="py-4 px-4 sm:px-5 min-w-[240px]">
                                                     <div className="flex items-center gap-3.5">
-                                                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#312E81] via-[#1E1B4B] to-[#0F172A] border border-indigo-400/25 flex items-center justify-center font-bold text-sm font-mono text-indigo-200 shadow-sm shrink-0">
+                                                        <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-gradient-to-br dark:from-[#312E81] dark:via-[#1E1B4B] dark:to-[#0F172A] border border-indigo-200 dark:border-indigo-400/25 flex items-center justify-center font-bold text-sm font-mono text-indigo-700 dark:text-indigo-200 shadow-xs shrink-0">
                                                             {initial}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <div className="font-bold text-slate-100 text-sm sm:text-base flex items-center gap-2 tracking-tight">
+                                                            <div className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base flex items-center gap-2 tracking-tight">
                                                                 <span className="truncate">{u.full_name}</span>
                                                                 {isSelf && (
-                                                                    <span className="text-[11px] font-mono text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-500/30 font-semibold shrink-0">
+                                                                    <span className="text-[11px] font-mono text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-500/15 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-500/30 font-semibold shrink-0">
                                                                         Akun Anda
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div className="text-xs font-mono text-slate-400 mt-0.5 truncate">
+                                                            <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                                                                 @{u.username}
                                                             </div>
                                                         </div>
@@ -583,10 +583,10 @@ export default function AdminUsersIndex({
                                                         onClick={() => handleToggleStatus(u)}
                                                         className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all inline-flex items-center gap-2 active:scale-95 ${
                                                             isSelf
-                                                                ? 'opacity-80 cursor-default bg-emerald-500/10 text-emerald-300 border-emerald-500/25'
+                                                                ? 'opacity-80 cursor-default bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/25'
                                                                 : u.is_active
-                                                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/35 hover:bg-emerald-500/25 cursor-pointer shadow-sm'
-                                                                : 'bg-rose-500/15 text-rose-300 border-rose-500/35 hover:bg-rose-500/25 cursor-pointer shadow-sm'
+                                                                ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/35 dark:hover:bg-emerald-500/25 cursor-pointer shadow-xs'
+                                                                : 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/35 dark:hover:bg-rose-500/25 cursor-pointer shadow-xs'
                                                         }`}
                                                         title={
                                                             isSelf
@@ -596,7 +596,7 @@ export default function AdminUsersIndex({
                                                     >
                                                         <span
                                                             className={`w-2 h-2 rounded-full shrink-0 ${
-                                                                u.is_active ? 'bg-emerald-400' : 'bg-rose-500'
+                                                                u.is_active ? 'bg-emerald-500' : 'bg-rose-500'
                                                             }`}
                                                         />
                                                         <span>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
@@ -604,12 +604,12 @@ export default function AdminUsersIndex({
                                                 </td>
 
                                                 {/* Shift Activity */}
-                                                <td className="py-4 px-4 text-center font-mono tabular-nums text-slate-300 text-sm font-semibold whitespace-nowrap">
+                                                <td className="py-4 px-4 text-center font-mono tabular-nums text-slate-800 dark:text-slate-300 text-sm font-semibold whitespace-nowrap">
                                                     {u.cashier_shifts_count || 0} sesi
                                                 </td>
 
                                                 {/* Date created */}
-                                                <td className="py-4 px-4 text-slate-400 text-xs font-mono whitespace-nowrap">
+                                                <td className="py-4 px-4 text-slate-500 dark:text-slate-400 text-xs font-mono whitespace-nowrap">
                                                     {u.created_at
                                                         ? new Date(u.created_at).toLocaleDateString('id-ID', {
                                                               day: 'numeric',
@@ -625,10 +625,10 @@ export default function AdminUsersIndex({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleOpenEdit(u)}
-                                                            className="h-9 px-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] transition-colors flex items-center gap-1.5 text-xs font-semibold active:scale-95"
+                                                            className="h-9 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white dark:border-white/[0.08] transition-colors flex items-center gap-1.5 text-xs font-semibold active:scale-95 shadow-xs"
                                                             title="Edit data pengguna"
                                                         >
-                                                            <Edit2 className="w-3.5 h-3.5 text-indigo-400" />
+                                                            <Edit2 className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                                                             <span>Edit</span>
                                                         </button>
 
@@ -638,13 +638,13 @@ export default function AdminUsersIndex({
                                                             onClick={() => handleOpenDelete(u)}
                                                             className={`h-9 w-9 rounded-lg transition-colors flex items-center justify-center text-xs border active:scale-95 ${
                                                                 isSelf
-                                                                    ? 'text-slate-600 border-transparent cursor-not-allowed opacity-40'
-                                                                    : 'bg-white/[0.02] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border-white/[0.06] hover:border-rose-500/30'
+                                                                    ? 'text-slate-300 dark:text-slate-600 border-transparent cursor-not-allowed opacity-40'
+                                                                    : 'bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border-slate-200 hover:border-rose-300 dark:bg-white/[0.02] dark:hover:bg-rose-500/15 dark:text-slate-400 dark:hover:text-rose-400 dark:border-white/[0.06] dark:hover:border-rose-500/30'
                                                             }`}
                                                             title={
                                                                 isSelf
-                                                                    ? 'Tidak dapat menghapus akun sendiri'
-                                                                    : 'Hapus pengguna'
+                                                                    ? 'Anda tidak dapat menghapus akun Anda sendiri'
+                                                                    : 'Hapus akun staf'
                                                             }
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
@@ -661,12 +661,12 @@ export default function AdminUsersIndex({
 
                     {/* Pagination Bar */}
                     {users.links && users.links.length > 3 && (
-                        <div className="p-4 sm:p-5 border-t border-white/[0.08] bg-[#0A0C14] flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-400">
+                        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0A0C14] flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-400">
                             <div>
                                 Menampilkan{' '}
-                                <span className="font-mono text-slate-200 font-semibold">{users.from || 0}</span> –{' '}
-                                <span className="font-mono text-slate-200 font-semibold">{users.to || 0}</span> dari{' '}
-                                <span className="font-mono text-slate-200 font-semibold">{users.total || 0}</span> pengguna
+                                <span className="font-mono text-slate-900 dark:text-slate-200 font-semibold">{users.from || 0}</span> –{' '}
+                                <span className="font-mono text-slate-900 dark:text-slate-200 font-semibold">{users.to || 0}</span> dari{' '}
+                                <span className="font-mono text-slate-900 dark:text-slate-200 font-semibold">{users.total || 0}</span> pengguna
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 {users.links.map((link, idx) => (
@@ -681,8 +681,8 @@ export default function AdminUsersIndex({
                                             link.active
                                                 ? 'bg-gradient-to-r from-[#4338CA] to-[#3730A3] text-white border border-indigo-400/30 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2)]'
                                                 : link.url
-                                                ? 'bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.06]'
-                                                : 'text-slate-600 bg-transparent cursor-not-allowed opacity-50'
+                                                ? 'bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 dark:bg-white/[0.03] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white dark:border-white/[0.06]'
+                                                : 'text-slate-400 dark:text-slate-600 bg-transparent cursor-not-allowed opacity-50'
                                         }`}
                                     />
                                 ))}
