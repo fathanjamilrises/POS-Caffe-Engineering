@@ -251,4 +251,51 @@ class AdminProductAndUserManagementTest extends TestCase
         $response->assertStatus(302);
         $this->assertDatabaseMissing('users', ['id' => $targetUser->id]);
     }
+
+    public function test_admin_can_update_and_delete_category(): void
+    {
+        $newCategory = Category::create([
+            'category_name' => 'Dessert Manis',
+            'slug' => 'dessert-manis',
+        ]);
+
+        $updateResponse = $this->actingAs($this->admin)->put("/admin/categories/{$newCategory->id}", [
+            'category_name' => 'Dessert & Puding',
+        ]);
+        $updateResponse->assertStatus(302);
+        $this->assertEquals('Dessert & Puding', $newCategory->fresh()->category_name);
+
+        $deleteResponse = $this->actingAs($this->admin)->delete("/admin/categories/{$newCategory->id}");
+        $deleteResponse->assertStatus(302);
+        $this->assertDatabaseMissing('categories', ['id' => $newCategory->id]);
+    }
+
+    public function test_admin_can_record_and_delete_operational_expense(): void
+    {
+        $response = $this->actingAs($this->admin)->post('/admin/expenses', [
+            'expense_name' => 'Beli Gas 3kg',
+            'amount' => 22000,
+            'expense_date' => now()->toDateString(),
+            'notes' => 'Keperluan dapur',
+        ]);
+        $response->assertStatus(302);
+        $this->assertDatabaseHas('operational_expenses', [
+            'expense_name' => 'Beli Gas 3kg',
+            'amount' => 22000,
+        ]);
+
+        $expense = \App\Models\OperationalExpense::where('expense_name', 'Beli Gas 3kg')->first();
+        $delResponse = $this->actingAs($this->admin)->delete("/admin/expenses/{$expense->id}");
+        $delResponse->assertStatus(302);
+        $this->assertDatabaseMissing('operational_expenses', ['id' => $expense->id]);
+    }
+
+    public function test_user_can_update_profile(): void
+    {
+        $response = $this->actingAs($this->admin)->post('/profile/update', [
+            'full_name' => 'Admin Baru Berintegritas',
+        ]);
+        $response->assertStatus(302);
+        $this->assertEquals('Admin Baru Berintegritas', $this->admin->fresh()->full_name);
+    }
 }

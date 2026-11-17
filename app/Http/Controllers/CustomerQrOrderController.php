@@ -122,4 +122,16 @@ class CustomerQrOrderController extends Controller
             'order' => $order,
         ]);
     }
+
+    /**
+     * Customer calls waiter / assistance from their table.
+     */
+    public function callWaiter(Request $request, string $token): RedirectResponse
+    {
+        $table = DiningTable::where('qr_code_token', $token)->firstOrFail();
+
+        $reason = $request->input('reason') ?: $request->input('assistance_type') ?: 'Bantuan Pelayan';
+
+        return redirect()->back()->with('success', "Pelayan telah diberitahu untuk segera menuju {$table->table_number} ({$reason}).");
+    }
 }

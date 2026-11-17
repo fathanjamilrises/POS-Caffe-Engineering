@@ -76,6 +76,36 @@ class AuthController extends Controller
     }
 
     /**
+     * Update current authenticated user's profile and password.
+     */
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'full_name' => ['required', 'string', 'max:100'],
+            'current_password' => ['nullable', 'string', 'required_with:new_password'],
+            'new_password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        if (! empty($validated['new_password'])) {
+            if (! Hash::check($validated['current_password'] ?? '', $user->password_hash)) {
+                throw ValidationException::withMessages([
+                    'current_password' => 'Password lama yang Anda masukkan tidak sesuai.',
+                ]);
+            }
+
+            $user->password_hash = Hash::make($validated['new_password']);
+        }
+
+        $user->full_name = $validated['full_name'];
+        $user->save();
+
+        return redirect()->back()->with('success', 'Profil dan kredensial akun berhasil diperbarui.');
+    }
+
+    /**
      * Redirect user to their respective home dashboard based on role.
      */
     protected function redirectBasedOnRole(User $user): RedirectResponse

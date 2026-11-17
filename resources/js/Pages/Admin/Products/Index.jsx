@@ -19,6 +19,7 @@ import {
     Barcode,
     ArrowUpDown,
     RotateCcw,
+    Printer,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
@@ -64,9 +65,11 @@ export default function AdminProductsIndex({
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isQuickScanModalOpen, setIsQuickScanModalOpen] = useState(false);
+    const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false);
 
-    // Selected product for edit/adjustment/delete
+    // Selected product for edit/adjustment/delete/barcode
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedBarcodeProduct, setSelectedBarcodeProduct] = useState(null);
     const [quickScanInput, setQuickScanInput] = useState('');
 
     // Form: Create Product
@@ -729,6 +732,19 @@ export default function AdminProductsIndex({
 
                                         <button
                                             type="button"
+                                            onClick={() => {
+                                                setSelectedBarcodeProduct(p);
+                                                setIsBarcodeModalOpen(true);
+                                            }}
+                                            className="w-11 h-11 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
+                                            title="Cetak label stiker barcode thermal (50x30mm)"
+                                            aria-label="Cetak label barcode"
+                                        >
+                                            <Barcode className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                        </button>
+
+                                        <button
+                                            type="button"
                                             onClick={() => handleOpenEdit(p)}
                                             className="w-11 h-11 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
                                             title="Edit nama, harga, dan kategori"
@@ -1359,6 +1375,84 @@ export default function AdminProductsIndex({
                         Catatan transaksi dan laporan keuangan sebelumnya yang memuat menu ini tetap tersimpan dengan aman.
                     </p>
                 </div>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 7: CETAK LABEL BARCODE THERMAL 50x30mm
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={isBarcodeModalOpen}
+                onClose={() => setIsBarcodeModalOpen(false)}
+                title="Cetak Label Barcode Thermal"
+                subtitle={selectedBarcodeProduct ? `${selectedBarcodeProduct.product_name} • Format 50x30mm` : ''}
+                maxWidth="max-w-sm"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setIsBarcodeModalOpen(false)}
+                        >
+                            Tutup
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            icon={Printer}
+                            onClick={() => window.print()}
+                            className="font-bold"
+                        >
+                            Cetak Stiker
+                        </SpecularButton>
+                    </div>
+                }
+            >
+                {selectedBarcodeProduct && (
+                    <div className="space-y-3">
+                        <p className="text-xs text-slate-400">
+                            Pratinjau stiker thermal format 50mm x 30mm untuk ditempel pada kemasan produk:
+                        </p>
+                        {/* 50x30mm thermal label container */}
+                        <div
+                            id="thermal-barcode-printable"
+                            className="w-[240px] h-[145px] p-2.5 rounded-lg bg-white text-slate-900 border border-slate-300 shadow-sm mx-auto flex flex-col justify-between font-mono select-none"
+                        >
+                            <div className="text-center border-b border-dashed border-slate-300 pb-1">
+                                <div className="text-[10px] font-bold tracking-wider uppercase text-slate-700">KASIR APP CANTEEN</div>
+                                <div className="text-xs font-black truncate leading-tight text-black">{selectedBarcodeProduct.product_name}</div>
+                            </div>
+
+                            {/* Barcode Lines Simulation */}
+                            <div className="flex flex-col items-center justify-center my-1">
+                                <div className="w-full h-8 flex items-end justify-center gap-[2px] px-2 overflow-hidden">
+                                    {(selectedBarcodeProduct.barcode || '899275311234')
+                                        .split('')
+                                        .map((char, idx) => {
+                                            const code = char.charCodeAt(0);
+                                            const width = (code % 3) + 1;
+                                            const height = 24 + (code % 8);
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="bg-black shrink-0"
+                                                    style={{ width: `${width}px`, height: `${height}px` }}
+                                                />
+                                            );
+                                        })}
+                                </div>
+                                <span className="text-[11px] font-bold tracking-widest text-black mt-0.5">
+                                    {selectedBarcodeProduct.barcode || 'NO-BARCODE'}
+                                </span>
+                            </div>
+
+                            <div className="text-center pt-1 border-t border-dashed border-slate-300">
+                                <span className="text-xs font-black text-black">
+                                    {formatRupiah(selectedBarcodeProduct.selling_price)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </AcrylicModal>
         </AdminAcrylicLayout>
     );

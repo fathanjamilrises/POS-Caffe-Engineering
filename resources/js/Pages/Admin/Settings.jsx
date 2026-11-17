@@ -27,6 +27,10 @@ import {
     Sun,
     Moon,
     Laptop,
+    Store,
+    Download,
+    AlertOctagon,
+    Printer,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -39,11 +43,22 @@ export default function AdminSettings({
     system_info = {},
     database_info = {},
     security_settings = {},
+    store_profile = {},
     logs = [],
     total_tables = 0,
 }) {
     const { theme, resolvedTheme, setTheme } = useTheme();
-    const [activeTab, setActiveTab] = useState('server'); // 'server' | 'optimize' | 'security' | 'maintenance' | 'logs'
+    const [activeTab, setActiveTab] = useState('server'); // 'server' | 'store' | 'optimize' | 'security' | 'maintenance' | 'logs'
+
+    // Store Profile Form State
+    const [storeForm, setStoreForm] = useState({
+        store_name: store_profile.store_name || 'KASIR CAFE CANTEEN',
+        store_address: store_profile.store_address || '',
+        store_phone: store_profile.store_phone || '',
+        receipt_footer: store_profile.receipt_footer || 'Terima Kasih Atas Kunjungan Anda!',
+        thermal_paper_width: store_profile.thermal_paper_width || '58mm',
+    });
+    const [isSavingStore, setIsSavingStore] = useState(false);
 
     // Security Form State
     const [securityForm, setSecurityForm] = useState({
@@ -77,8 +92,10 @@ export default function AdminSettings({
     // Confirmation Modals State
     const [showRegenQrModal, setShowRegenQrModal] = useState(false);
     const [showClearLogsModal, setShowClearLogsModal] = useState(false);
+    const [showResetDemoModal, setShowResetDemoModal] = useState(false);
     const [isRegeneratingQr, setIsRegeneratingQr] = useState(false);
     const [isClearingLogs, setIsClearingLogs] = useState(false);
+    const [isResettingDemo, setIsResettingDemo] = useState(false);
 
     // Log Viewer State
     const [logLevelFilter, setLogLevelFilter] = useState('ALL');
@@ -144,6 +161,40 @@ export default function AdminSettings({
                 },
             }
         );
+    };
+
+    // Handle Save Store Profile
+    const handleSaveStore = (e) => {
+        e.preventDefault();
+        setIsSavingStore(true);
+        router.post('/admin/settings/store-profile', storeForm, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsSavingStore(false);
+                toast.success('Identitas kafe dan format struk berhasil disimpan.');
+            },
+            onError: (errs) => {
+                setIsSavingStore(false);
+                toast.error(Object.values(errs)[0] || 'Gagal menyimpan identitas kafe.');
+            },
+        });
+    };
+
+    // Handle Reset Demo Data
+    const handleResetDemoData = () => {
+        setIsResettingDemo(true);
+        router.post('/admin/settings/reset-demo', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsResettingDemo(false);
+                setShowResetDemoModal(false);
+                toast.success('Seluruh data transaksi dan antrean demo telah direset bersih.');
+            },
+            onError: () => {
+                setIsResettingDemo(false);
+                toast.error('Gagal mereset data demo.');
+            },
+        });
     };
 
     // Handle Save Security Settings
@@ -280,6 +331,7 @@ export default function AdminSettings({
                 <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-2 flex items-center gap-1.5 overflow-x-auto select-none shadow-sm">
                     {[
                         { id: 'server', label: 'Ringkasan & Server', icon: Server },
+                        { id: 'store', label: 'Profil Kafe & Struk', icon: Store },
                         { id: 'optimize', label: 'Perintah Optimasi', icon: Zap },
                         { id: 'security', label: 'Keamanan QR & Barcode', icon: ShieldCheck },
                         {
@@ -540,6 +592,156 @@ export default function AdminSettings({
                                         </button>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ============================================================
+                    TAB 1B: PROFIL KAFE & FORMAT STRUK THERMAL
+                ============================================================ */}
+                {activeTab === 'store' && (
+                    <div className="space-y-5">
+                        <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-2">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                <Store className="w-4 h-4 text-indigo-400" />
+                                <span>Identitas Usaha & Konfigurasi Struk Kasir</span>
+                            </h3>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                Atur nama kafe/kantin, alamat fisik, nomor kontak, serta format catatan kaki pada struk belanja thermal (58mm / 80mm).
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                            {/* Form Input (7 cols) */}
+                            <form onSubmit={handleSaveStore} className="lg:col-span-7 space-y-4">
+                                <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-300 block">
+                                            Nama Resto / Kafe / Kantin:
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={storeForm.store_name}
+                                            onChange={(e) => setStoreForm({ ...storeForm, store_name: e.target.value })}
+                                            placeholder="Contoh: KASIR CAFE CANTEEN"
+                                            className="w-full h-10 px-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500 font-medium"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-300 block">
+                                            Alamat Lengkap Usaha:
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={storeForm.store_address}
+                                            onChange={(e) => setStoreForm({ ...storeForm, store_address: e.target.value })}
+                                            placeholder="Jl. R.E. Martadinata No. 42, Ciamis"
+                                            className="w-full p-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500 font-sans resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-300 block">
+                                                Nomor Telepon / WhatsApp:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={storeForm.store_phone}
+                                                onChange={(e) => setStoreForm({ ...storeForm, store_phone: e.target.value })}
+                                                placeholder="0812-3456-7890"
+                                                className="w-full h-10 px-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-300 block">
+                                                Ukuran Standar Kertas Struk:
+                                            </label>
+                                            <select
+                                                value={storeForm.thermal_paper_width}
+                                                onChange={(e) => setStoreForm({ ...storeForm, thermal_paper_width: e.target.value })}
+                                                className="w-full h-10 px-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500"
+                                            >
+                                                <option value="58mm">58mm (Roll Kecil / Portable)</option>
+                                                <option value="80mm">80mm (Standar Desktop POS)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-300 block">
+                                            Catatan Kaki Struk (Receipt Footer):
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={storeForm.receipt_footer}
+                                            onChange={(e) => setStoreForm({ ...storeForm, receipt_footer: e.target.value })}
+                                            placeholder="Terima Kasih Atas Kunjungan Anda! Harap Simpan Struk Ini..."
+                                            className="w-full p-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500 font-sans resize-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end pt-1">
+                                    <SpecularButton
+                                        type="submit"
+                                        variant="primary"
+                                        size="md"
+                                        disabled={isSavingStore}
+                                        icon={Store}
+                                    >
+                                        <span>{isSavingStore ? 'Menyimpan...' : 'Simpan Profil & Format Struk'}</span>
+                                    </SpecularButton>
+                                </div>
+                            </form>
+
+                            {/* Live Struk Preview (5 cols) */}
+                            <div className="lg:col-span-5 bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-3">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <Printer className="w-4 h-4 text-indigo-400" />
+                                    <span>Pratinjau Format Struk ({storeForm.thermal_paper_width})</span>
+                                </h4>
+
+                                <div className={`p-4 rounded-xl bg-white text-slate-900 font-mono space-y-2.5 shadow-md mx-auto ${storeForm.thermal_paper_width === '58mm' ? 'max-w-[260px] text-[11px]' : 'max-w-[320px] text-xs'}`}>
+                                    <div className="text-center border-b border-dashed border-slate-300 pb-2">
+                                        <h5 className="font-bold tracking-wider uppercase text-black">{storeForm.store_name || 'KASIR CAFE'}</h5>
+                                        <p className="text-[10px] text-slate-600 leading-tight mt-0.5">{storeForm.store_address || 'Alamat Toko'}</p>
+                                        <p className="text-[10px] text-slate-500 mt-0.5">Telp: {storeForm.store_phone || '-'}</p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px]">
+                                        <div className="flex justify-between">
+                                            <span>Token:</span>
+                                            <span className="font-bold text-xs">#042</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Invoice:</span>
+                                            <span>INV-20261117-0042</span>
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-b border-dashed border-slate-300 py-1.5 space-y-1 text-[10px]">
+                                        <div className="flex justify-between">
+                                            <span>1x Mie Goreng Spesial</span>
+                                            <span>Rp 18.000</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>1x Es Kopi Susu Gula Aren</span>
+                                            <span>Rp 15.000</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] font-bold">
+                                        <div className="flex justify-between">
+                                            <span>TOTAL:</span>
+                                            <span>Rp 33.000</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-center border-t border-dashed border-slate-300 pt-2 text-[10px] text-slate-600 leading-tight">
+                                        <p>{storeForm.receipt_footer || 'Terima kasih atas kunjungan Anda!'}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -889,6 +1091,50 @@ export default function AdminSettings({
                                 </SpecularButton>
                             </div>
                         </form>
+
+                        {/* Database Backup & Demo Reset Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            {/* Backup Card */}
+                            <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                        <Download className="w-5 h-5 text-emerald-400" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-white">Cadangan Database (.SQL)</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        Unduh berkas .SQL berisi seluruh skema database, tabel menu produk, transaksi penjualan kasir, dan akun pengguna.
+                                    </p>
+                                </div>
+                                <a
+                                    href="/admin/settings/backup-database"
+                                    className="min-h-[42px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Unduh File Cadangan Database (.SQL)</span>
+                                </a>
+                            </div>
+
+                            {/* Reset Demo Card */}
+                            <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                        <AlertOctagon className="w-5 h-5 text-rose-400" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-white">Reset Riwayat Transaksi Demo</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        Bersihkan riwayat transaksi kasir uji coba, tiket dapur KDS, dan sesi shift untuk mempersiapkan operasional bersih secara riil.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowResetDemoModal(true)}
+                                    className="min-h-[42px] px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 active:scale-95 text-rose-300 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                                >
+                                    <Trash2 className="w-4 h-4 text-rose-400" />
+                                    <span>Reset Riwayat Transaksi Demo</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -1185,6 +1431,46 @@ export default function AdminSettings({
                             <span>{isClearingLogs ? 'Membersihkan...' : 'Ya, Kosongkan Log'}</span>
                         </SpecularButton>
                     </div>
+                </div>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 4: KONFIRMASI RESET DATA DEMO
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={showResetDemoModal}
+                onClose={() => setShowResetDemoModal(false)}
+                title="Reset Transaksi Simulasi?"
+                subtitle="Tindakan ini akan mengosongkan riwayat pesanan demo"
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setShowResetDemoModal(false)}
+                        >
+                            Batal
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="danger"
+                            size="md"
+                            disabled={isResettingDemo}
+                            onClick={handleResetDemoData}
+                            icon={Trash2}
+                        >
+                            <span>{isResettingDemo ? 'Mereset...' : 'Ya, Bersihkan Data Demo'}</span>
+                        </SpecularButton>
+                    </div>
+                }
+            >
+                <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+                    <p>
+                        Seluruh data <strong className="text-white">Pesanan Kasir</strong>, <strong className="text-white">Tiket Dapur (KDS)</strong>, dan <strong className="text-white">Sesi Shift Kasir</strong> akan dikosongkan.
+                    </p>
+                    <p className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300">
+                        ✓ Akun pengguna (Admin/Kasir/Koki), daftar menu katalog, dan nomor meja TETAP AMAN dan tidak akan dihapus.
+                    </p>
                 </div>
             </AcrylicModal>
         </AuthenticatedLayout>

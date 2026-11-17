@@ -322,4 +322,39 @@ class AdminReportService
 
         return $csv ?: '';
     }
+
+    /**
+     * Generate CSV export for operational expenses.
+     */
+    public function generateExpensesCsv(): string
+    {
+        $expenses = OperationalExpense::with('user')->latest('expense_date')->limit(500)->get();
+
+        $output = fopen('php://temp', 'r+');
+        fwrite($output, "\xEF\xBB\xBF");
+
+        fputcsv($output, [
+            'Tanggal',
+            'Nama Pengeluaran / Beban',
+            'Jumlah (Rp)',
+            'Dicatat Oleh',
+            'Catatan / Keterangan',
+        ]);
+
+        foreach ($expenses as $e) {
+            fputcsv($output, [
+                $e->expense_date,
+                $e->expense_name,
+                $e->amount,
+                $e->user?->full_name ?? '-',
+                $e->notes ?? '-',
+            ]);
+        }
+
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return $csv ?: '';
+    }
 }

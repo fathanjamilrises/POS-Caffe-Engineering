@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
     ShoppingCart,
@@ -29,6 +29,8 @@ import {
     History,
     Printer,
     RefreshCw,
+    Keyboard,
+    HelpCircle,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -37,6 +39,12 @@ import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
 import AcrylicInput from '@/Components/Acrylic/AcrylicInput';
 import { useBarcodeScanner } from '@/Hooks/useBarcodeScanner';
 import { toast } from '@/Services/toast';
+import {
+    playScannerBeep,
+    playCartBeep,
+    playSuccessChime,
+    playWarningBuzzer,
+} from '@/Services/audio';
 
 function formatRupiah(amount) {
     const num = Number(amount) || 0;
@@ -85,6 +93,8 @@ export default function CashierPos({
     const [isCancellingOrder, setIsCancellingOrder] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+    const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+    const [receiptPaperWidth, setReceiptPaperWidth] = useState('58mm');
     const [selectedOrderForReprint, setSelectedOrderForReprint] = useState(null);
     const [historyFilter, setHistoryFilter] = useState('all'); // 'all' | 'unprocessed' | 'processing' | 'ready' | 'served'
     const [historySearchQuery, setHistorySearchQuery] = useState('');
@@ -196,13 +206,19 @@ export default function CashierPos({
         notes: '',
     });
 
+    const searchInputRef = useRef(null);
+
     // Barcode scanner integration: scanning a barcode instantly adds the item to the cart
     const handleBarcodeDetected = (barcode) => {
         const item = products.find((p) => p.barcode === barcode);
         if (item) {
+            playScannerBeep();
             addToCart(item);
+            toast.success(`Barcode terbaca: ${item.product_name}`);
         } else {
+            playWarningBuzzer();
             setSearchQuery(barcode);
+            toast.warning(`Barcode "${barcode}" tidak ditemukan.`);
         }
     };
 
@@ -243,6 +259,7 @@ export default function CashierPos({
 
     const addToCart = (product) => {
         if (product.stock_qty <= 0 || !product.is_available) {
+            playWarningBuzzer();
             showNotice(
                 'Menu Tidak Tersedia',
                 `Menu "${product.product_name}" saat ini sedang habis atau tidak aktif untuk dijual.`,
@@ -251,10 +268,13 @@ export default function CashierPos({
             return;
         }
 
+        playCartBeep();
+
         setCart((prev) => {
             const existing = prev.find((i) => i.id === product.id);
             if (existing) {
                 if (existing.quantity >= product.stock_qty) {
+                    playWarningBuzzer();
                     showNotice(
                         'Batas Stok Menu Tercapai',
                         `Menu "${product.product_name}" hanya tersisa ${product.stock_qty} unit di gudang/dapur. Anda tidak dapat menambahkan lebih dari stok yang ada.`,
@@ -367,9 +387,16 @@ export default function CashierPos({
 
     const handleSubmitCheckout = (e) => {
         e.preventDefault();
+        if (isUnderpaid) {
+            playWarningBuzzer();
+            toast.error('Jumlah uang tunai yang diterima kurang dari total belanja!');
+            return;
+        }
+
         postCheckout('/pos/checkout', {
             preserveScroll: true,
             onSuccess: (page) => {
+                playSuccessChime();
                 setIsPaymentModalOpen(false);
                 setCart([]);
                 resetCheckout();
@@ -380,25 +407,52 @@ export default function CashierPos({
                     setIsReprintModalOpen(true);
                 }
             },
+            onError: () => {
+                playWarningBuzzer();
+            },
         });
     };
 
-    // Keyboard shortcut (F8: Buka Pembayaran)
+    // Keyboard shortcuts listener (F1, F2, F4, F7, F8, F9, F10)
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'F8') {
-                e.preventDefault();
+            const isFKey = /^F(1|2|4|7|8|9|10)$/.test(e.key);
+            if (!isFKey) return;
+
+            e.preventDefault();
+            if (e.key === 'F1') {
+                setIsShortcutsModalOpen((prev) => !prev);
+            } else if (e.key === 'F2') {
+                searchInputRef.current?.focus();
+            } else if (e.key === 'F4') {
+                if (cart.length > 0) setIsClearCartModalOpen(true);
+            } else if (e.key === 'F7') {
+                setIsHistoryModalOpen(true);
+            } else if (e.key === 'F8') {
                 if (cart.length > 0 && !isPaymentModalOpen) {
                     handleOpenPayment('tunai');
+                }
+            } else if (e.key === 'F9') {
+                if (pending_qr_orders.length > 0) {
+                    handleOpenPendingQrOrder(pending_qr_orders[0]);
+                } else {
+                    toast.info('Tidak ada antrean pesanan QR meja saat ini.');
+                }
+            } else if (e.key === 'F10') {
+                if (fulfillment_orders.length > 0) {
+                    setIsFulfillmentModalOpen(true);
+                } else {
+                    toast.info('Tidak ada pesanan siap saji dari dapur saat ini.');
                 }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [cart, isPaymentModalOpen, cartTotals, active_shift, orderSource, selectedTableId, customerName]);
+    }, [cart, isPaymentModalOpen, pending_qr_orders, fulfillment_orders, cartTotals, active_shift, orderSource, selectedTableId, customerName]);
 
     // Handshake: Cashier marks order as served
     const handleServeOrder = (orderId) => {
+        playSuccessChime();
         router.post(`/pos/orders/${orderId}/serve`, {}, { preserveScroll: true });
     };
 
@@ -420,6 +474,7 @@ export default function CashierPos({
             pendingPaymentMethod === 'tunai' &&
             Number(pendingAmountReceived) < Number(selectedPendingOrder.total_amount)
         ) {
+            playWarningBuzzer();
             toast.error('Uang tunai yang diterima kurang dari total tagihan!');
             return;
         }
@@ -436,12 +491,14 @@ export default function CashierPos({
             {
                 preserveScroll: true,
                 onSuccess: () => {
+                    playSuccessChime();
                     setIsPendingQrModalOpen(false);
                     setSelectedPendingOrder(null);
                     setPendingAmountReceived('');
                     toast.success('Pembayaran pesanan QR meja berhasil dikonfirmasi dan dikirim ke dapur!');
                 },
                 onError: (errs) => {
+                    playWarningBuzzer();
                     const firstMsg = Object.values(errs)[0];
                     toast.error(firstMsg || 'Gagal memproses pembayaran pesanan.');
                 },
@@ -586,12 +643,23 @@ export default function CashierPos({
 
                     {/* Right: Unified Action Buttons Group */}
                     <div className="flex items-center gap-2 shrink-0">
+                        {/* 0. Hotkeys (F1) Guide */}
+                        <button
+                            type="button"
+                            onClick={() => setIsShortcutsModalOpen(true)}
+                            className="h-8 px-2.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:border-white/[0.08] dark:text-slate-300 font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs"
+                            title="Panduan Pintasan Keyboard (F1)"
+                        >
+                            <Keyboard className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                            <span className="hidden xl:inline">Hotkeys (F1)</span>
+                        </button>
+
                         {/* 1. Riwayat Transaksi Button */}
                         <button
                             type="button"
                             onClick={() => setIsHistoryModalOpen(true)}
                             className="h-8 px-3 rounded-lg bg-white hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:border-white/[0.08] dark:text-slate-200 dark:hover:text-white font-semibold text-xs transition-all flex items-center gap-2 shadow-xs dark:shadow-sm"
-                            title="Buka riwayat transaksi kasir dan tracking status pesanan"
+                            title="Buka riwayat transaksi kasir dan tracking status pesanan (F7)"
                         >
                             <History className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                             <span className="hidden sm:inline">Riwayat Transaksi</span>
@@ -679,10 +747,11 @@ export default function CashierPos({
                             <div className="relative">
                                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 <input
+                                    ref={searchInputRef}
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Cari nama menu atau scan barcode..."
+                                    placeholder="Cari nama menu atau scan barcode (F2)..."
                                     className="w-full h-10 bg-slate-50 dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-10 pr-9 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors shadow-xs dark:shadow-none"
                                 />
                                 {searchQuery && (
@@ -1906,7 +1975,7 @@ export default function CashierPos({
                 onClose={() => setIsReprintModalOpen(false)}
                 title="Struk Bukti Pembayaran"
                 subtitle={selectedOrderForReprint ? `Invoice: ${selectedOrderForReprint.invoice_number}` : ''}
-                maxWidth="max-w-sm"
+                maxWidth="max-w-md"
                 footer={
                     <div className="flex items-center justify-between w-full">
                         <SpecularButton
@@ -1924,100 +1993,139 @@ export default function CashierPos({
                             onClick={() => window.print()}
                             className="min-h-[42px] px-5 font-bold"
                         >
-                            Cetak Struk
+                            Cetak Struk ({receiptPaperWidth})
                         </SpecularButton>
                     </div>
                 }
             >
                 {selectedOrderForReprint && (
-                    <div className="p-4 rounded-xl bg-white text-slate-900 font-mono text-xs space-y-3 shadow-inner">
-                        <div className="text-center border-b border-dashed border-slate-300 pb-3">
-                            <h4 className="font-bold text-sm tracking-wider uppercase">KASIR APP CANTEEN</h4>
-                            <p className="text-[11px] text-slate-600">Sistem Kasir & Dapur Terintegrasi</p>
-                            <p className="text-[10px] text-slate-500 mt-1">
-                                {selectedOrderForReprint.invoice_number}
-                            </p>
-                        </div>
-
-                        <div className="space-y-1 text-[11px]">
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Nomor Token:</span>
-                                <span className="font-bold text-sm">#{selectedOrderForReprint.token_number}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Tanggal/Jam:</span>
-                                <span>{new Date(selectedOrderForReprint.created_at).toLocaleString('id-ID')}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Layanan:</span>
-                                <span>{selectedOrderForReprint.table ? `Meja ${selectedOrderForReprint.table.table_number}` : 'Takeaway / Bungkus'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Pelanggan:</span>
-                                <span>{selectedOrderForReprint.customer_name || 'Pelanggan'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Tipe Pesanan:</span>
-                                <span className="font-bold">
-                                    {(selectedOrderForReprint.items || []).some(i => i.product?.requires_kitchen)
-                                        ? 'Masak Dapur'
-                                        : 'Instan (Langsung Saji)'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-600">Status Pesanan:</span>
-                                <span className="font-bold uppercase text-emerald-700">
-                                    {selectedOrderForReprint.order_status === 'served'
-                                        ? 'Selesai / Lunas'
-                                        : selectedOrderForReprint.order_status === 'processing'
-                                        ? 'Sedang Dimasak Dapur'
-                                        : selectedOrderForReprint.order_status === 'ready'
-                                        ? 'Siap Diambil'
-                                        : 'Menunggu Pembayaran'}
-                                </span>
+                    <div className="space-y-3">
+                        {/* Paper Width Selector */}
+                        <div className="flex items-center justify-between p-2 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] text-xs">
+                            <span className="font-semibold text-slate-700 dark:text-slate-300">Format Kertas Thermal:</span>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setReceiptPaperWidth('58mm')}
+                                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${
+                                        receiptPaperWidth === '58mm'
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'bg-white dark:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    58mm (Roll Kecil)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setReceiptPaperWidth('80mm')}
+                                    className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all ${
+                                        receiptPaperWidth === '80mm'
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'bg-white dark:bg-white/[0.08] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    80mm (Standar)
+                                </button>
                             </div>
                         </div>
 
-                        <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-1">
-                            {(selectedOrderForReprint.items || []).map((item) => (
-                                <div key={item.id} className="flex justify-between">
-                                    <span>
-                                        {item.quantity}x {item.product?.product_name || 'Item'}
-                                        <span className="text-[10px] text-slate-500 ml-1">
-                                            ({item.product?.requires_kitchen ? 'Dapur' : 'Instan'})
-                                        </span>
-                                    </span>
-                                    <span>{formatRupiah(item.subtotal)}</span>
+                        {/* Struk Card Container */}
+                        <div
+                            id="thermal-receipt-printable"
+                            className={`p-4 rounded-xl bg-white text-slate-900 font-mono space-y-3 shadow-inner mx-auto transition-all ${
+                                receiptPaperWidth === '58mm'
+                                    ? 'thermal-receipt-58mm max-w-[270px] text-xs'
+                                    : 'thermal-receipt-80mm max-w-[350px] text-sm'
+                            }`}
+                        >
+                            <div className="text-center border-b border-dashed border-slate-300 pb-3">
+                                <h4 className="font-bold text-sm tracking-wider uppercase">KASIR APP CANTEEN</h4>
+                                <p className="text-[11px] text-slate-600">Sistem Kasir & Dapur Terintegrasi</p>
+                                <p className="text-[10px] text-slate-500 mt-1">
+                                    {selectedOrderForReprint.invoice_number}
+                                </p>
+                            </div>
+
+                            <div className="space-y-1 text-[11px]">
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Nomor Token:</span>
+                                    <span className="font-bold text-sm">#{selectedOrderForReprint.token_number}</span>
                                 </div>
-                            ))}
-                        </div>
-
-                        <div className="space-y-1 text-[11px]">
-                            <div className="flex justify-between font-bold text-xs pt-1">
-                                <span>Total Belanja:</span>
-                                <span>{formatRupiah(selectedOrderForReprint.total_amount)}</span>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Tanggal/Jam:</span>
+                                    <span>{new Date(selectedOrderForReprint.created_at).toLocaleString('id-ID')}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Layanan:</span>
+                                    <span>{selectedOrderForReprint.table ? `Meja ${selectedOrderForReprint.table.table_number}` : 'Takeaway / Bungkus'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Pelanggan:</span>
+                                    <span>{selectedOrderForReprint.customer_name || 'Pelanggan'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Tipe Pesanan:</span>
+                                    <span className="font-bold">
+                                        {(selectedOrderForReprint.items || []).some(i => i.product?.requires_kitchen)
+                                            ? 'Masak Dapur'
+                                            : 'Instan (Langsung Saji)'}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-slate-600">Status Pesanan:</span>
+                                    <span className="font-bold uppercase text-emerald-700">
+                                        {selectedOrderForReprint.order_status === 'served'
+                                            ? 'Selesai / Lunas'
+                                            : selectedOrderForReprint.order_status === 'processing'
+                                            ? 'Sedang Dimasak Dapur'
+                                            : selectedOrderForReprint.order_status === 'ready'
+                                            ? 'Siap Diambil'
+                                            : 'Menunggu Pembayaran'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex justify-between text-slate-600">
-                                <span>Metode Bayar:</span>
-                                <span className="uppercase">{selectedOrderForReprint.payment_method}</span>
-                            </div>
-                            {selectedOrderForReprint.payment_method === 'tunai' && (
-                                <>
-                                    <div className="flex justify-between text-slate-600">
-                                        <span>Tunai Diterima:</span>
-                                        <span>{formatRupiah(selectedOrderForReprint.amount_received)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-slate-600">
-                                        <span>Kembalian:</span>
-                                        <span>{formatRupiah(selectedOrderForReprint.change_amount)}</span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
 
-                        <div className="text-center border-t border-dashed border-slate-300 pt-3 text-[10px] text-slate-500">
-                            <p>Terima Kasih Atas Kunjungan Anda!</p>
-                            <p>Pesanan Segar dari Dapur Kantin</p>
+                            <div className="border-t border-b border-dashed border-slate-300 py-2 space-y-1">
+                                {(selectedOrderForReprint.items || []).map((item) => (
+                                    <div key={item.id} className="flex justify-between">
+                                        <span>
+                                            {item.quantity}x {item.product?.product_name || 'Item'}
+                                            <span className="text-[10px] text-slate-500 ml-1">
+                                                ({item.product?.requires_kitchen ? 'Dapur' : 'Instan'})
+                                            </span>
+                                        </span>
+                                        <span>{formatRupiah(item.subtotal)}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="space-y-1 text-[11px]">
+                                <div className="flex justify-between font-bold text-xs pt-1">
+                                    <span>Total Belanja:</span>
+                                    <span>{formatRupiah(selectedOrderForReprint.total_amount)}</span>
+                                </div>
+                                <div className="flex justify-between text-slate-600">
+                                    <span>Metode Bayar:</span>
+                                    <span className="uppercase">{selectedOrderForReprint.payment_method}</span>
+                                </div>
+                                {selectedOrderForReprint.payment_method === 'tunai' && (
+                                    <>
+                                        <div className="flex justify-between text-slate-600">
+                                            <span>Tunai Diterima:</span>
+                                            <span>{formatRupiah(selectedOrderForReprint.amount_received)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-slate-600">
+                                            <span>Kembalian:</span>
+                                            <span>{formatRupiah(selectedOrderForReprint.change_amount)}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="text-center border-t border-dashed border-slate-300 pt-3 text-[10px] text-slate-500">
+                                <p>Terima Kasih Atas Kunjungan Anda!</p>
+                                <p>Pesanan Segar dari Dapur Kantin</p>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -2331,6 +2439,58 @@ export default function CashierPos({
                         )}
                     </div>
                 )}
+            </AcrylicModal>
+
+            {/* =========================================================
+                MODAL 9: PANDUAN PINTASAN KEYBOARD (HOTKEYS WORKSTATION)
+               ========================================================= */}
+            <AcrylicModal
+                isOpen={isShortcutsModalOpen}
+                onClose={() => setIsShortcutsModalOpen(false)}
+                title="Pintasan Keyboard (Workstation Hotkeys)"
+                subtitle="Akses cepat navigasi kasir kecepatan tinggi tanpa mouse"
+                maxWidth="max-w-md"
+                footer={
+                    <SpecularButton
+                        variant="primary"
+                        size="md"
+                        onClick={() => setIsShortcutsModalOpen(false)}
+                        className="w-full"
+                    >
+                        Tutup Panduan (Esc)
+                    </SpecularButton>
+                }
+            >
+                <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px]">F1</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Buka Panduan Pintasan Keyboard</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px]">F2</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Fokus ke Input Cari Menu / Scan Barcode</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-rose-600 text-white text-[11px]">F4</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Kosongkan Keranjang Belanja</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px]">F7</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Buka Riwayat Transaksi & Status Pesanan</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-emerald-600 text-white text-[11px]">F8</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Buka Dialog Pembayaran (Bayar Tunai)</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-indigo-600 text-white text-[11px]">F9</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Verifikasi Antrean Pesanan QR Meja</span>
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08]">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-amber-600 text-white text-[11px]">F10</span>
+                        <span className="font-medium text-slate-700 dark:text-slate-200">Serah Terima Pesanan Selesai Masak dari Dapur</span>
+                    </div>
+                </div>
             </AcrylicModal>
         </AuthenticatedLayout>
     );

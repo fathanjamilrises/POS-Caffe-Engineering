@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     CheckCircle2,
@@ -11,13 +11,24 @@ import {
     PlusCircle,
     Store,
     Sparkles,
+    PhoneCall,
+    Bell,
+    Check,
+    HelpCircle,
+    UtensilsCrossed,
+    FileText,
 } from 'lucide-react';
 import GuestAcrylicLayout from '@/Layouts/GuestAcrylicLayout';
 import AcrylicCard from '@/Components/Acrylic/AcrylicCard';
 import AcrylicBadge from '@/Components/Acrylic/AcrylicBadge';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
+import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
+import { toast } from '@/Services/toast';
 
 export default function CustomerQrStatus({ table, order }) {
+    const [isCallWaiterOpen, setIsCallWaiterOpen] = useState(false);
+    const [assistanceType, setAssistanceType] = useState('waiter');
+    const [callingWaiter, setCallingWaiter] = useState(false);
     // Gentle auto-refresh every 8 seconds to reflect kitchen progress
     useEffect(() => {
         if (order.order_status === 'served') return;
@@ -37,6 +48,26 @@ export default function CustomerQrStatus({ table, order }) {
             only: ['order'],
             preserveScroll: true,
         });
+    };
+
+    const handleCallWaiter = (type = 'waiter') => {
+        setCallingWaiter(true);
+        router.post(
+            `/table/${table.qr_code_token}/call-waiter`,
+            { assistance_type: type },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setCallingWaiter(false);
+                    setIsCallWaiterOpen(false);
+                    toast.success('Panggilan telah terkirim ke staf kasir!');
+                },
+                onError: () => {
+                    setCallingWaiter(false);
+                    toast.error('Gagal mengirim panggilan ke kasir.');
+                },
+            }
+        );
     };
 
     // Determine stepper progress
@@ -132,19 +163,16 @@ export default function CustomerQrStatus({ table, order }) {
                     </div>
 
                     {isUnpaid && order.order_status !== 'cancelled' ? (
-                        <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs text-left space-y-1.5">
+                        <div className="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs text-left space-y-2">
                             <div className="font-bold text-amber-300 flex items-center gap-1.5">
                                 <Receipt className="w-4 h-4 text-amber-400 shrink-0" />
-                                <span>Menunggu Pembayaran di Meja Kasir</span>
+                                <span>Menunggu Konfirmasi Pembayaran ({order.payment_method.toUpperCase()})</span>
                             </div>
                             <p className="leading-relaxed text-[11px] text-amber-200/90">
-                                Total tagihan Anda adalah{' '}
-                                <strong className="text-white font-mono font-bold text-xs">
-                                    Rp {Number(order.total_amount).toLocaleString('id-ID')}
-                                </strong>
-                                . Silakan menuju meja kasir dan sebutkan{' '}
-                                <strong>Meja {table.table_number}</strong> atau Token{' '}
-                                <strong>#{order.token_number}</strong> agar koki segera memasak pesanan Anda.
+                                Total tagihan: <strong className="text-white font-mono font-bold text-xs">Rp {Number(order.total_amount).toLocaleString('id-ID')}</strong>.
+                                {order.payment_method === 'qris'
+                                    ? ' Silakan scan QRIS di meja atau tunjukkan kode Token ke kasir untuk menyelesaikan transaksi.'
+                                    : ` Silakan menuju meja kasir dan sebutkan Meja ${table.table_number} atau Token #${order.token_number}.`}
                             </p>
                         </div>
                     ) : (
@@ -290,16 +318,81 @@ export default function CustomerQrStatus({ table, order }) {
                     </div>
                 </AcrylicCard>
 
-                {/* Additional Order Action */}
-                <div className="text-center pt-2">
+                {/* Additional Order Action & Call Waiter */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setIsCallWaiterOpen(true)}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all shadow-sm active:scale-95"
+                    >
+                        <Bell className="w-4 h-4 text-amber-400" />
+                        <span>Panggil Pelayan / Bantuan Meja</span>
+                    </button>
+
                     <Link
                         href={`/table/${table.qr_code_token}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] text-xs font-medium transition-colors"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] text-xs font-medium transition-all"
                     >
                         <PlusCircle className="w-4 h-4 text-indigo-400" />
-                        <span>Pesan Menu Tambahan untuk Meja Ini</span>
+                        <span>Pesan Menu Tambahan</span>
                     </Link>
                 </div>
+
+                {/* Call Waiter Modal */}
+                <AcrylicModal
+                    isOpen={isCallWaiterOpen}
+                    onClose={() => setIsCallWaiterOpen(false)}
+                    title={`Panggil Pelayan - Meja ${table.table_number}`}
+                    subtitle="Pilih jenis bantuan yang Anda butuhkan"
+                    maxWidth="max-w-sm"
+                    footer={
+                        <div className="flex items-center justify-between w-full">
+                            <SpecularButton
+                                variant="secondary"
+                                size="md"
+                                onClick={() => setIsCallWaiterOpen(false)}
+                            >
+                                Batal
+                            </SpecularButton>
+                            <SpecularButton
+                                variant="primary"
+                                size="md"
+                                disabled={callingWaiter}
+                                onClick={() => handleCallWaiter(assistanceType)}
+                            >
+                                {callingWaiter ? 'Memanggil...' : 'Kirim Panggilan'}
+                            </SpecularButton>
+                        </div>
+                    }
+                >
+                    <div className="space-y-2.5 text-xs">
+                        {[
+                            { id: 'waiter', label: 'Bantuan Pelayan ke Meja', desc: 'Pelayan akan segera mendatangi meja Anda' },
+                            { id: 'cutlery', label: 'Minta Alat Makan / Sendok', desc: 'Sendok, garpu, tisu, atau sedotan' },
+                            { id: 'bill', label: 'Minta Nota / Bayar di Meja', desc: 'Pengecekan tagihan akhir di meja' },
+                            { id: 'cleaning', label: 'Minta Bersihkan Meja', desc: 'Pembersihan meja atau piring kotor' },
+                        ].map((opt) => (
+                            <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => setAssistanceType(opt.id)}
+                                className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                                    assistanceType === opt.id
+                                        ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
+                                        : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/[0.06] text-slate-300'
+                                }`}
+                            >
+                                <span className={`w-4 h-4 rounded-full border mt-0.5 flex items-center justify-center shrink-0 ${assistanceType === opt.id ? 'border-indigo-400 bg-indigo-600' : 'border-slate-500'}`}>
+                                    {assistanceType === opt.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                </span>
+                                <div>
+                                    <div className="font-bold">{opt.label}</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">{opt.desc}</div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </AcrylicModal>
             </div>
         </GuestAcrylicLayout>
     );

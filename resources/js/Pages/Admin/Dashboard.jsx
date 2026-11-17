@@ -16,6 +16,10 @@ import {
     TrendingDown,
     Wallet,
     AlertTriangle,
+    DollarSign,
+    Pencil,
+    Trash2,
+    FileSpreadsheet,
 } from 'lucide-react';
 
 import AdminAcrylicLayout from '@/Layouts/AdminAcrylicLayout';
@@ -23,6 +27,7 @@ import AcrylicModal from '@/Components/Acrylic/AcrylicModal';
 import AcrylicInput from '@/Components/Acrylic/AcrylicInput';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useBarcodeScanner } from '@/Hooks/useBarcodeScanner';
+import { toast } from '@/Services/toast';
 
 function formatRupiah(amount) {
     const num = Number(amount) || 0;
@@ -36,6 +41,7 @@ export default function AdminDashboard({
     recent_orders = [],
     categories = [],
     dining_tables = [],
+    operational_expenses = [],
     filters = {},
 }) {
     const [activeTab, setActiveTab] = useState('inventory');
@@ -50,6 +56,9 @@ export default function AdminDashboard({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isCreateCategoryModalOpen, setIsCreateCategoryModalOpen] = useState(false);
+    const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -114,6 +123,85 @@ export default function AdminDashboard({
     } = useForm({
         category_name: '',
     });
+
+    const {
+        data: expenseData,
+        setData: setExpenseData,
+        post: postExpense,
+        processing: expenseProcessing,
+        reset: resetExpense,
+        errors: expenseErrors,
+    } = useForm({
+        title: '',
+        category: 'operasional',
+        amount: '',
+        expense_date: new Date().toISOString().slice(0, 10),
+        notes: '',
+    });
+
+    const handleSubmitExpense = (e) => {
+        e.preventDefault();
+        postExpense('/admin/expenses', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsExpenseModalOpen(false);
+                resetExpense();
+                toast.success('Beban operasional berhasil dicatat.');
+            },
+        });
+    };
+
+    const handleDeleteExpense = (expenseId) => {
+        if (confirm('Yakin ingin menghapus catatan beban operasional ini?')) {
+            router.delete(`/admin/expenses/${expenseId}`, {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Catatan beban berhasil dihapus.'),
+            });
+        }
+    };
+
+    const {
+        data: editCategoryData,
+        setData: setEditCategoryData,
+        put: putCategory,
+        processing: editCategoryProcessing,
+        errors: editCategoryErrors,
+    } = useForm({
+        category_name: '',
+    });
+
+    const handleOpenEditCategory = (cat) => {
+        setEditingCategory(cat);
+        setEditCategoryData('category_name', cat.category_name);
+        setIsEditCategoryModalOpen(true);
+    };
+
+    const handleUpdateCategory = (e) => {
+        e.preventDefault();
+        if (!editingCategory) return;
+        putCategory(`/admin/categories/${editingCategory.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditCategoryModalOpen(false);
+                setEditingCategory(null);
+                toast.success('Kategori berhasil diperbarui.');
+            },
+        });
+    };
+
+    const handleDeleteCategory = (cat) => {
+        if (cat.products_count > 0) {
+            toast.warning(`Kategori "${cat.category_name}" tidak bisa dihapus karena masih digunakan ${cat.products_count} menu.`);
+            return;
+        }
+        if (confirm(`Yakin ingin menghapus kategori "${cat.category_name}"?`)) {
+            router.delete(`/admin/categories/${cat.id}`, {
+                preserveScroll: true,
+                onSuccess: () => toast.success('Kategori berhasil dihapus.'),
+                onError: (errs) => toast.error(Object.values(errs)[0] || 'Gagal menghapus kategori.'),
+            });
+        }
+    };
 
     const handleBarcodeDetected = (barcode) => {
         const matched = products.data?.find((p) => p.barcode === barcode);
@@ -278,6 +366,7 @@ export default function AdminDashboard({
         { id: 'shifts', label: 'Rekap Shift', icon: Clock, count: cashier_shifts.length },
         { id: 'orders', label: 'Riwayat Transaksi', icon: Receipt, count: recent_orders.length },
         { id: 'tables', label: 'Status Meja', icon: LayoutGrid, count: dining_tables.length },
+        { id: 'expenses', label: 'Beban Operasional', icon: DollarSign, count: operational_expenses.length },
     ];
 
     return (
@@ -985,6 +1074,142 @@ export default function AdminDashboard({
             )}
 
             {/* ============================================================
+                TAB 5: BEBAN OPERASIONAL (NET PROFIT & EXPENSE TRACKER)
+            ============================================================ */}
+            {activeTab === 'expenses' && (
+                <div className="space-y-4">
+                    {/* Top P&L Financial Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <div className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between">
+                            <span className="text-xs text-slate-400 font-medium">Omzet Kotor</span>
+                            <div className="mt-2 text-xl font-bold font-mono text-white">
+                                {formatRupiah(summary_metrics.total_revenue)}
+                            </div>
+                            <span className="text-[11px] text-slate-500 mt-1">Total penjualan kotor</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between">
+                            <span className="text-xs text-slate-400 font-medium">Laba Kotor (Gross Profit)</span>
+                            <div className="mt-2 text-xl font-bold font-mono text-indigo-300">
+                                {formatRupiah(summary_metrics.gross_profit)}
+                            </div>
+                            <span className="text-[11px] text-slate-500 mt-1">Omzet dikurangi HPP Produk</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between">
+                            <span className="text-xs text-slate-400 font-medium">Total Beban Operasional</span>
+                            <div className="mt-2 text-xl font-bold font-mono text-rose-300">
+                                {formatRupiah(summary_metrics.total_operational_expenses || 0)}
+                            </div>
+                            <span className="text-[11px] text-slate-500 mt-1">Biaya utilitas, sewa, operasional</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-[#0C0E16] border border-white/[0.08] flex flex-col justify-between">
+                            <span className="text-xs text-slate-400 font-medium">Laba Bersih (Net Profit)</span>
+                            <div className="mt-2 text-xl font-bold font-mono text-emerald-400">
+                                {formatRupiah((summary_metrics.gross_profit || 0) - (summary_metrics.total_operational_expenses || 0))}
+                            </div>
+                            <span className="text-[11px] text-slate-500 mt-1">Laba kotor setelah seluruh beban</span>
+                        </div>
+                    </div>
+
+                    {/* Table Container */}
+                    <div className="p-4 rounded-2xl bg-[#0C0E16] border border-white/[0.08] shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
+                            <div>
+                                <h3 className="text-sm font-bold text-white tracking-tight">
+                                    Daftar Beban & Pengeluaran Operasional
+                                </h3>
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                    Catatan pengeluaran riil untuk kalkulasi Laba Bersih akurat
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href="/admin/export/excel?type=expenses"
+                                    className="h-9 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>Ekspor CSV</span>
+                                </a>
+                                <SpecularButton
+                                    variant="primary"
+                                    size="sm"
+                                    icon={Plus}
+                                    onClick={() => setIsExpenseModalOpen(true)}
+                                >
+                                    Catat Beban Baru
+                                </SpecularButton>
+                            </div>
+                        </div>
+
+                        {operational_expenses.length === 0 ? (
+                            <div className="py-12 text-center text-slate-500 text-xs space-y-2">
+                                <DollarSign className="w-8 h-8 mx-auto text-slate-600 opacity-40" />
+                                <p>Belum ada catatan beban operasional pada periode ini.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExpenseModalOpen(true)}
+                                    className="text-indigo-400 hover:text-indigo-300 font-bold"
+                                >
+                                    + Catat Beban Pertama
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs">
+                                    <thead className="bg-[#08090D] text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-white/[0.06]">
+                                        <tr>
+                                            <th className="py-3 px-3">Tanggal</th>
+                                            <th className="py-3 px-3">Keperluan / Judul</th>
+                                            <th className="py-3 px-3">Kategori</th>
+                                            <th className="py-3 px-3 text-right">Nominal</th>
+                                            <th className="py-3 px-3">Dicatat Oleh</th>
+                                            <th className="py-3 px-3">Catatan</th>
+                                            <th className="py-3 px-3 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/[0.04]">
+                                        {operational_expenses.map((exp) => (
+                                            <tr key={exp.id} className="hover:bg-white/[0.02] transition-colors">
+                                                <td className="py-3 px-3 font-mono text-slate-300 whitespace-nowrap">
+                                                    {exp.expense_date}
+                                                </td>
+                                                <td className="py-3 px-3 font-semibold text-white">
+                                                    {exp.expense_name || exp.title}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono uppercase bg-white/[0.05] border border-white/[0.08] text-slate-300">
+                                                        {exp.category}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 px-3 font-mono font-bold text-rose-300 text-right whitespace-nowrap">
+                                                    {formatRupiah(exp.amount)}
+                                                </td>
+                                                <td className="py-3 px-3 text-slate-400 whitespace-nowrap">
+                                                    {exp.user?.name || 'Sistem'}
+                                                </td>
+                                                <td className="py-3 px-3 text-slate-400 truncate max-w-[200px]">
+                                                    {exp.notes || '-'}
+                                                </td>
+                                                <td className="py-3 px-3 text-center whitespace-nowrap">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteExpense(exp.id)}
+                                                        className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                                        title="Hapus beban ini"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ============================================================
                 MODAL 1: PENYESUAIAN STOK
             ============================================================ */}
             <AcrylicModal
@@ -1360,14 +1585,14 @@ export default function AdminDashboard({
             </AcrylicModal>
 
             {/* ============================================================
-                MODAL 4: TAMBAH KATEGORI BARU
+                MODAL 4: TAMBAH & KELOLA KATEGORI
             ============================================================ */}
             <AcrylicModal
                 isOpen={isCreateCategoryModalOpen}
                 onClose={() => setIsCreateCategoryModalOpen(false)}
-                title="Kategori Menu Baru"
-                subtitle="Tambahkan kategori baru untuk mengelompokkan makanan atau minuman."
-                maxWidth="max-w-md"
+                title="Kelola Kategori Menu"
+                subtitle="Tambah atau kelola kategori untuk mengelompokkan makanan dan minuman."
+                maxWidth="max-w-lg"
                 footer={
                     <>
                         <SpecularButton
@@ -1375,7 +1600,7 @@ export default function AdminDashboard({
                             size="md"
                             onClick={() => setIsCreateCategoryModalOpen(false)}
                         >
-                            Batal
+                            Tutup
                         </SpecularButton>
                         <SpecularButton
                             variant="primary"
@@ -1383,20 +1608,192 @@ export default function AdminDashboard({
                             loading={categoryProcessing}
                             onClick={handleSubmitCategory}
                         >
-                            Simpan Kategori
+                            + Tambah Kategori
                         </SpecularButton>
                     </>
                 }
             >
-                <form onSubmit={handleSubmitCategory} className="space-y-4">
+                <div className="space-y-5">
+                    <form onSubmit={handleSubmitCategory} className="space-y-4">
+                        <AcrylicInput
+                            label="Nama Kategori Baru"
+                            value={categoryData.category_name}
+                            onChange={(e) => setCategoryData('category_name', e.target.value)}
+                            placeholder="Contoh: Kopi Spesial, Makanan Utama, Camilan"
+                            error={categoryErrors.category_name}
+                            required
+                        />
+                    </form>
+
+                    <div className="pt-3 border-t border-white/[0.08] space-y-2.5">
+                        <span className="text-xs font-bold text-slate-300 block">
+                            Daftar Kategori Saat Ini ({categories.length}):
+                        </span>
+                        <div className="max-h-56 overflow-y-auto space-y-1.5 pr-1">
+                            {categories.map((cat) => (
+                                <div
+                                    key={cat.id}
+                                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-white">{cat.category_name}</span>
+                                        <span className="px-2 py-0.5 rounded-full font-mono text-[10px] bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
+                                            {cat.products_count} menu
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenEditCategory(cat)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors"
+                                            title="Ubah nama kategori"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteCategory(cat)}
+                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                            title="Hapus kategori (hanya jika 0 menu)"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 4B: UBAH NAMA KATEGORI
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={isEditCategoryModalOpen}
+                onClose={() => setIsEditCategoryModalOpen(false)}
+                title="Ubah Nama Kategori"
+                subtitle={editingCategory ? `Kategori: ${editingCategory.category_name}` : ''}
+                maxWidth="max-w-md"
+                footer={
+                    <>
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setIsEditCategoryModalOpen(false)}
+                        >
+                            Batal
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            loading={editCategoryProcessing}
+                            onClick={handleUpdateCategory}
+                        >
+                            Simpan Perubahan
+                        </SpecularButton>
+                    </>
+                }
+            >
+                <form onSubmit={handleUpdateCategory} className="space-y-4">
                     <AcrylicInput
                         label="Nama Kategori"
-                        value={categoryData.category_name}
-                        onChange={(e) => setCategoryData('category_name', e.target.value)}
-                        placeholder="Contoh: Kopi Spesial, Makanan Utama, Camilan"
-                        error={categoryErrors.category_name}
+                        value={editCategoryData.category_name}
+                        onChange={(e) => setEditCategoryData('category_name', e.target.value)}
+                        placeholder="Contoh: Kopi Spesial"
+                        error={editCategoryErrors.category_name}
                         required
                     />
+                </form>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 4C: CATAT BEBAN OPERASIONAL BARU
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={isExpenseModalOpen}
+                onClose={() => setIsExpenseModalOpen(false)}
+                title="Catat Beban Operasional"
+                subtitle="Catat pengeluaran listrik, sewa, bahan baku, atau biaya harian kafe"
+                maxWidth="max-w-md"
+                footer={
+                    <>
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setIsExpenseModalOpen(false)}
+                        >
+                            Batal
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="primary"
+                            size="md"
+                            loading={expenseProcessing}
+                            onClick={handleSubmitExpense}
+                        >
+                            Simpan Beban
+                        </SpecularButton>
+                    </>
+                }
+            >
+                <form onSubmit={handleSubmitExpense} className="space-y-4">
+                    <AcrylicInput
+                        label="Keperluan / Judul Biaya"
+                        value={expenseData.title}
+                        onChange={(e) => setExpenseData('title', e.target.value)}
+                        placeholder="Contoh: Beli Es Batu Kristal 10 Sak, Token Listrik PLN"
+                        error={expenseErrors.title}
+                        required
+                    />
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-slate-300 block">Kategori</label>
+                            <select
+                                value={expenseData.category}
+                                onChange={(e) => setExpenseData('category', e.target.value)}
+                                className="w-full h-10 px-3 rounded-xl bg-[#08090D] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500"
+                            >
+                                <option value="operasional">Operasional Harian</option>
+                                <option value="bahan_baku">Bahan Baku Tambahan</option>
+                                <option value="utilitas">Utilitas (Listrik/Air/Gas)</option>
+                                <option value="gaji">Gaji / Upah Karyawan</option>
+                                <option value="sewa">Sewa Tempat / Alat</option>
+                                <option value="pemeliharaan">Pemeliharaan / Servis</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </div>
+
+                        <AcrylicInput
+                            label="Tanggal"
+                            type="date"
+                            value={expenseData.expense_date}
+                            onChange={(e) => setExpenseData('expense_date', e.target.value)}
+                            error={expenseErrors.expense_date}
+                            required
+                        />
+                    </div>
+
+                    <AcrylicInput
+                        label="Nominal Pengeluaran (Rp)"
+                        type="number"
+                        min="1"
+                        value={expenseData.amount}
+                        onChange={(e) => setExpenseData('amount', e.target.value)}
+                        placeholder="Contoh: 150000"
+                        error={expenseErrors.amount}
+                        required
+                    />
+
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-300 block">Catatan Tambahan (Opsional)</label>
+                        <textarea
+                            value={expenseData.notes}
+                            onChange={(e) => setExpenseData('notes', e.target.value)}
+                            placeholder="Keterangan bon, nomor nota, atau detail pembelian..."
+                            className="w-full h-20 p-3 rounded-xl bg-[#08090D] border border-white/[0.08] text-xs text-white focus:outline-none focus:border-indigo-500 resize-none"
+                        />
+                    </div>
                 </form>
             </AcrylicModal>
 

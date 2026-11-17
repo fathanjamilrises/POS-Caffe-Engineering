@@ -28,10 +28,19 @@ class AdminSettingsController extends Controller
         $securitySettings = $this->healthService->getSecuritySettings();
         $logs = $this->healthService->getRecentLogs(60);
 
+        $storeProfile = [
+            'store_name' => SystemSetting::get('store_name', 'KASIR CAFE CANTEEN'),
+            'store_address' => SystemSetting::get('store_address', 'Jl. R.E. Martadinata No. 42, Ciamis'),
+            'store_phone' => SystemSetting::get('store_phone', '0812-3456-7890'),
+            'receipt_footer' => SystemSetting::get('receipt_footer', 'Terima Kasih Atas Kunjungan Anda! Harap Simpan Struk Sebagai Bukti Pembayaran Resmi.'),
+            'thermal_paper_width' => SystemSetting::get('thermal_paper_width', '58mm'),
+        ];
+
         return Inertia::render('Admin/Settings', [
             'system_info' => $systemInfo,
             'database_info' => $databaseInfo,
             'security_settings' => $securitySettings,
+            'store_profile' => $storeProfile,
             'logs' => $logs,
             'total_tables' => DiningTable::count(),
         ]);
@@ -127,5 +136,72 @@ class AdminSettingsController extends Controller
         $count = DiningTable::count();
 
         return redirect()->back()->with('success', "Semua token QR ({$count} meja) berhasil diperbarui. Foto QR lama tidak dapat digunakan lagi.");
+    }
+
+    /**
+     * Update Store / Cafe identity and thermal printer settings.
+     */
+    public function updateStoreProfile(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'store_name' => ['required', 'string', 'max:100'],
+            'store_address' => ['required', 'string', 'max:255'],
+            'store_phone' => ['required', 'string', 'max:50'],
+            'receipt_footer' => ['required', 'string', 'max:255'],
+            'thermal_paper_width' => ['required', 'string', 'in:58mm,80mm'],
+        ]);
+
+        foreach ($validated as $key => $val) {
+            SystemSetting::set($key, $val, 'general');
+        }
+
+        return redirect()->back()->with('success', 'Profil kafe & setelan struk termal kasir berhasil disimpan.');
+    }
+
+    /**
+     * 1-Click Database SQL Backup download.
+     */
+    public function backupDatabase(): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $filename = 'backup_kasir_pos_' . date('Y-m-d_His') . '.sql';
+
+        return response()->streamDownload(function () {
+            echo "-- ============================================================\n";
+            echo "-- KASIR CAFE POS DATABASE BACKUP\n";
+            echo "-- Generated: " . date('Y-m-d H:i:s') . "\n";
+            echo "-- ============================================================\n\n";
+
+            $tables = \Illuminate\Support\Facades\Schema::getTableListing();
+            foreach ($tables as $table) {
+                if (in_array($table, ['sqlite_sequence', 'migrations'])) continue;
+                echo "-- Table: {$table}\n";
+                $rows = DB::table($table)->get();
+                foreach ($rows as $row) {
+                    $cols = array_keys((array) $row);
+                    $vals = array_map(function ($v) {
+                        return is_null($v) ? 'NULL' : "'" . addslashes((string) $v) . "'";
+                    }, array_values((array) $row));
+
+                    echo "INSERT INTO `{$table}` (`" . implode('`, `', $cols) . "`) VALUES (" . implode(', ', $vals) . ");\n";
+                }
+                echo "\n";
+            }
+        }, $filename, [
+            'Content-Type' => 'application/sql',
+        ]);
+    }
+
+    /**
+     * 1-Click Reset / Re-seed Demo Data.
+     */
+    public function resetDemoData(Request $request): RedirectResponse
+    {
+        try {
+            \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+
+            return redirect()->back()->with('success', 'Data demo dan pengaturan standar berhasil diperbarui / di-reset.');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Gagal me-reset data: ' . $e->getMessage());
+        }
     }
 }

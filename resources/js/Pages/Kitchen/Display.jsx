@@ -21,6 +21,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import SpecularButton from '@/Components/Acrylic/SpecularButton';
 import { useAudioAlert } from '@/Hooks/useAudioAlert';
 import { toast } from '@/Services/toast';
+import { playKitchenAlertBell } from '@/Services/audio';
 
 /**
  * Kitchen Display System (KDS) - Tablet & Ergonomic Edition
@@ -38,12 +39,11 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         return hasActive ? 'active' : 'all';
     });
 
+    const [stationFilter, setStationFilter] = useState('all'); // 'all' | 'makanan' | 'minuman' | 'snack'
     const [searchQuery, setSearchQuery] = useState('');
     const [now, setNow] = useState(Date.now());
     const [audioMuted, setAudioMuted] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-
-    const { playChime } = useAudioAlert();
 
     // Tablet Kiosk Fullscreen Mode Listener
     useEffect(() => {
@@ -86,14 +86,14 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
     useEffect(() => {
         if (unnotified_count > 0) {
             if (!audioMuted) {
-                playChime();
+                playKitchenAlertBell();
             }
             toast.info(`${unnotified_count} pesanan baru masuk ke antrean dapur!`, {
                 title: 'Pesanan Dapur Baru',
                 duration: 5000,
             });
         }
-    }, [unnotified_count, audioMuted, playChime]);
+    }, [unnotified_count, audioMuted]);
 
     const handleAcknowledgeAudio = () => {
         router.post('/kitchen/acknowledge-audio', {}, { preserveScroll: true });
@@ -138,7 +138,8 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
             text,
             minutes: mins,
             isWarning: mins >= 5 && mins < 10,
-            isUrgent: mins >= 10,
+            isUrgent: mins >= 10 && mins < 20,
+            isCritical: mins >= 20,
             isCompleted: false,
         };
     };
@@ -163,14 +164,33 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
         };
     }, [tickets]);
 
-    // Filter tickets by dropdown selection and search query
+    // Filter tickets by dropdown selection, station tabs, and search query
     const filteredTickets = useMemo(() => {
         return tickets.filter((t) => {
-            // Dropdown filter
+            // Dropdown status filter
             if (statusFilter === 'active') {
                 if (t.ticket_status === 'completed') return false;
             } else if (statusFilter !== 'all') {
                 if (t.ticket_status !== statusFilter) return false;
+            }
+
+            // Station category filter
+            if (stationFilter !== 'all') {
+                const cat = (t.order_item?.product?.category?.category_name || '').toLowerCase();
+                const prod = (t.order_item?.product?.product_name || '').toLowerCase();
+                if (stationFilter === 'makanan') {
+                    if (!cat.includes('makan') && !cat.includes('food') && !prod.includes('nasi') && !prod.includes('mie') && !prod.includes('ayam')) {
+                        return false;
+                    }
+                } else if (stationFilter === 'minuman') {
+                    if (!cat.includes('minum') && !cat.includes('drink') && !cat.includes('kopi') && !cat.includes('beverage') && !prod.includes('es') && !prod.includes('kopi') && !prod.includes('teh')) {
+                        return false;
+                    }
+                } else if (stationFilter === 'snack') {
+                    if (!cat.includes('snack') && !cat.includes('camilan') && !cat.includes('roti') && !cat.includes('kentang')) {
+                        return false;
+                    }
+                }
             }
 
             // Search query filter
@@ -189,7 +209,7 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
 
             return true;
         });
-    }, [tickets, statusFilter, searchQuery]);
+    }, [tickets, statusFilter, stationFilter, searchQuery]);
 
     // Top Metric Cards
     const metricCards = [
@@ -271,28 +291,42 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                             <span className="truncate">Heningkan ({unnotified_count})</span>
                         </button>
                     ) : (
-                        <button
-                            type="button"
-                            onClick={() => setAudioMuted(!audioMuted)}
-                            className={`min-h-[44px] px-3 sm:px-3.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all active:scale-95 ${
-                                audioMuted
-                                    ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
-                                    : 'bg-[#0C0E16] hover:bg-white/[0.08] border-white/[0.08] text-slate-200'
-                            }`}
-                            title={audioMuted ? 'Suara bell mati. Klik untuk aktifkan' : 'Suara bell aktif. Klik untuk bisukan'}
-                        >
-                            {audioMuted ? (
-                                <>
-                                    <VolumeX className="w-4 h-4 text-rose-400" />
-                                    <span className="hidden sm:inline">Bell Senyap</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                                    <span className="hidden sm:inline">Bell Aktif</span>
-                                </>
-                            )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    playKitchenAlertBell();
+                                    toast.success('Suara lonceng dapur berbunyi normal.');
+                                }}
+                                className="min-h-[44px] px-3 rounded-xl bg-[#0C0E16] hover:bg-white/[0.08] active:scale-95 border border-white/[0.08] text-slate-300 hover:text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                                title="Tes output speaker suara lonceng dapur"
+                            >
+                                <Bell className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span className="hidden sm:inline">Tes Bel</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setAudioMuted(!audioMuted)}
+                                className={`min-h-[44px] px-3 sm:px-3.5 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all active:scale-95 ${
+                                    audioMuted
+                                        ? 'bg-rose-500/15 border-rose-500/40 text-rose-300'
+                                        : 'bg-[#0C0E16] hover:bg-white/[0.08] border-white/[0.08] text-slate-200'
+                                }`}
+                                title={audioMuted ? 'Suara bell mati. Klik untuk aktifkan' : 'Suara bell aktif. Klik untuk bisukan'}
+                            >
+                                {audioMuted ? (
+                                    <>
+                                        <VolumeX className="w-4 h-4 text-rose-400" />
+                                        <span className="hidden sm:inline">Bell Senyap</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Volume2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                        <span className="hidden sm:inline">Bell Aktif</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     )}
 
                     {/* Manual Refresh */}
@@ -401,6 +435,32 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                     </div>
                 </div>
 
+                {/* Station Filter Tabs */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none select-none">
+                    {[
+                        { id: 'all', label: 'Semua Stasiun' },
+                        { id: 'makanan', label: 'Stasiun Makanan' },
+                        { id: 'minuman', label: 'Stasiun Minuman' },
+                        { id: 'snack', label: 'Stasiun Snack / Camilan' },
+                    ].map((st) => {
+                        const isSelected = stationFilter === st.id;
+                        return (
+                            <button
+                                key={st.id}
+                                type="button"
+                                onClick={() => setStationFilter(st.id)}
+                                className={`min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                    isSelected
+                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        : 'bg-[#0B0D13] hover:bg-white/[0.06] text-slate-400 hover:text-white border border-white/[0.08]'
+                                }`}
+                            >
+                                <span>{st.label}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
                 {/* ============================================================
                     KDS MINIMALIST CARD GRID (FOKUS KOKI, TATA LETAK RAPI)
                 ============================================================ */}
@@ -441,12 +501,15 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                             const isCooking = ticket.ticket_status === 'cooking';
                             const isDelivered = ticket.ticket_status === 'delivered_to_cashier';
                             const isCompleted = ticket.ticket_status === 'completed';
+                            const isUrgentDelay = (isWaiting || isCooking) && elapsed.isCritical;
 
                             return (
                                 <div
                                     key={ticket.id}
                                     className={`rounded-xl border bg-[#0B0D13] flex flex-col justify-between overflow-hidden shadow-sm transition-all duration-200 ${
-                                        isWaiting
+                                        isUrgentDelay
+                                            ? 'border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.35)] animate-pulse'
+                                            : isWaiting
                                             ? 'border-white/[0.08] border-t-2 border-t-rose-500'
                                             : isCooking
                                             ? 'border-white/[0.08] border-t-2 border-t-amber-400'
@@ -465,7 +528,12 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
 
                                             {/* Status Badge + Live Timer */}
                                             <div className="shrink-0">
-                                                {isWaiting && (
+                                                {elapsed.isCritical && (isWaiting || isCooking) ? (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-rose-600 text-white animate-pulse">
+                                                        <Flame className="w-3.5 h-3.5 text-white" />
+                                                        <span>TERLAMBAT ({elapsed.text})</span>
+                                                    </div>
+                                                ) : isWaiting ? (
                                                     <div
                                                         className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold ${
                                                             elapsed.isUrgent
@@ -478,16 +546,14 @@ export default function KitchenDisplay({ tickets = [], unnotified_count = 0 }) {
                                                         <span className="text-slate-400">•</span>
                                                         <span>{elapsed.text}</span>
                                                     </div>
-                                                )}
-
-                                                {isCooking && (
+                                                ) : isCooking ? (
                                                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                                                         <span>Dimasak</span>
                                                         <span className="text-slate-400">•</span>
                                                         <span>{elapsed.text}</span>
                                                     </div>
-                                                )}
+                                                ) : null}
 
                                                 {isDelivered && (
                                                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">

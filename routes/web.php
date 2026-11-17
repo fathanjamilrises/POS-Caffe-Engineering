@@ -61,6 +61,10 @@ Route::post('/logout', [AuthController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
+Route::post('/profile/update', [AuthController::class, 'updateProfile'])
+    ->middleware('auth')
+    ->name('profile.update');
+
 // Error Page Preview / Standalone
 Route::get('/error', function (Request $request) {
     $status = (int) $request->input('status', 404);
@@ -76,6 +80,7 @@ Route::prefix('table/{token}')->name('table.')->group(function (): void {
     Route::get('/', [CustomerQrOrderController::class, 'show'])->name('menu');
     Route::post('/order', [CustomerQrOrderController::class, 'store'])->name('order.store');
     Route::get('/status/{order}', [CustomerQrOrderController::class, 'status'])->name('order.status');
+    Route::post('/call-waiter', [CustomerQrOrderController::class, 'callWaiter'])->name('call-waiter');
 });
 
 // Authenticated Routes
@@ -106,6 +111,10 @@ Route::middleware('auth')->group(function (): void {
         // Legacy / Quick Actions Compatibility
         Route::post('/stock-adjustments', [AdminProductController::class, 'adjustStock'])->name('stock.adjust');
         Route::post('/categories', [AdminDashboardController::class, 'storeCategory'])->name('categories.store');
+        Route::put('/categories/{category}', [AdminDashboardController::class, 'updateCategory'])->name('categories.update');
+        Route::delete('/categories/{category}', [AdminDashboardController::class, 'destroyCategory'])->name('categories.destroy');
+        Route::post('/expenses', [AdminDashboardController::class, 'storeExpense'])->name('expenses.store');
+        Route::delete('/expenses/{expense}', [AdminDashboardController::class, 'destroyExpense'])->name('expenses.destroy');
         Route::patch('/tables/{diningTable}/status', [AdminDashboardController::class, 'updateTableStatus'])->name('tables.status');
 
         // Users & Staff Management
@@ -126,6 +135,9 @@ Route::middleware('auth')->group(function (): void {
 
         // System Settings, Health & Maintenance
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/store-profile', [AdminSettingsController::class, 'updateStoreProfile'])->name('settings.store-profile');
+        Route::get('/settings/backup-database', [AdminSettingsController::class, 'backupDatabase'])->name('settings.backup-database');
+        Route::post('/settings/reset-demo', [AdminSettingsController::class, 'resetDemoData'])->name('settings.reset-demo');
         Route::post('/settings/security', [AdminSettingsController::class, 'updateSecurity'])->name('settings.security');
         Route::post('/settings/maintenance', [AdminSettingsController::class, 'toggleMaintenance'])->name('settings.maintenance');
         Route::post('/settings/artisan', [AdminSettingsController::class, 'runArtisan'])->name('settings.artisan');
