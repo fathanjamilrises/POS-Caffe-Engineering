@@ -956,31 +956,46 @@ export default function CashierPos({
 
                             {/* Dine-in Table (Disabled for Cashier Direct Orders) & Customer Input */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div className="relative">
-                                    <select
-                                        disabled
-                                        className="w-full h-9 bg-slate-100 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.06] rounded-lg px-2.5 text-xs text-slate-500 dark:text-slate-500 font-mono cursor-not-allowed shadow-none appearance-none"
-                                        title="Pemesanan langsung di kasir bersifat Self Pick-up (Ambil Mandiri). Konsumen bebas memilih meja setelah pesanan selesai."
-                                    >
-                                        <option>
-                                            {diningOption === 'dine_in'
-                                                ? 'Bebas Duduk (Pick-up Mandiri)'
-                                                : 'Bawa Pulang (Tanpa Meja)'}
-                                        </option>
-                                    </select>
-                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400 dark:text-slate-500 pointer-events-none uppercase">
-                                        Kasir
-                                    </span>
+                                <div className="h-10 px-3 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] flex items-center gap-2.5 select-none shadow-xs">
+                                    {diningOption === 'dine_in' ? (
+                                        <>
+                                            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                                <Store className="w-3.5 h-3.5" />
+                                            </div>
+                                            <div className="min-w-0 flex-1 leading-tight">
+                                                <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px] truncate">
+                                                    Bebas Duduk
+                                                </span>
+                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                                                    Pick-up Mandiri Kasir
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                                <ShoppingBag className="w-3.5 h-3.5" />
+                                            </div>
+                                            <div className="min-w-0 flex-1 leading-tight">
+                                                <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px] truncate">
+                                                    Pesanan Bungkus
+                                                </span>
+                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                                                    Bawa Pulang (Tanpa Meja)
+                                                </span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 <div className="relative">
-                                    <User className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                                    <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                     <input
                                         type="text"
                                         value={customerName}
                                         onChange={(e) => setCustomerName(e.target.value)}
                                         placeholder={diningOption === 'takeaway' ? 'Nama Tamu (Bungkus)' : 'Nama Tamu (Walk-in)'}
-                                        className="w-full h-9 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-lg pl-8 pr-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-xs"
+                                        className="w-full h-10 bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] rounded-xl pl-9 pr-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 shadow-xs font-medium"
                                     />
                                 </div>
                             </div>
