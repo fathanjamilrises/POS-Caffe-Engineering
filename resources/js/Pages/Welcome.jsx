@@ -397,21 +397,6 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* Architectural Canvas Background with Smooth Scroll Parallax */}
             <ArchitecturalCanvas isDark={isDark} scrollY={scrollY} />
 
-            {/* Lenis Smooth Floating Scrollbar Track & Glowing Thumb Indicator */}
-            <div
-                className="fixed right-2.5 top-28 bottom-28 w-1.5 hidden lg:flex flex-col z-50 pointer-events-none"
-                aria-hidden="true"
-            >
-                <div className="relative w-full h-full rounded-full bg-slate-300/40 dark:bg-white/[0.08] backdrop-blur-md border border-slate-300/40 dark:border-white/[0.08] overflow-hidden">
-                    <div
-                        className="absolute w-full rounded-full bg-gradient-to-b from-indigo-500 via-indigo-400 to-[#3730A3] shadow-[0_0_8px_rgba(99,102,241,0.6)] transition-all duration-75 ease-out"
-                        style={{
-                            height: '14%',
-                            top: `${(scrollPercent / 100) * 86}%`,
-                        }}
-                    />
-                </div>
-            </div>
 
             {/* 1. SINGLE FOCUSED CIRCULAR BLUE GRADIENT GLOW (HANYA DI KANAN BULAT) */}
             <div
