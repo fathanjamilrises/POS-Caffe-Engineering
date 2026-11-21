@@ -157,4 +157,36 @@ class AdminSettingsTest extends TestCase
         $cashierAllowedResponse = $this->actingAs($this->cashier)->get('/pos');
         $cashierAllowedResponse->assertStatus(200);
     }
+
+    public function test_admin_can_update_store_profile(): void
+    {
+        $payload = [
+            'store_name' => 'Kantin SMK Hebat',
+            'store_address' => 'Jl. Pendidikan No. 1, Ciamis',
+            'store_phone' => '0899-1234-5678',
+            'receipt_footer' => 'Terima kasih telah berbelanja di kantin kami!',
+            'thermal_paper_width' => '80mm',
+        ];
+
+        $response = $this->actingAs($this->admin)->post('/admin/settings/store-profile', $payload);
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
+
+        $this->assertEquals('Kantin SMK Hebat', SystemSetting::get('store_name'));
+        $this->assertEquals('80mm', SystemSetting::get('thermal_paper_width'));
+    }
+
+    public function test_admin_can_backup_database(): void
+    {
+        $response = $this->actingAs($this->admin)->get('/admin/settings/backup-database');
+        $response->assertStatus(200);
+        $this->assertTrue(str_contains($response->headers->get('content-type') ?? '', 'application/sql') || str_contains($response->headers->get('content-disposition') ?? '', '.sql'));
+    }
+
+    public function test_admin_can_reset_demo_data(): void
+    {
+        $response = $this->actingAs($this->admin)->post('/admin/settings/reset-demo');
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
+    }
 }

@@ -203,4 +203,16 @@ class TableAndCustomerQrTest extends TestCase
             'status' => 'available',
         ]);
     }
+
+    public function test_customer_can_call_waiter_from_qr(): void
+    {
+        $table = DiningTable::first();
+
+        $response = $this->post("/table/{$table->qr_code_token}/call-waiter", [
+            'assistance_type' => 'cutlery',
+        ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
+    }
 }

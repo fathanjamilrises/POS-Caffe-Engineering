@@ -40,11 +40,11 @@ html.light,
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* WebKit / Chromium Legacy Custom Smooth Scrollbar for ALL elements */
+/* WebKit / Chromium Legacy Custom Smooth Scrollbar with Animated Gradient */
 ::-webkit-scrollbar,
 *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track,
@@ -55,13 +55,17 @@ html.light,
 
 ::-webkit-scrollbar-thumb,
 *::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb);
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.6) 0%, rgba(67, 56, 202, 0.8) 100%);
     border-radius: 9999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+    transition: all 0.25s ease-out;
 }
 
 ::-webkit-scrollbar-thumb:hover,
 *::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
+    background: linear-gradient(180deg, #818CF8 0%, #4F46E5 100%);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
 }
 
 ::-webkit-scrollbar-corner,
@@ -113,26 +117,47 @@ html.light aside,
 html.light .bg-\[\#0B0D13\],
 html.light .bg-\[\#0C0E16\],
 html.light .bg-\[\#08090D\],
+html.light .bg-\[\#090A10\],
 html.light .bg-\[\#0A0C13\],
+html.light .bg-\[\#0A0C14\],
 html.light .bg-\[\#090B12\],
 html.light .bg-\[\#0E1017\],
 html.light .bg-\[\#0E101A\],
 html.light .bg-\[\#121524\],
 html.light .bg-\[\#141824\],
 html.light .bg-\[\#16192B\],
+html.light .bg-\[\#0C0E16\]\/60,
 :root[data-theme="light"] .bg-\[\#0B0D13\],
 :root[data-theme="light"] .bg-\[\#0C0E16\],
 :root[data-theme="light"] .bg-\[\#08090D\],
+:root[data-theme="light"] .bg-\[\#090A10\],
 :root[data-theme="light"] .bg-\[\#0A0C13\],
+:root[data-theme="light"] .bg-\[\#0A0C14\],
 :root[data-theme="light"] .bg-\[\#090B12\],
 :root[data-theme="light"] .bg-\[\#0E1017\],
 :root[data-theme="light"] .bg-\[\#0E101A\],
 :root[data-theme="light"] .bg-\[\#121524\],
 :root[data-theme="light"] .bg-\[\#141824\],
-:root[data-theme="light"] .bg-\[\#16192B\] {
+:root[data-theme="light"] .bg-\[\#16192B\],
+:root[data-theme="light"] .bg-\[\#0C0E16\]\/60 {
     background-color: #FFFFFF !important;
     border-color: #E2E8F0 !important;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Table headers and sticky headers in light mode */
+html.light thead,
+:root[data-theme="light"] thead {
+    background-color: #F8FAFC !important;
+    border-color: #E2E8F0 !important;
+    color: #475569 !important;
+}
+
+html.light thead th,
+:root[data-theme="light"] thead th {
+    background-color: #F8FAFC !important;
+    color: #475569 !important;
+    border-color: #E2E8F0 !important;
 }
 
 /* Neutral canvas backdrops */
@@ -207,10 +232,16 @@ html.light textarea::placeholder {
 }
 
 /* Explicitly preserve crisp white text on interactive primary action buttons & specular elements */
-button.text-white,
-button.text-white *,
-a.text-white,
-a.text-white *,
+html.dark button.text-white,
+html.dark button.text-white *,
+html.dark a.text-white,
+html.dark a.text-white *,
+button.bg-indigo-600,
+button.bg-indigo-600 *,
+button.bg-emerald-600,
+button.bg-emerald-600 *,
+button.bg-rose-600,
+button.bg-rose-600 *,
 .specular-button-primary,
 .specular-button-primary * {
     color: #FFFFFF !important;
@@ -321,4 +352,72 @@ html.light .border-white\/\[0\.2\],
 
 .animate-toast-progress {
     animation: toast-progress linear forwards;
+}
+
+/* ============================================================
+   Hardware Thermal Printer ESC/POS & Barcode Label Print Rules
+   Optimized for 58mm / 80mm roll printers & 50x30mm sticker labels
+============================================================ */
+@media print {
+    @page {
+        margin: 0;
+        size: auto;
+    }
+
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Hide everything on page by default during print */
+    nav,
+    aside,
+    header,
+    footer,
+    button,
+    .no-print,
+    [role="dialog"] > div:first-child, /* backdrop overlay */
+    .toast-container {
+        display: none !important;
+    }
+
+    /* Isolate printable receipt or barcode label */
+    .printable-thermal-receipt {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 58mm !important;
+        margin: 0 auto !important;
+        padding: 8px 6px !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .printable-thermal-receipt[data-width="80mm"] {
+        max-width: 80mm !important;
+        font-size: 12px !important;
+    }
+
+    .printable-barcode-label {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 50mm !important;
+        height: 30mm !important;
+        padding: 4mm !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        text-align: center !important;
+        page-break-after: always !important;
+    }
 }

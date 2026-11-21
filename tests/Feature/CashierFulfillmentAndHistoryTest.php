@@ -214,4 +214,32 @@ class CashierFulfillmentAndHistoryTest extends TestCase
         $this->assertEquals('delivered_to_cashier', $ticket->fresh()->ticket_status);
         $this->assertEquals('ready', $order->fresh()->order_status);
     }
+
+    public function test_serving_order_releases_dining_table_status_to_available(): void
+    {
+        /** @var PosOrderService $posService */
+        $posService = app(PosOrderService::class);
+
+        // Place an order associated with a table
+        $order = $posService->createPosOrder([
+            'items' => [
+                ['product_id' => $this->instantProduct->id, 'quantity' => 1],
+            ],
+            'payment_method' => 'tunai',
+            'amount_received' => 10000,
+            'table_id' => $this->table->id,
+            'customer_name' => 'Tamu Meja 5',
+            'order_source' => 'cashier_direct',
+        ], $this->cashier->id);
+
+        // Table must be occupied initially
+        $this->assertEquals('occupied', $this->table->fresh()->status);
+
+        // Cashier confirms order is served
+        $serveResponse = $this->actingAs($this->cashier)->post("/pos/orders/{$order->id}/serve");
+        $serveResponse->assertStatus(302);
+
+        // Table must now automatically be released to available
+        $this->assertEquals('available', $this->table->fresh()->status);
+    }
 }

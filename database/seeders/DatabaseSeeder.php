@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\DiningTable;
+use App\Models\OperationalExpense;
 use App\Models\Product;
+use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -135,6 +137,37 @@ class DatabaseSeeder extends Seeder
                 'stock_qty' => 30,
                 'requires_kitchen' => true,
                 'is_available' => true,
+            ]
+        );
+
+        // 5. Default System Settings & Cafe Profile
+        SystemSetting::set('store_name', 'KASIR CAFE CANTEEN', 'general');
+        SystemSetting::set('store_address', 'Jl. R.E. Martadinata No. 42, Ciamis', 'general');
+        SystemSetting::set('store_phone', '0812-3456-7890', 'general');
+        SystemSetting::set('receipt_footer', 'Terima Kasih Atas Kunjungan Anda! Harap Simpan Struk Sebagai Bukti Pembayaran Resmi.', 'general');
+        SystemSetting::set('thermal_paper_width', '58mm', 'hardware');
+        SystemSetting::set('qr_require_cashier_verification', true, 'security');
+        SystemSetting::set('qr_rate_limit_per_minute', 3, 'security');
+        SystemSetting::set('qr_table_pin_enabled', false, 'security');
+        SystemSetting::set('maintenance_mode', false, 'system');
+
+        // 6. Sample Operational Expenses
+        OperationalExpense::firstOrCreate(
+            ['expense_name' => 'Beli Es Batu Kristal 10 Bal'],
+            [
+                'user_id' => $admin->id,
+                'amount' => 50000,
+                'expense_date' => now()->toDateString(),
+                'notes' => 'Pasokan es batu harian untuk bar minuman',
+            ]
+        );
+        OperationalExpense::firstOrCreate(
+            ['expense_name' => 'Beli Gas LPG 3Kg (2 Tabung)'],
+            [
+                'user_id' => $admin->id,
+                'amount' => 44000,
+                'expense_date' => now()->toDateString(),
+                'notes' => 'Bahan bakar kompor dapur',
             ]
         );
     }

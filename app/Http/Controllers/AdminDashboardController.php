@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\DiningTable;
+use App\Models\OperationalExpense;
 use App\Models\Product;
 use App\Services\AdminReportService;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,7 @@ class AdminDashboardController extends Controller
         $recentOrders = $this->reportService->getRecentOrders(25);
         $diningTables = $this->reportService->getDiningTables();
         $categories = Category::withCount('products')->orderBy('category_name')->get();
+        $operationalExpenses = OperationalExpense::with('user')->latest('expense_date')->limit(30)->get();
 
         return Inertia::render('Admin/Dashboard', [
             'summary_metrics' => $summaryMetrics,
@@ -54,6 +56,7 @@ class AdminDashboardController extends Controller
             'recent_orders' => $recentOrders,
             'categories' => $categories,
             'dining_tables' => $diningTables,
+            'operational_expenses' => $operationalExpenses,
             'filters' => $filters,
             'flash' => [
                 'success' => $request->session()->get('success'),
@@ -161,6 +164,76 @@ class AdminDashboardController extends Controller
     }
 
     /**
+     * Update an existing category.
+     */
+    public function updateCategory(Request $request, Category $category): RedirectResponse
+    {
+        $validated = $request->validate([
+            'category_name' => ['required', 'string', 'max:100', Rule::unique('categories', 'category_name')->ignore($category->id)],
+        ]);
+
+        $category->update($validated);
+
+        return redirect()->back()->with('success', "Kategori '{$category->category_name}' berhasil diperbarui.");
+    }
+
+    /**
+     * Remove a category if not in use.
+     */
+    public function destroyCategory(Category $category): RedirectResponse
+    {
+        if ($category->products()->exists()) {
+            return redirect()->back()->with('error', "Kategori '{$category->category_name}' tidak dapat dihapus karena masih digunakan oleh produk menu.");
+        }
+
+        $name = $category->category_name;
+        $category->delete();
+
+        return redirect()->back()->with('success', "Kategori '{$name}' berhasil dihapus.");
+    }
+
+    /**
+     * Store a newly created operational expense.
+     */
+    public function storeExpense(Request $request): RedirectResponse
+    {
+        $name = $request->input('expense_name') ?: $request->input('title');
+
+        $validated = $request->validate([
+            'expense_name' => ['nullable', 'string', 'max:150'],
+            'title' => ['nullable', 'string', 'max:150'],
+            'amount' => ['required', 'numeric', 'min:0'],
+            'expense_date' => ['required', 'date'],
+            'notes' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if (empty($name)) {
+            return redirect()->back()->withErrors(['expense_name' => 'Nama keperluan biaya operasional wajib diisi.']);
+        }
+
+        OperationalExpense::create([
+            'user_id' => $request->user()->id,
+            'expense_name' => $name,
+            'amount' => (float) $validated['amount'],
+            'expense_date' => $validated['expense_date'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        return redirect()->back()->with('success', 'Biaya operasional berhasil dicatat.');
+    }
+
+    /**
+     * Remove an operational expense record.
+     */
+    public function destroyExpense(OperationalExpense $expense): RedirectResponse
+    {
+        $name = $expense->expense_name;
+        $expense->delete();
+
+        return redirect()->back()->with('success', "Biaya operasional '{$name}' berhasil dihapus.");
+    }
+
+    /**
      * Update dining table status.
      */
     public function updateTableStatus(Request $request, DiningTable $diningTable): RedirectResponse
@@ -180,13 +253,17 @@ class AdminDashboardController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         $type = $request->input('type', 'orders');
-        $filename = $type === 'shifts'
-            ? 'rekap_shift_kasir_'.date('Ymd_His').'.csv'
-            : 'riwayat_transaksi_'.date('Ymd_His').'.csv';
 
-        $csvContent = $type === 'shifts'
-            ? $this->reportService->generateShiftsCsv()
-            : $this->reportService->generateOrdersCsv();
+        if ($type === 'expenses') {
+            $filename = 'biaya_operasional_'.date('Ymd_His').'.csv';
+            $csvContent = $this->reportService->generateExpensesCsv();
+        } elseif ($type === 'shifts') {
+            $filename = 'rekap_shift_kasir_'.date('Ymd_His').'.csv';
+            $csvContent = $this->reportService->generateShiftsCsv();
+        } else {
+            $filename = 'riwayat_transaksi_'.date('Ymd_His').'.csv';
+            $csvContent = $this->reportService->generateOrdersCsv();
+        }
 
         return response()->streamDownload(function () use ($csvContent): void {
             echo $csvContent;
@@ -207,11 +284,15 @@ class AdminDashboardController extends Controller
         $summaryMetrics = $this->reportService->getSummaryMetrics($date ?: null, $preset ?: 'today');
         $recentOrders = $this->reportService->getRecentOrders(50);
         $cashierShifts = $this->reportService->getRecentShifts(20);
+        $operationalExpenses = OperationalExpense::with('user')
+            ->whereBetween('expense_date', [$summaryMetrics['target_date'], $summaryMetrics['end_date']])
+            ->get();
 
         return response()->view('reports.executive_pdf', [
             'summary_metrics' => $summaryMetrics,
             'recent_orders' => $recentOrders,
             'cashier_shifts' => $cashierShifts,
+            'operational_expenses' => $operationalExpenses,
             'generated_at' => now()->format('d M Y, H:i:s'),
         ]);
     }

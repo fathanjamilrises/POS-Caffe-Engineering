@@ -170,7 +170,8 @@ class PosOrderService
 
             // Check if this is a QR Table order that requires Cashier Verification
             $isQrOrder = ($data['order_source'] ?? '') === 'qr_table';
-            $requiresVerification = $isQrOrder && (bool) SystemSetting::get('qr_require_cashier_verification', true);
+            // Verification is ONLY required for customer-initiated QR orders (where cashierId is empty/null)
+            $requiresVerification = $isQrOrder && empty($cashierId) && (bool) SystemSetting::get('qr_require_cashier_verification', true);
 
             if ($requiresVerification) {
                 // Pending cashier verification: payment is unpaid, no change calculated yet
@@ -193,9 +194,10 @@ class PosOrderService
                 }
 
                 $changeAmount = max(0, $amountReceived - $totalAmount);
-                $orderStatus = $requiresKitchenAny
-                    ? 'processing'
-                    : ($data['order_source'] === 'cashier_direct' ? 'served' : 'ready');
+
+                // If any item requires kitchen cooking -> 'processing' (sent to kitchen KDS)
+                // If all items are instant (drinks/snacks) -> 'served' (immediately ready and handed over)
+                $orderStatus = $requiresKitchenAny ? 'processing' : 'served';
             }
 
             $tokenNumber = $this->generateTokenNumber();
@@ -369,7 +371,7 @@ class PosOrderService
 
             // Check if any items require kitchen processing
             $requiresKitchenAny = $order->items()->whereHas('product', fn ($q) => $q->where('requires_kitchen', true))->exists();
-            $targetOrderStatus = $requiresKitchenAny ? 'processing' : 'ready';
+            $targetOrderStatus = $requiresKitchenAny ? 'processing' : 'served';
 
             $order->update([
                 'cashier_id' => $cashierId,
@@ -484,12 +486,23 @@ class PosOrderService
                 'completed_at' => now(),
             ]);
 
-            // Auto-rotate table QR token to prevent "customer iseng" from ordering using old photos
-            if ($order->table_id && SystemSetting::get('qr_auto_rotate_token', true)) {
-                $order->table?->update([
-                    'qr_code_token' => Str::random(32),
-                    'status' => 'available',
-                ]);
+            // Release table when order is served, provided no other active orders remain on this table
+            if ($order->table_id) {
+                $hasOtherActive = Order::where('table_id', $order->table_id)
+                    ->where('id', '!=', $order->id)
+                    ->whereNotIn('order_status', ['served', 'cancelled'])
+                    ->exists();
+
+                if (! $hasOtherActive) {
+                    $tableUpdates = ['status' => 'available'];
+
+                    // Auto-rotate table QR token to prevent "customer iseng" from ordering using old photos
+                    if (SystemSetting::get('qr_auto_rotate_token', true)) {
+                        $tableUpdates['qr_code_token'] = Str::random(32);
+                    }
+
+                    $order->table?->update($tableUpdates);
+                }
             }
 
             return $order;

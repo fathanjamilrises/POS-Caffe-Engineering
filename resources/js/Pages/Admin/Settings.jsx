@@ -27,6 +27,10 @@ import {
     Sun,
     Moon,
     Laptop,
+    Store,
+    Download,
+    AlertOctagon,
+    Printer,
 } from 'lucide-react';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -39,11 +43,22 @@ export default function AdminSettings({
     system_info = {},
     database_info = {},
     security_settings = {},
+    store_profile = {},
     logs = [],
     total_tables = 0,
 }) {
     const { theme, resolvedTheme, setTheme } = useTheme();
-    const [activeTab, setActiveTab] = useState('server'); // 'server' | 'optimize' | 'security' | 'maintenance' | 'logs'
+    const [activeTab, setActiveTab] = useState('server'); // 'server' | 'store' | 'optimize' | 'security' | 'maintenance' | 'logs'
+
+    // Store Profile Form State
+    const [storeForm, setStoreForm] = useState({
+        store_name: store_profile.store_name || 'KASIR CAFE CANTEEN',
+        store_address: store_profile.store_address || '',
+        store_phone: store_profile.store_phone || '',
+        receipt_footer: store_profile.receipt_footer || 'Terima Kasih Atas Kunjungan Anda!',
+        thermal_paper_width: store_profile.thermal_paper_width || '58mm',
+    });
+    const [isSavingStore, setIsSavingStore] = useState(false);
 
     // Security Form State
     const [securityForm, setSecurityForm] = useState({
@@ -77,8 +92,10 @@ export default function AdminSettings({
     // Confirmation Modals State
     const [showRegenQrModal, setShowRegenQrModal] = useState(false);
     const [showClearLogsModal, setShowClearLogsModal] = useState(false);
+    const [showResetDemoModal, setShowResetDemoModal] = useState(false);
     const [isRegeneratingQr, setIsRegeneratingQr] = useState(false);
     const [isClearingLogs, setIsClearingLogs] = useState(false);
+    const [isResettingDemo, setIsResettingDemo] = useState(false);
 
     // Log Viewer State
     const [logLevelFilter, setLogLevelFilter] = useState('ALL');
@@ -144,6 +161,40 @@ export default function AdminSettings({
                 },
             }
         );
+    };
+
+    // Handle Save Store Profile
+    const handleSaveStore = (e) => {
+        e.preventDefault();
+        setIsSavingStore(true);
+        router.post('/admin/settings/store-profile', storeForm, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsSavingStore(false);
+                toast.success('Identitas kafe dan format struk berhasil disimpan.');
+            },
+            onError: (errs) => {
+                setIsSavingStore(false);
+                toast.error(Object.values(errs)[0] || 'Gagal menyimpan identitas kafe.');
+            },
+        });
+    };
+
+    // Handle Reset Demo Data
+    const handleResetDemoData = () => {
+        setIsResettingDemo(true);
+        router.post('/admin/settings/reset-demo', {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsResettingDemo(false);
+                setShowResetDemoModal(false);
+                toast.success('Seluruh data transaksi dan antrean demo telah direset bersih.');
+            },
+            onError: () => {
+                setIsResettingDemo(false);
+                toast.error('Gagal mereset data demo.');
+            },
+        });
     };
 
     // Handle Save Security Settings
@@ -280,6 +331,7 @@ export default function AdminSettings({
                 <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-2 flex items-center gap-1.5 overflow-x-auto select-none shadow-sm">
                     {[
                         { id: 'server', label: 'Ringkasan & Server', icon: Server },
+                        { id: 'store', label: 'Profil Kafe & Struk', icon: Store },
                         { id: 'optimize', label: 'Perintah Optimasi', icon: Zap },
                         { id: 'security', label: 'Keamanan QR & Barcode', icon: ShieldCheck },
                         {
@@ -341,7 +393,7 @@ export default function AdminSettings({
                                     <Server className="w-4 h-4 text-indigo-400" />
                                 </div>
                                 <div>
-                                    <div className="text-xl font-bold font-mono text-white">
+                                    <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                                         PHP {system_info.php_version}
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1 truncate" title={system_info.server_software}>
@@ -363,7 +415,7 @@ export default function AdminSettings({
                                     <Database className="w-4 h-4 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <div className="text-xl font-bold font-mono text-white uppercase">
+                                    <div className="text-xl font-bold font-mono text-slate-900 dark:text-white uppercase">
                                         {database_info.driver}
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1 font-mono truncate" title={database_info.database_name}>
@@ -385,7 +437,7 @@ export default function AdminSettings({
                                     <Cpu className="w-4 h-4 text-amber-400" />
                                 </div>
                                 <div>
-                                    <div className="text-xl font-bold font-mono text-white">
+                                    <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                                         {system_info.memory_usage_mb} MB
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1">
@@ -407,10 +459,10 @@ export default function AdminSettings({
                                     <HardDrive className="w-4 h-4 text-cyan-400" />
                                 </div>
                                 <div>
-                                    <div className="text-xl font-bold font-mono text-white">
+                                    <div className="text-xl font-bold font-mono text-slate-900 dark:text-white">
                                         {system_info.disk_free_gb} GB Bebas
                                     </div>
-                                    <div className="mt-2 w-full bg-white/[0.08] h-1.5 rounded-full overflow-hidden">
+                                    <div className="mt-2 w-full bg-slate-200 dark:bg-white/[0.08] h-1.5 rounded-full overflow-hidden">
                                         <div
                                             className="bg-indigo-500 h-full rounded-full"
                                             style={{ width: `${system_info.disk_usage_percent}%` }}
@@ -426,8 +478,8 @@ export default function AdminSettings({
 
                         {/* Detailed Specifications Table */}
                         <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 shadow-sm">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <Sliders className="w-4 h-4 text-indigo-400" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Sliders className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                                 <span>Spesifikasi Lingkungan Sistem Lengkap</span>
                             </h3>
 
@@ -446,12 +498,12 @@ export default function AdminSettings({
                                 ].map((item, idx) => (
                                     <div
                                         key={idx}
-                                        className="p-3 rounded-lg bg-[#06070A] border border-white/[0.06] flex flex-col justify-between"
+                                        className="p-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.06] flex flex-col justify-between"
                                     >
-                                        <span className="text-[11px] font-medium text-slate-400">{item.label}</span>
+                                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{item.label}</span>
                                         <span
                                             className={`text-xs font-mono font-bold mt-1 truncate ${
-                                                item.highlight || 'text-white'
+                                                item.highlight || 'text-slate-900 dark:text-white'
                                             }`}
                                             title={String(item.value)}
                                         >
@@ -465,16 +517,16 @@ export default function AdminSettings({
                         {/* Theme Mode Selector Card */}
                         <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 shadow-sm">
                             <div className="flex items-center justify-between flex-wrap gap-2">
-                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <Sun className="w-4 h-4 text-amber-400" />
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Sun className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                                     <span>Pilihan Tema Tampilan (Dark & Light Mode)</span>
                                 </h3>
-                                <span className="text-xs font-mono text-slate-400">
+                                <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
                                     Aktif: {theme === 'system' ? 'Mengikuti Sistem' : theme === 'dark' ? 'Mode Gelap' : 'Mode Terang'}
                                 </span>
                             </div>
 
-                            <p className="text-xs text-slate-400 leading-relaxed">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                                 Pilih preferensi visual tampilan aplikasi. Secara default sistem akan mendeteksi pengaturan mode terang/gelap pada perangkat komputer atau tablet Anda secara dinamis.
                             </p>
 
@@ -511,29 +563,29 @@ export default function AdminSettings({
                                             }}
                                             className={`p-4 rounded-xl border text-left flex flex-col justify-between space-y-3 transition-all ${
                                                 isSelected
-                                                    ? 'bg-indigo-50 border-indigo-500 shadow-md ring-1 ring-indigo-500/50 dark:bg-[#1E1B4B] dark:bg-gradient-to-b dark:from-[#4338CA]/30 dark:to-[#1E1B4B]'
-                                                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#06070A] dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:text-slate-400 dark:hover:text-white'
+                                                    ? 'bg-indigo-50/90 border-indigo-500 shadow-sm ring-1 ring-indigo-500/30 text-indigo-950 dark:bg-[#1E1B4B] dark:bg-gradient-to-b dark:from-[#4338CA]/30 dark:to-[#1E1B4B] dark:text-white dark:border-indigo-500 dark:ring-indigo-500/50'
+                                                    : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-[#06070A] dark:hover:bg-white/[0.04] dark:border-white/[0.06] dark:hover:border-white/[0.12] dark:text-slate-400 dark:hover:text-white'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div
                                                     className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                                         isSelected
-                                                            ? 'bg-indigo-600 text-white'
-                                                            : 'bg-white/[0.05] text-slate-400'
+                                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                                            : 'bg-slate-200/70 text-slate-600 dark:bg-white/[0.05] dark:text-slate-400'
                                                     }`}
                                                 >
                                                     <Icon className="w-4 h-4" />
                                                 </div>
                                                 {isSelected && (
-                                                    <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                                                    <span className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-indigo-400 animate-pulse" />
                                                 )}
                                             </div>
                                             <div>
-                                                <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                                                <div className={`text-xs font-bold ${isSelected ? 'text-indigo-950 dark:text-white' : 'text-slate-800 dark:text-slate-200'}`}>
                                                     {item.title}
                                                 </div>
-                                                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                                <p className={`text-[11px] mt-1 leading-relaxed ${isSelected ? 'text-indigo-900/80 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                                     {item.desc}
                                                 </p>
                                             </div>
@@ -546,13 +598,163 @@ export default function AdminSettings({
                 )}
 
                 {/* ============================================================
+                    TAB 1B: PROFIL KAFE & FORMAT STRUK THERMAL
+                ============================================================ */}
+                {activeTab === 'store' && (
+                    <div className="space-y-5">
+                        <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-2">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Store className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                                <span>Identitas Usaha & Konfigurasi Struk Kasir</span>
+                            </h3>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                Atur nama kafe/kantin, alamat fisik, nomor kontak, serta format catatan kaki pada struk belanja thermal (58mm / 80mm).
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                            {/* Form Input (7 cols) */}
+                            <form onSubmit={handleSaveStore} className="lg:col-span-7 space-y-4">
+                                <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                                            Nama Resto / Kafe / Kantin:
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={storeForm.store_name}
+                                            onChange={(e) => setStoreForm({ ...storeForm, store_name: e.target.value })}
+                                            placeholder="Contoh: KASIR CAFE CANTEEN"
+                                            className="w-full h-10 px-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                                            Alamat Lengkap Usaha:
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={storeForm.store_address}
+                                            onChange={(e) => setStoreForm({ ...storeForm, store_address: e.target.value })}
+                                            placeholder="Jl. R.E. Martadinata No. 42, Ciamis"
+                                            className="w-full p-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-sans resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                                                Nomor Telepon / WhatsApp:
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={storeForm.store_phone}
+                                                onChange={(e) => setStoreForm({ ...storeForm, store_phone: e.target.value })}
+                                                placeholder="0812-3456-7890"
+                                                className="w-full h-10 px-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-mono"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                                                Ukuran Standar Kertas Struk:
+                                            </label>
+                                            <select
+                                                value={storeForm.thermal_paper_width}
+                                                onChange={(e) => setStoreForm({ ...storeForm, thermal_paper_width: e.target.value })}
+                                                className="w-full h-10 px-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                                            >
+                                                <option value="58mm">58mm (Roll Kecil / Portable)</option>
+                                                <option value="80mm">80mm (Standar Desktop POS)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                                            Catatan Kaki Struk (Receipt Footer):
+                                        </label>
+                                        <textarea
+                                            rows={2}
+                                            value={storeForm.receipt_footer}
+                                            onChange={(e) => setStoreForm({ ...storeForm, receipt_footer: e.target.value })}
+                                            placeholder="Terima Kasih Atas Kunjungan Anda! Harap Simpan Struk Ini..."
+                                            className="w-full p-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-sans resize-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end pt-1">
+                                    <SpecularButton
+                                        type="submit"
+                                        variant="primary"
+                                        size="md"
+                                        disabled={isSavingStore}
+                                        icon={Store}
+                                    >
+                                        <span>{isSavingStore ? 'Menyimpan...' : 'Simpan Profil & Format Struk'}</span>
+                                    </SpecularButton>
+                                </div>
+                            </form>
+
+                            {/* Live Struk Preview (5 cols) */}
+                            <div className="lg:col-span-5 bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-3">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                                    <Printer className="w-4 h-4 text-indigo-400" />
+                                    <span>Pratinjau Format Struk ({storeForm.thermal_paper_width})</span>
+                                </h4>
+
+                                <div className={`p-4 rounded-xl bg-white text-slate-900 font-mono space-y-2.5 shadow-md mx-auto ${storeForm.thermal_paper_width === '58mm' ? 'max-w-[260px] text-[11px]' : 'max-w-[320px] text-xs'}`}>
+                                    <div className="text-center border-b border-dashed border-slate-300 pb-2">
+                                        <h5 className="font-bold tracking-wider uppercase text-black">{storeForm.store_name || 'KASIR CAFE'}</h5>
+                                        <p className="text-[10px] text-slate-600 leading-tight mt-0.5">{storeForm.store_address || 'Alamat Toko'}</p>
+                                        <p className="text-[10px] text-slate-500 mt-0.5">Telp: {storeForm.store_phone || '-'}</p>
+                                    </div>
+                                    <div className="space-y-1 text-[10px]">
+                                        <div className="flex justify-between">
+                                            <span>Token:</span>
+                                            <span className="font-bold text-xs">#042</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Invoice:</span>
+                                            <span>INV-20261117-0042</span>
+                                        </div>
+                                    </div>
+                                    <div className="border-t border-b border-dashed border-slate-300 py-1.5 space-y-1 text-[10px]">
+                                        <div className="flex justify-between">
+                                            <span>1x Mie Goreng Spesial</span>
+                                            <span>Rp 18.000</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>1x Es Kopi Susu Gula Aren</span>
+                                            <span>Rp 15.000</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1 text-[10px] font-bold">
+                                        <div className="flex justify-between">
+                                            <span>TOTAL:</span>
+                                            <span>Rp 33.000</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-center border-t border-dashed border-slate-300 pt-2 text-[10px] text-slate-600 leading-tight">
+                                        <p>{storeForm.receipt_footer || 'Terima kasih atas kunjungan Anda!'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* ============================================================
                     TAB 2: PERINTAH OPTIMASI (ARTISAN SHORTCUTS)
                 ============================================================ */}
                 {activeTab === 'optimize' && (
                     <div className="space-y-5">
                         <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-2">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <Zap className="w-4 h-4 text-amber-400" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                                 <span>Perintah Cepat Optimasi & Pemeliharaan Cache</span>
                             </h3>
                             <p className="text-xs text-slate-400 leading-relaxed">
@@ -575,9 +777,9 @@ export default function AdminSettings({
                                                     <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
                                                         <Icon className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="text-sm font-bold text-white">{cmd.title}</h4>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{cmd.title}</h4>
                                                 </div>
-                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-white/[0.05] text-slate-400 border border-white/[0.08]">
+                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/[0.08]">
                                                     {cmd.badge}
                                                 </span>
                                             </div>
@@ -586,7 +788,7 @@ export default function AdminSettings({
                                                 {cmd.description}
                                             </p>
 
-                                            <div className="text-[11px] font-mono text-slate-500 bg-[#06070A] px-2.5 py-1 rounded border border-white/[0.05]">
+                                            <div className="text-[11px] font-mono text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-[#06070A] px-2.5 py-1 rounded border border-slate-200 dark:border-white/[0.05]">
                                                 $ php artisan {cmd.key}
                                             </div>
                                         </div>
@@ -595,7 +797,7 @@ export default function AdminSettings({
                                             type="button"
                                             disabled={isRunning}
                                             onClick={() => handleRunArtisan(cmd.key, cmd.title)}
-                                            className="w-full min-h-[42px] px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
+                                            className="w-full min-h-[42px] px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 hover:border-slate-300 text-slate-800 hover:text-slate-900 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/[0.08] dark:hover:border-white/[0.15] dark:text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-50"
                                         >
                                             {isRunning ? (
                                                 <>
@@ -623,8 +825,8 @@ export default function AdminSettings({
                     <div className="space-y-5">
                         <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-2">
                             <div className="flex items-center justify-between flex-wrap gap-3">
-                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                                     <span>Pencegahan Kecurangan & Pelanggan Iseng (Anti-Prank)</span>
                                 </h3>
 
@@ -646,8 +848,8 @@ export default function AdminSettings({
                             {/* Toggle 1: Auto-Rotate Token QR */}
                             <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                        <QrCode className="w-4 h-4 text-indigo-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <QrCode className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                                         <span>Rotasi Otomatis Token QR Meja (Sangat Disarankan)</span>
                                     </h4>
                                     <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
@@ -673,8 +875,8 @@ export default function AdminSettings({
                             {/* Toggle 2: Wajib Verifikasi Kasir Sebelum Masuk KDS */}
                             <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                        <Lock className="w-4 h-4 text-amber-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <Lock className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                                         <span>Wajib Konfirmasi Kasir Sebelum Dapur Memasak</span>
                                     </h4>
                                     <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
@@ -700,8 +902,8 @@ export default function AdminSettings({
                             {/* Config 3: Rate Limiter Per Device / IP */}
                             <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div className="space-y-1">
-                                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                        <ShieldCheck className="w-4 h-4 text-cyan-400" />
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                        <ShieldCheck className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
                                         <span>Batas Frekuensi Pemesanan (Anti-Spam Flood)</span>
                                     </h4>
                                     <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
@@ -720,7 +922,7 @@ export default function AdminSettings({
                                                 qr_rate_limit_per_minute: parseInt(e.target.value) || 1,
                                             })
                                         }
-                                        className="w-20 h-10 px-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-center font-mono font-bold text-white text-sm focus:outline-none focus:border-indigo-500"
+                                        className="w-20 h-10 px-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-center font-mono font-bold text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500"
                                     />
                                     <span className="text-xs font-mono text-slate-400">kali / 2 menit</span>
                                 </div>
@@ -730,8 +932,8 @@ export default function AdminSettings({
                             <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
-                                        <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                                            <KeyRound className="w-4 h-4 text-purple-400" />
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                            <KeyRound className="w-4 h-4 text-purple-500 dark:text-purple-400" />
                                             <span>Proteksi Kode PIN Meja (Keamanan Fisik Tingkat Lanjut)</span>
                                         </h4>
                                         <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
@@ -756,7 +958,7 @@ export default function AdminSettings({
 
                                 {securityForm.qr_table_pin_enabled && (
                                     <div className="p-3.5 rounded-lg bg-[#06070A] border border-purple-500/20 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                                        <label className="text-xs text-slate-300 font-medium">
+                                        <label className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                                             Kode PIN Valid Meja:
                                         </label>
                                         <input
@@ -770,7 +972,7 @@ export default function AdminSettings({
                                                 })
                                             }
                                             placeholder="Contoh: 1234"
-                                            className="w-36 h-9 px-3 rounded-md bg-[#0B0D13] border border-white/[0.1] font-mono text-center font-bold tracking-widest text-white text-sm focus:outline-none focus:border-indigo-500"
+                                            className="w-36 h-9 px-3 rounded-md bg-white dark:bg-[#0B0D13] border border-slate-300 dark:border-white/[0.1] font-mono text-center font-bold tracking-widest text-slate-900 dark:text-white text-sm focus:outline-none focus:border-indigo-500"
                                         />
                                         <span className="text-[11px] text-slate-400">
                                             Tempelkan nomor PIN ini pada akrilik meja fisik.
@@ -803,8 +1005,8 @@ export default function AdminSettings({
                 {activeTab === 'maintenance' && (
                     <div className="space-y-5">
                         <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-2">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <Wrench className="w-4 h-4 text-amber-400" />
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Wrench className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                                 <span>Kontrol Mode Pemeliharaan Sistem (Maintenance)</span>
                             </h3>
                             <p className="text-xs text-slate-400 leading-relaxed">
@@ -817,7 +1019,7 @@ export default function AdminSettings({
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <h4 className="text-sm font-bold text-white">
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                                                 Status Pemeliharaan Saat Ini:
                                             </h4>
                                             <span
@@ -854,7 +1056,7 @@ export default function AdminSettings({
                                 </div>
 
                                 <div className="space-y-1.5 pt-3 border-t border-white/[0.06]">
-                                    <label className="text-xs font-semibold text-slate-300">
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                         Pesan Broadcast Pemeliharaan untuk Pengunjung:
                                     </label>
                                     <textarea
@@ -867,7 +1069,7 @@ export default function AdminSettings({
                                             })
                                         }
                                         placeholder="Tuliskan alasan pemeliharaan untuk pelanggan..."
-                                        className="w-full p-3 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-sans"
+                                        className="w-full p-3 rounded-lg bg-slate-50 dark:bg-[#06070A] border border-slate-200 dark:border-white/[0.08] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-sans"
                                     />
                                     <p className="text-[11px] text-slate-500">
                                         Pesan ini akan ditampilkan di halaman depan saat kasir atau pelanggan mengakses sistem.
@@ -889,6 +1091,50 @@ export default function AdminSettings({
                                 </SpecularButton>
                             </div>
                         </form>
+
+                        {/* Database Backup & Demo Reset Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            {/* Backup Card */}
+                            <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                        <Download className="w-5 h-5 text-emerald-400" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Cadangan Database (.SQL)</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        Unduh berkas .SQL berisi seluruh skema database, tabel menu produk, transaksi penjualan kasir, dan akun pengguna.
+                                    </p>
+                                </div>
+                                <a
+                                    href="/admin/settings/backup-database"
+                                    className="min-h-[42px] px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span>Unduh File Cadangan Database (.SQL)</span>
+                                </a>
+                            </div>
+
+                            {/* Reset Demo Card */}
+                            <div className="bg-[#0B0D13] border border-white/[0.07] rounded-xl p-5 space-y-4 flex flex-col justify-between">
+                                <div className="space-y-2">
+                                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                                        <AlertOctagon className="w-5 h-5 text-rose-400" />
+                                    </div>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Reset Riwayat Transaksi Demo</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        Bersihkan riwayat transaksi kasir uji coba, tiket dapur KDS, dan sesi shift untuk mempersiapkan operasional bersih secara riil.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowResetDemoModal(true)}
+                                    className="min-h-[42px] px-4 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 dark:bg-rose-600/20 dark:hover:bg-rose-600/30 dark:border-rose-500/30 active:scale-95 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-2 transition-all"
+                                >
+                                    <Trash2 className="w-4 h-4 text-rose-400" />
+                                    <span>Reset Riwayat Transaksi Demo</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -913,8 +1159,8 @@ export default function AdminSettings({
                                         onClick={() => setLogLevelFilter(tab.id)}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                                             logLevelFilter === tab.id
-                                                ? 'bg-white/[0.1] text-white border border-white/[0.15]'
-                                                : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                                                ? 'bg-slate-200 text-slate-900 border border-slate-300 dark:bg-white/[0.1] dark:text-white dark:border-white/[0.15]'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.04]'
                                         }`}
                                     >
                                         <span className={tab.color}>{tab.label}</span>
@@ -931,13 +1177,13 @@ export default function AdminSettings({
                                         value={logSearchQuery}
                                         onChange={(e) => setLogSearchQuery(e.target.value)}
                                         placeholder="Cari pesan log..."
-                                        className="w-full h-9 pl-3 pr-7 rounded-lg bg-[#06070A] border border-white/[0.08] text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                                        className="w-full h-9 pl-3 pr-7 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 font-mono dark:bg-[#06070A] dark:border-white/[0.08] dark:text-white dark:placeholder-slate-500"
                                     />
                                     {logSearchQuery && (
                                         <button
                                             type="button"
                                             onClick={() => setLogSearchQuery('')}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs"
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs"
                                         >
                                             &times;
                                         </button>
@@ -959,7 +1205,7 @@ export default function AdminSettings({
                         {filteredLogs.length === 0 ? (
                             <div className="py-20 text-center bg-[#0B0D13] rounded-xl border border-white/[0.07] p-8 space-y-2">
                                 <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-400 opacity-60" />
-                                <h4 className="text-sm font-bold text-white">Tidak Ada Log yang Perlu Diperiksa</h4>
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white">Tidak Ada Log yang Perlu Diperiksa</h4>
                                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
                                     {logSearchQuery
                                         ? `Tidak ada log yang cocok dengan kata kunci "${logSearchQuery}".`
@@ -976,16 +1222,16 @@ export default function AdminSettings({
                                     return (
                                         <div
                                             key={idx}
-                                            className={`rounded-xl border bg-[#0B0D13] overflow-hidden transition-all ${
+                                            className={`rounded-xl border bg-white dark:bg-[#0B0D13] overflow-hidden transition-all shadow-xs ${
                                                 isError
-                                                    ? 'border-rose-500/25 border-l-4 border-l-rose-500'
+                                                    ? 'border-rose-200 dark:border-rose-500/25 border-l-4 border-l-rose-500'
                                                     : isWarning
-                                                    ? 'border-amber-500/25 border-l-4 border-l-amber-400'
-                                                    : 'border-white/[0.07] border-l-4 border-l-indigo-400'
+                                                    ? 'border-amber-200 dark:border-amber-500/25 border-l-4 border-l-amber-400'
+                                                    : 'border-slate-200 dark:border-white/[0.07] border-l-4 border-l-indigo-500 dark:border-l-indigo-400'
                                             }`}
                                         >
                                             {/* Log Summary Header */}
-                                            <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-[#06070A]/80">
+                                            <div className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 dark:bg-[#06070A]/80 border-b border-slate-200 dark:border-white/[0.05]">
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
@@ -998,7 +1244,7 @@ export default function AdminSettings({
                                                     >
                                                         {log.level}
                                                     </span>
-                                                    <span className="text-xs font-mono text-slate-400">
+                                                    <span className="text-xs font-mono text-slate-600 dark:text-slate-400">
                                                         {log.timestamp}
                                                     </span>
                                                     <span className="text-[10px] font-mono text-slate-500 uppercase">
@@ -1015,7 +1261,7 @@ export default function AdminSettings({
                                                                 idx
                                                             )
                                                         }
-                                                        className="px-2 py-1 rounded text-[11px] font-mono text-slate-400 hover:text-white hover:bg-white/[0.06] flex items-center gap-1 transition-colors"
+                                                        className="px-2 py-1 rounded text-[11px] font-mono text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.06] flex items-center gap-1 transition-colors"
                                                         title="Salin log"
                                                     >
                                                         {copiedIndex === idx ? (
@@ -1032,7 +1278,7 @@ export default function AdminSettings({
                                                             onClick={() =>
                                                                 setExpandedLogIndex(isExpanded ? null : idx)
                                                             }
-                                                            className="px-2 py-1 rounded text-[11px] font-mono text-indigo-300 hover:text-white hover:bg-indigo-500/20 flex items-center gap-1 transition-colors"
+                                                            className="px-2 py-1 rounded text-[11px] font-mono text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 dark:text-indigo-300 dark:hover:text-white dark:hover:bg-indigo-500/20 flex items-center gap-1 transition-colors"
                                                         >
                                                             {isExpanded ? (
                                                                 <>
@@ -1051,14 +1297,14 @@ export default function AdminSettings({
                                             </div>
 
                                             {/* Message Content */}
-                                            <div className="p-4 font-mono text-xs text-slate-200 leading-relaxed break-words">
+                                            <div className="p-4 font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed break-words bg-white dark:bg-[#0B0D13]">
                                                 {log.message}
                                             </div>
 
                                             {/* Expandable Stack Trace */}
                                             {isExpanded && log.stack_trace && (
-                                                <div className="p-4 bg-black/60 border-t border-white/[0.06] overflow-x-auto">
-                                                    <pre className="text-[11px] font-mono text-slate-400 whitespace-pre-wrap leading-relaxed">
+                                                <div className="p-4 bg-slate-950 border-t border-slate-800 overflow-x-auto">
+                                                    <pre className="text-[11px] font-mono text-slate-300 whitespace-pre-wrap leading-relaxed">
                                                         {log.stack_trace}
                                                     </pre>
                                                 </div>
@@ -1084,11 +1330,11 @@ export default function AdminSettings({
                 maxWidth="max-w-2xl"
             >
                 <div className="space-y-4">
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                         {commandOutputModal.description}
                     </p>
 
-                    <div className="p-4 rounded-xl bg-black/80 border border-white/[0.08] font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
+                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-400 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
                         {commandOutputModal.output}
                     </div>
 
@@ -1116,17 +1362,17 @@ export default function AdminSettings({
                 maxWidth="max-w-md"
             >
                 <div className="space-y-4">
-                    <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3 text-rose-200 text-xs">
+                    <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 flex items-start gap-3 text-rose-900 dark:text-rose-200 text-xs">
                         <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                         <div className="space-y-1">
-                            <strong className="font-bold text-rose-300 block">Peringatan Penting:</strong>
+                            <strong className="font-bold text-rose-700 dark:text-rose-300 block">Peringatan Penting:</strong>
                             <p className="leading-relaxed">
                                 Tindakan ini akan mengganti token URL seluruh {total_tables} meja makan secara massal. Semua foto atau cetakan QR code lama tidak akan dapat dibuka lagi oleh pelanggan.
                             </p>
                         </div>
                     </div>
 
-                    <p className="text-xs text-slate-300 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                         Gunakan tombol ini jika Anda mencurigai adanya pelanggan yang menyebarkan tautan pemesanan QR ke luar kantin. Anda perlu mencetak ulang atau menampilkan QR code baru setelah proses ini.
                     </p>
 
@@ -1134,7 +1380,7 @@ export default function AdminSettings({
                         <button
                             type="button"
                             onClick={() => setShowRegenQrModal(false)}
-                            className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                            className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                         >
                             Batal
                         </button>
@@ -1163,15 +1409,15 @@ export default function AdminSettings({
                 maxWidth="max-w-md"
             >
                 <div className="space-y-4">
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                        Apakah Anda yakin ingin mengosongkan file <code className="text-indigo-300 font-mono">storage/logs/laravel.log</code>? Seluruh riwayat catatan error sebelumnya akan dihapus secara permanen.
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Apakah Anda yakin ingin mengosongkan file <code className="text-indigo-600 dark:text-indigo-300 font-mono">storage/logs/laravel.log</code>? Seluruh riwayat catatan error sebelumnya akan dihapus secara permanen.
                     </p>
 
                     <div className="flex items-center justify-end gap-2.5 pt-2">
                         <button
                             type="button"
                             onClick={() => setShowClearLogsModal(false)}
-                            className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+                            className="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                         >
                             Batal
                         </button>
@@ -1185,6 +1431,46 @@ export default function AdminSettings({
                             <span>{isClearingLogs ? 'Membersihkan...' : 'Ya, Kosongkan Log'}</span>
                         </SpecularButton>
                     </div>
+                </div>
+            </AcrylicModal>
+
+            {/* ============================================================
+                MODAL 4: KONFIRMASI RESET DATA DEMO
+            ============================================================ */}
+            <AcrylicModal
+                isOpen={showResetDemoModal}
+                onClose={() => setShowResetDemoModal(false)}
+                title="Reset Transaksi Simulasi?"
+                subtitle="Tindakan ini akan mengosongkan riwayat pesanan demo"
+                maxWidth="max-w-md"
+                footer={
+                    <div className="flex items-center justify-between w-full">
+                        <SpecularButton
+                            variant="secondary"
+                            size="md"
+                            onClick={() => setShowResetDemoModal(false)}
+                        >
+                            Batal
+                        </SpecularButton>
+                        <SpecularButton
+                            variant="danger"
+                            size="md"
+                            disabled={isResettingDemo}
+                            onClick={handleResetDemoData}
+                            icon={Trash2}
+                        >
+                            <span>{isResettingDemo ? 'Mereset...' : 'Ya, Bersihkan Data Demo'}</span>
+                        </SpecularButton>
+                    </div>
+                }
+            >
+                <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <p>
+                        Seluruh data <strong className="text-slate-900 dark:text-white">Pesanan Kasir</strong>, <strong className="text-slate-900 dark:text-white">Tiket Dapur (KDS)</strong>, dan <strong className="text-slate-900 dark:text-white">Sesi Shift Kasir</strong> akan dikosongkan.
+                    </p>
+                    <p className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/25 text-emerald-800 dark:text-emerald-300">
+                        ✓ Akun pengguna (Admin/Kasir/Koki), daftar menu katalog, dan nomor meja TETAP AMAN dan tidak akan dihapus.
+                    </p>
                 </div>
             </AcrylicModal>
         </AuthenticatedLayout>

@@ -18,6 +18,22 @@ class CashierPosController extends Controller
     ) {}
 
     /**
+     * Display public interactive demo POS Cashier interface without authentication.
+     */
+    public function demo(Request $request): Response
+    {
+        $products = $this->posService->getPosProducts();
+        $categories = Category::orderBy('category_name')->get();
+        $diningTables = $this->posService->getDiningTables();
+
+        return Inertia::render('Cashier/DemoPos', [
+            'products' => $products,
+            'categories' => $categories,
+            'dining_tables' => $diningTables,
+        ]);
+    }
+
+    /**
      * Display POS Cashier interface.
      */
     public function index(Request $request): Response

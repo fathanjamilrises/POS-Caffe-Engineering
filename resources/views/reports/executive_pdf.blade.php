@@ -170,6 +170,32 @@
             @endforelse
         </tbody>
     </table>
+
+    @if(isset($operational_expenses) && count($operational_expenses) > 0)
+        <h3>Rincian Pengeluaran Operasional</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Nama Pengeluaran / Beban</th>
+                    <th>Dicatat Oleh</th>
+                    <th>Keterangan</th>
+                    <th class="text-right">Biaya (Rp)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($operational_expenses as $exp)
+                    <tr>
+                        <td>{{ $exp->expense_date }}</td>
+                        <td>{{ $exp->expense_name }}</td>
+                        <td>{{ $exp->user?->full_name ?? '-' }}</td>
+                        <td>{{ $exp->notes ?? '-' }}</td>
+                        <td class="text-right mono">Rp {{ number_format($exp->amount, 0, ',', '.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 </body>
 </html>
 
