@@ -82,6 +82,7 @@ export default function CashierPos({
     // Cart state
     const [cart, setCart] = useState([]);
     const [diningOption, setDiningOption] = useState('dine_in'); // 'dine_in' | 'takeaway'
+    const [selectedTableId, setSelectedTableId] = useState(''); // '' = Bebas Duduk (Pick-up Mandiri)
     const [customerName, setCustomerName] = useState('Pelanggan Walk-in');
 
     // Modals state
@@ -91,6 +92,7 @@ export default function CashierPos({
     const [isClearCartModalOpen, setIsClearCartModalOpen] = useState(false);
     const [isFulfillmentModalOpen, setIsFulfillmentModalOpen] = useState(false);
     const [isPendingQrModalOpen, setIsPendingQrModalOpen] = useState(false);
+    const [isTableStatusModalOpen, setIsTableStatusModalOpen] = useState(false);
     const [selectedPendingOrder, setSelectedPendingOrder] = useState(null);
     const [pendingPaymentMethod, setPendingPaymentMethod] = useState('tunai');
     const [pendingAmountReceived, setPendingAmountReceived] = useState('');
@@ -105,11 +107,11 @@ export default function CashierPos({
     const [historySearchQuery, setHistorySearchQuery] = useState('');
     const [expandedNotesId, setExpandedNotesId] = useState(null);
 
-    // Auto-polling interval (every 6s) to sync kitchen readiness, pending QR orders & transactions
+    // Auto-polling interval (every 6s) to sync kitchen readiness, pending QR orders, dining tables & transactions
     useEffect(() => {
         const poll = setInterval(() => {
             router.reload({
-                only: ['fulfillment_orders', 'pending_qr_orders', 'recent_transactions', 'active_shift'],
+                only: ['fulfillment_orders', 'pending_qr_orders', 'recent_transactions', 'active_shift', 'dining_tables'],
                 preserveScroll: true,
                 preserveState: true,
             });
@@ -370,7 +372,7 @@ export default function CashierPos({
             })),
             payment_method: presetMethod,
             amount_received: cartTotals.totalAmount,
-            table_id: null,
+            table_id: diningOption === 'dine_in' && selectedTableId ? Number(selectedTableId) : null,
             customer_name: customerName || (diningOption === 'takeaway' ? 'Tamu (Bungkus)' : 'Pelanggan Walk-in'),
             order_source: 'cashier_direct',
         });
@@ -395,6 +397,7 @@ export default function CashierPos({
                 playSuccessChime();
                 setIsPaymentModalOpen(false);
                 setCart([]);
+                setSelectedTableId('');
                 resetCheckout();
                 // Pop up the receipt immediately so cashier can review change or print!
                 const latestTx = page.props.recent_transactions?.[0];
@@ -669,6 +672,21 @@ export default function CashierPos({
                                     {recent_transactions.length}
                                 </span>
                             )}
+                        </button>
+
+                        {/* Status Meja & Quick Reset Button */}
+                        <button
+                            type="button"
+                            onClick={() => setIsTableStatusModalOpen(true)}
+                            className="h-8 px-2.5 sm:px-3 rounded-lg bg-white hover:bg-slate-100 active:scale-95 border border-slate-200 text-slate-700 hover:text-slate-900 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] dark:border-white/[0.08] dark:text-slate-200 dark:hover:text-white font-semibold text-xs transition-all flex items-center gap-1.5 shadow-xs dark:shadow-sm"
+                            title="Buka status denah meja dan kosongkan meja selesai makan"
+                        >
+                            <Store className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                            <span className="hidden sm:inline">Status Meja</span>
+                            <span className="sm:hidden">Meja</span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-300">
+                                {dining_tables.filter((t) => t.status === 'occupied').length}/{dining_tables.length}
+                            </span>
                         </button>
 
                         {/* 2. QR Orders Pending Verification Badge */}
@@ -954,39 +972,56 @@ export default function CashierPos({
                                 </button>
                             </div>
 
-                            {/* Dine-in Table (Disabled for Cashier Direct Orders) & Customer Input */}
+                            {/* Dine-in Table Selector / Takeaway & Customer Input */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <div className="h-10 px-3 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] flex items-center gap-2.5 select-none shadow-xs">
-                                    {diningOption === 'dine_in' ? (
-                                        <>
-                                            <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                                                <Store className="w-3.5 h-3.5" />
-                                            </div>
-                                            <div className="min-w-0 flex-1 leading-tight">
-                                                <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px] truncate">
-                                                    Bebas Duduk
-                                                </span>
-                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                                                    Pick-up Mandiri Kasir
-                                                </span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                                                <ShoppingBag className="w-3.5 h-3.5" />
-                                            </div>
-                                            <div className="min-w-0 flex-1 leading-tight">
-                                                <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px] truncate">
-                                                    Pesanan Bungkus
-                                                </span>
-                                                <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                                                    Bawa Pulang (Tanpa Meja)
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                {diningOption === 'dine_in' ? (
+                                    <div className="relative h-10 rounded-xl bg-white dark:bg-[#08090D] border border-slate-200 dark:border-white/[0.08] shadow-xs flex items-center pl-3 pr-2 focus-within:border-indigo-500">
+                                        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mr-2 ${
+                                            selectedTableId
+                                                ? (dining_tables.find((t) => String(t.id) === String(selectedTableId))?.status === 'occupied'
+                                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400')
+                                                : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                        }`}>
+                                            <Store className="w-3.5 h-3.5" />
+                                        </div>
+                                        <select
+                                            value={selectedTableId}
+                                            onChange={(e) => setSelectedTableId(e.target.value)}
+                                            className="w-full bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-hidden cursor-pointer"
+                                        >
+                                            <option value="" className="bg-white dark:bg-[#0B0D13] text-slate-900 dark:text-slate-100">
+                                                Bebas Duduk (Token Antrean)
+                                            </option>
+                                            {dining_tables.map((table) => {
+                                                const isOcc = table.status === 'occupied';
+                                                return (
+                                                    <option
+                                                        key={table.id}
+                                                        value={table.id}
+                                                        className="bg-white dark:bg-[#0B0D13] text-slate-900 dark:text-slate-100"
+                                                    >
+                                                        {formatTableName(table.table_number)} {isOcc ? '(Terisi - Re-order)' : '(Tersedia)'}
+                                                    </option>
+                                                );
+                                            })}
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="h-10 px-3 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] flex items-center gap-2.5 select-none shadow-xs">
+                                        <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                            <ShoppingBag className="w-3.5 h-3.5" />
+                                        </div>
+                                        <div className="min-w-0 flex-1 leading-tight">
+                                            <span className="font-bold text-slate-800 dark:text-slate-100 block text-[11px] truncate">
+                                                Pesanan Bungkus
+                                            </span>
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                                                Bawa Pulang (Tanpa Meja)
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="relative">
                                     <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -1297,7 +1332,11 @@ export default function CashierPos({
                         <div className="text-right">
                             <span className="text-slate-500 dark:text-slate-400 block font-medium">Layanan:</span>
                             <span className="text-indigo-600 dark:text-indigo-300 font-bold text-sm sm:text-base">
-                                {diningOption === 'takeaway' ? 'Bungkus / Takeaway' : 'Makan di Tempat (Pick-up Mandiri)'}
+                                {diningOption === 'takeaway'
+                                    ? 'Bungkus / Takeaway'
+                                    : (selectedTableId
+                                        ? formatTableName(dining_tables.find((t) => String(t.id) === String(selectedTableId))?.table_number)
+                                        : 'Makan di Tempat (Bebas Duduk)')}
                             </span>
                         </div>
                     </div>
@@ -2443,6 +2482,131 @@ export default function CashierPos({
                         )}
                     </div>
                 )}
+            </AcrylicModal>
+
+            {/* =========================================================
+                MODAL 8.5: STATUS MEJA & RESET KOSONG (1-KLIK)
+               ========================================================= */}
+            <AcrylicModal
+                isOpen={isTableStatusModalOpen}
+                onClose={() => setIsTableStatusModalOpen(false)}
+                title="Status & Denah Meja Pelanggan"
+                subtitle="Pantau meja terisi dan kosongkan meja selesai makan (1-klik)"
+                maxWidth="max-w-2xl"
+            >
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] text-xs">
+                        <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                                {dining_tables.filter((t) => t.status === 'available').length} Tersedia
+                            </span>
+                            <span className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                                {dining_tables.filter((t) => t.status === 'occupied').length} Terisi
+                            </span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                            Total: {dining_tables.length} Meja
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                        {dining_tables.map((table) => {
+                            const isOccupied = table.status === 'occupied';
+                            return (
+                                <div
+                                    key={table.id}
+                                    className={`p-3.5 rounded-xl border flex flex-col justify-between gap-3 transition-all ${
+                                        isOccupied
+                                            ? 'bg-amber-500/[0.06] border-amber-500/25 dark:bg-amber-500/[0.08] dark:border-amber-500/30'
+                                            : 'bg-white dark:bg-[#0B0D13] border-slate-200 dark:border-white/[0.08]'
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <h4 className="text-sm font-bold text-slate-900 dark:text-white font-mono">
+                                                {formatTableName(table.table_number)}
+                                            </h4>
+                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono block mt-0.5">
+                                                Token: {table.qr_code_token ? table.qr_code_token.substring(0, 8) + '...' : '-'}
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                                                isOccupied
+                                                    ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                                    : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25'
+                                            }`}
+                                        >
+                                            {isOccupied ? 'Terisi' : 'Tersedia'}
+                                        </span>
+                                    </div>
+
+                                    <div className="pt-2 border-t border-slate-100 dark:border-white/[0.06] flex items-center gap-1.5">
+                                        {isOccupied ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    router.patch(
+                                                        `/tables/${table.id}/status`,
+                                                        { status: 'available' },
+                                                        {
+                                                            preserveScroll: true,
+                                                            onSuccess: () => {
+                                                                toast.success(`${formatTableName(table.table_number)} berhasil dikosongkan.`);
+                                                            },
+                                                        }
+                                                    );
+                                                }}
+                                                className="w-full py-1.5 px-2 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                                            >
+                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                <span>Kosongkan Meja</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    router.patch(
+                                                        `/tables/${table.id}/status`,
+                                                        { status: 'occupied' },
+                                                        {
+                                                            preserveScroll: true,
+                                                            onSuccess: () => {
+                                                                toast.info(`${formatTableName(table.table_number)} ditandai terisi.`);
+                                                            },
+                                                        }
+                                                    );
+                                                }}
+                                                className="w-full py-1.5 px-2 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                                            >
+                                                <span>Tandai Terisi</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/[0.08]">
+                        <a
+                            href="/tables"
+                            className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                        >
+                            <span>Kelola QR Meja & Cetak Barcode</span>
+                            <ArrowRight className="w-3 h-3" />
+                        </a>
+                        <button
+                            type="button"
+                            onClick={() => setIsTableStatusModalOpen(false)}
+                            className="py-1.5 px-4 rounded-xl text-xs font-bold bg-slate-100 dark:bg-white/[0.06] hover:bg-slate-200 dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                        >
+                            Tutup
+                        </button>
+                    </div>
+                </div>
             </AcrylicModal>
 
             {/* =========================================================
