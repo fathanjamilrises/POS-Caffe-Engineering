@@ -384,7 +384,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
     };
 
     return (
-        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#06070A] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300 scroll-smooth">
+        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#070913] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300 scroll-smooth">
             <Head title="Kasir App - Sistem POS Kasir, Dapur KDS & QR Meja Kantin" />
 
             {/* Top Global Animated Scroll Progress Bar */}
@@ -413,16 +413,34 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                 </div>
             </div>
 
-            {/* Architectural Grid Lines Background (Latar Belakang Bergaris Teknikal) */}
+            {/* 1. VIBRANT ARCHITECTURAL BLUE GRADIENT GLOWS */}
             <div
-                className="fixed inset-0 pointer-events-none z-0 opacity-40 dark:opacity-20 transition-opacity duration-300"
+                className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+                style={{
+                    background: isDark
+                        ? `
+                            radial-gradient(circle 950px at 50% -10%, rgba(67, 56, 202, 0.45) 0%, rgba(30, 27, 75, 0.38) 42%, transparent 80%),
+                            radial-gradient(circle 800px at 85% 35%, rgba(59, 130, 246, 0.30) 0%, rgba(30, 58, 138, 0.22) 45%, transparent 75%),
+                            radial-gradient(circle 850px at 15% 70%, rgba(79, 70, 229, 0.35) 0%, rgba(30, 27, 75, 0.28) 50%, transparent 80%)
+                          `
+                        : `
+                            radial-gradient(circle 950px at 50% -10%, rgba(99, 102, 241, 0.22) 0%, rgba(224, 231, 255, 0.5) 45%, transparent 80%),
+                            radial-gradient(circle 800px at 85% 35%, rgba(59, 130, 246, 0.16) 0%, rgba(219, 234, 254, 0.4) 45%, transparent 75%),
+                            radial-gradient(circle 850px at 15% 70%, rgba(129, 140, 248, 0.18) 0%, rgba(224, 231, 255, 0.4) 50%, transparent 80%)
+                          `,
+                    transform: `translate3d(0, ${scrollY * -0.02}px, 0)`,
+                }}
+                aria-hidden="true"
+            />
+
+            {/* 2. CRISP ARCHITECTURAL GRID LINES (GARIS-GARIS KOTAK TEKNIKAL) */}
+            <div
+                className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-300"
                 style={{
                     backgroundImage: isDark
-                        ? 'linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px)'
-                        : 'linear-gradient(to right, rgba(67, 56, 202, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(67, 56, 202, 0.08) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px',
-                    maskImage: 'radial-gradient(ellipse 85% 70% at 50% 20%, #000 65%, transparent 100%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 85% 70% at 50% 20%, #000 65%, transparent 100%)',
+                        ? 'linear-gradient(to right, rgba(99, 102, 241, 0.22) 1px, transparent 1px), linear-gradient(to bottom, rgba(99, 102, 241, 0.22) 1px, transparent 1px)'
+                        : 'linear-gradient(to right, rgba(67, 56, 202, 0.13) 1px, transparent 1px), linear-gradient(to bottom, rgba(67, 56, 202, 0.13) 1px, transparent 1px)',
+                    backgroundSize: '44px 44px',
                 }}
                 aria-hidden="true"
             />
@@ -463,16 +481,6 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                 })}
             </nav>
 
-            {/* Subtle Architectural Ambient Radial Gradients with Tanzanite & Ultramarine Glows */}
-            <div
-                className="pointer-events-none fixed inset-0 z-0 opacity-70 dark:opacity-40 transition-transform duration-300"
-                style={{
-                    background: isDark
-                        ? 'radial-gradient(circle 700px at 50% -5%, rgba(67, 56, 202, 0.28), transparent 75%), radial-gradient(circle 500px at 85% 25%, rgba(59, 130, 246, 0.12), transparent 70%), radial-gradient(circle 650px at 15% 65%, rgba(49, 46, 129, 0.18), transparent 70%)'
-                        : 'radial-gradient(circle 700px at 50% -5%, rgba(67, 56, 202, 0.15), transparent 75%), radial-gradient(circle 500px at 85% 25%, rgba(59, 130, 246, 0.08), transparent 70%), radial-gradient(circle 650px at 15% 65%, rgba(99, 102, 241, 0.09), transparent 70%)',
-                    transform: `translate3d(0, ${scrollY * -0.02}px, 0)`,
-                }}
-            />
 
             {/* =========================================================================
                 FIXED NAVBAR WITH DYNAMIC FROSTED GLASSMORPHY ANIMATION
@@ -754,7 +762,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 02: END-TO-END OPERATIONAL FLOW PIPELINE
                 ========================================================================= */}
-            <section id="flow" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
+            <section id="flow" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200/80 dark:border-white/[0.06] bg-slate-50/30 dark:bg-transparent scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -985,7 +993,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 04: ROLE & ACCESS CONTROL MATRIX
                 ========================================================================= */}
-            <section id="roles" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
+            <section id="roles" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200/80 dark:border-white/[0.06] bg-slate-50/30 dark:bg-transparent scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -1098,7 +1106,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 05: QUICK ROLE LAUNCHER & ARCHITECTURAL FOOTER
                 ========================================================================= */}
-            <section id="portal" className="relative z-10 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300 scroll-mt-24">
+            <section id="portal" className="relative z-10 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200/80 dark:border-white/[0.08] bg-white/40 dark:bg-transparent transition-colors duration-300 scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-12">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
