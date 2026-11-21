@@ -361,7 +361,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* Floating Side Section Quick Navigation Rail (Desktop Only) */}
             <nav
                 aria-label="Navigasi Halaman Cepat"
-                className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col items-center gap-3.5 p-2 rounded-full bg-white/70 dark:bg-[#0B0D13]/70 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.08] shadow-lg shadow-black/5"
+                className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden xl:flex flex-col items-center gap-3.5 p-2 rounded-full bg-white/90 dark:bg-[#0B0D13]/90 backdrop-blur-xl border border-slate-200 dark:border-white/[0.12] shadow-xl shadow-slate-900/10 dark:shadow-black/60"
             >
                 {[
                     { id: 'hero', label: '01 Ringkasan' },
@@ -679,7 +679,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 02: END-TO-END OPERATIONAL FLOW PIPELINE
                 ========================================================================= */}
-            <section id="flow" className="relative z-20 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
+            <section id="flow" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -786,7 +786,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 03: CORE TECHNICAL FEATURES (BENTO GRID)
                 ========================================================================= */}
-            <section id="features" className="relative z-30 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] scroll-mt-24">
+            <section id="features" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -910,7 +910,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 04: ROLE & ACCESS CONTROL MATRIX
                 ========================================================================= */}
-            <section id="roles" className="relative z-40 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
+            <section id="roles" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -1023,7 +1023,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 05: QUICK ROLE LAUNCHER & ARCHITECTURAL FOOTER
                 ========================================================================= */}
-            <section id="portal" className="relative z-50 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300 scroll-mt-24">
+            <section id="portal" className="relative z-10 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300 scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-12">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
