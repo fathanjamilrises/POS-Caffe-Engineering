@@ -25,10 +25,7 @@ import {
     ExternalLink,
     Play,
     Volume2,
-    Check,
-    Receipt,
-    Clock,
-    ShoppingBag,
+    ChevronDown,
 } from 'lucide-react';
 
 /* =========================================================================
@@ -36,7 +33,7 @@ import {
    High-performance, restrained ambient canvas that adapts to light/dark themes.
    Supports prefers-reduced-motion for complete accessibility.
    ========================================================================= */
-function ArchitecturalCanvas({ isDark }) {
+function ArchitecturalCanvas({ isDark, scrollY }) {
     const canvasRef = useRef(null);
 
     useEffect(() => {
@@ -45,7 +42,6 @@ function ArchitecturalCanvas({ isDark }) {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Check reduced motion preference
         const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         let animationFrameId;
@@ -150,6 +146,7 @@ function ArchitecturalCanvas({ isDark }) {
         <canvas
             ref={canvasRef}
             className="fixed inset-0 pointer-events-none z-0 opacity-60 dark:opacity-40 transition-opacity duration-500"
+            style={{ transform: `translate3d(0, ${scrollY * -0.04}px, 0)` }}
             aria-hidden="true"
         />
     );
@@ -162,23 +159,45 @@ export default function Welcome({ sample_table_token = null, sample_table_number
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
 
-    // Reset scroll to top on initial mount
+    // Global Scroll & Parallax Tracking
+    const [scrollY, setScrollY] = useState(0);
+    const [scrollPercent, setScrollPercent] = useState(0);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [activeSection, setActiveSection] = useState('hero');
+
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                window.history.scrollRestoration = 'manual';
-            } catch (e) {
-                // Ignore
+        const handleScroll = () => {
+            const currentY = window.scrollY;
+            setScrollY(currentY);
+            setIsScrolled(currentY > 20);
+
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (currentY / docHeight) * 100 : 0;
+            setScrollPercent(Math.min(100, Math.max(0, progress)));
+
+            // Snap indicator tracking
+            const sections = ['hero', 'flow', 'features', 'roles', 'portal'];
+            for (const sec of sections) {
+                const el = document.getElementById(sec);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top <= 240 && rect.bottom >= 240) {
+                        setActiveSection(sec);
+                        break;
+                    }
+                }
             }
-            window.scrollTo(0, 0);
-        }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     // Interactive Real-Time Flow Simulation State
     const [simulatedToken, setSimulatedToken] = useState(42);
-    const [simulatedStep, setSimulatedStep] = useState(0); // 0: Idle, 1: QR sent, 2: POS verified, 3: Kitchen KDS chime
+    const [simulatedStep, setSimulatedStep] = useState(0);
     const [isSimulating, setIsSimulating] = useState(false);
-    const [simulationProgress, setSimulationProgress] = useState(0); // 0 to 100 percentage for continuous track
+    const [simulationProgress, setSimulationProgress] = useState(0);
 
     // Interactive Step for Section 2 (Alur Sistem)
     const [activeFlowStep, setActiveFlowStep] = useState(0);
@@ -326,26 +345,75 @@ export default function Welcome({ sample_table_token = null, sample_table_number
     };
 
     return (
-        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#06070A] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300">
+        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#06070A] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300 scroll-smooth">
             <Head title="Kasir App - Sistem POS Kasir, Dapur KDS & QR Meja Kantin" />
 
-            {/* Architectural Canvas Background */}
-            <ArchitecturalCanvas isDark={isDark} />
+            {/* Top Global Animated Scroll Progress Bar */}
+            <div
+                className="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-400 z-[100] transition-all duration-75 ease-out shadow-xs pointer-events-none"
+                style={{ width: `${scrollPercent}%` }}
+                aria-hidden="true"
+            />
+
+            {/* Architectural Canvas Background with Smooth Scroll Parallax */}
+            <ArchitecturalCanvas isDark={isDark} scrollY={scrollY} />
+
+            {/* Floating Side Section Quick Navigation Rail (Desktop Only) */}
+            <nav
+                aria-label="Navigasi Halaman Cepat"
+                className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden xl:flex flex-col items-center gap-3.5 p-2 rounded-full bg-white/70 dark:bg-[#0B0D13]/70 backdrop-blur-md border border-slate-200/80 dark:border-white/[0.08] shadow-lg shadow-black/5"
+            >
+                {[
+                    { id: 'hero', label: '01 Ringkasan' },
+                    { id: 'flow', label: '02 Alur Sistem' },
+                    { id: 'features', label: '03 Fitur Utama' },
+                    { id: 'roles', label: '04 Hak Akses' },
+                    { id: 'portal', label: '05 Portal Cepat' },
+                ].map((item) => {
+                    const isActive = activeSection === item.id;
+                    return (
+                        <a
+                            key={item.id}
+                            href={`#${item.id}`}
+                            className="group relative flex items-center justify-center p-1.5 focus:outline-hidden"
+                            aria-label={`Pindah ke ${item.label}`}
+                        >
+                            <span className="absolute right-8 px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold text-white bg-slate-900 dark:bg-slate-800 border border-white/10 shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                {item.label}
+                            </span>
+                            <span
+                                className={`block rounded-full transition-all duration-300 ${
+                                    isActive
+                                        ? 'w-2.5 h-6 bg-indigo-600 dark:bg-indigo-400 shadow-sm shadow-indigo-500/50'
+                                        : 'w-2 h-2 bg-slate-300 dark:bg-slate-600 hover:bg-slate-500 dark:hover:bg-slate-400'
+                                }`}
+                            />
+                        </a>
+                    );
+                })}
+            </nav>
 
             {/* Subtle Ambient Radial Lighting */}
             <div
-                className="pointer-events-none fixed inset-0 z-0 opacity-40 dark:opacity-20"
+                className="pointer-events-none fixed inset-0 z-0 opacity-40 dark:opacity-20 transition-transform duration-300"
                 style={{
                     background:
                         'radial-gradient(ellipse 70% 35% at 50% -5%, rgba(67, 56, 202, 0.22), transparent 70%)',
+                    transform: `translate3d(0, ${scrollY * -0.02}px, 0)`,
                 }}
             />
 
             {/* =========================================================================
-                TOP STICKY NAVBAR
+                FIXED NAVBAR WITH DYNAMIC FROSTED GLASSMORPHY ANIMATION
                 ========================================================================= */}
-            <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-[#06070A]/90 backdrop-blur-md border-b border-slate-200 dark:border-white/[0.08] transition-colors duration-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 h-16 flex items-center justify-between gap-4">
+            <header
+                className={`fixed top-0 left-0 right-0 z-50 w-full transition-all duration-300 ease-out ${
+                    isScrolled
+                        ? 'h-16 bg-white/80 dark:bg-[#06070A]/85 backdrop-blur-2xl border-b border-slate-200/80 dark:border-white/[0.08] shadow-lg shadow-slate-900/5 dark:shadow-black/50'
+                        : 'h-20 bg-transparent backdrop-blur-xs border-b border-transparent'
+                }`}
+            >
+                <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 h-full flex items-center justify-between gap-4">
                     {/* Brand Identity */}
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-b from-[#4338CA] to-[#312E81] flex items-center justify-center text-white shadow-xs border border-indigo-400/30">
@@ -361,18 +429,30 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
                     </div>
 
-                    {/* Navigation Anchors */}
+                    {/* Navigation Anchors with Clean Snap Target */}
                     <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        <a href="#hero" className="hover:text-indigo-600 dark:hover:text-white transition-colors">
+                        <a
+                            href="#hero"
+                            className={`transition-colors ${activeSection === 'hero' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
+                        >
                             Ringkasan
                         </a>
-                        <a href="#flow" className="hover:text-indigo-600 dark:hover:text-white transition-colors">
+                        <a
+                            href="#flow"
+                            className={`transition-colors ${activeSection === 'flow' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
+                        >
                             Alur Sistem
                         </a>
-                        <a href="#features" className="hover:text-indigo-600 dark:hover:text-white transition-colors">
+                        <a
+                            href="#features"
+                            className={`transition-colors ${activeSection === 'features' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
+                        >
                             Fitur Utama
                         </a>
-                        <a href="#roles" className="hover:text-indigo-600 dark:hover:text-white transition-colors">
+                        <a
+                            href="#roles"
+                            className={`transition-colors ${activeSection === 'roles' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
+                        >
                             Hak Akses
                         </a>
                     </nav>
@@ -402,8 +482,9 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
             {/* =========================================================================
                 SECTION 01: HERO & INTERACTIVE OPERATIONAL FLOW SCHEMATIC
+                Has generous pt-28 sm:pt-36 to avoid overlapping with fixed navbar
                 ========================================================================= */}
-            <section id="hero" className="relative z-10 pt-12 sm:pt-16 pb-20 px-4 sm:px-8 lg:px-12">
+            <section id="hero" className="relative z-10 pt-28 sm:pt-36 pb-20 px-4 sm:px-8 lg:px-12 scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full">
                     {/* Header Headline */}
                     <div className="text-center max-w-4xl mx-auto space-y-4">
@@ -459,9 +540,13 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
                     {/* =========================================================================
                         INTERACTIVE OPERATIONAL PIPELINE SCHEMATIC (SMOOTH & INTEGRATED)
+                        With gentle parallax translation
                         ========================================================================= */}
-                    <div className="mt-12 max-w-5xl mx-auto">
-                        <div className="p-5 sm:p-6 rounded-2xl bg-white/90 dark:bg-[#0B0D13]/90 backdrop-blur-md border border-slate-200 dark:border-white/[0.08] shadow-sm space-y-5">
+                    <div
+                        className="mt-12 max-w-5xl mx-auto transition-transform duration-200 ease-out"
+                        style={{ transform: `translate3d(0, ${Math.min(scrollY * 0.04, 25)}px, 0)` }}
+                    >
+                        <div className="p-5 sm:p-6 rounded-2xl bg-white/90 dark:bg-[#0B0D13]/90 backdrop-blur-md border border-slate-200 dark:border-white/[0.08] shadow-md shadow-slate-900/5 space-y-5">
                             {/* Card Header & Simulation Trigger Button */}
                             <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/[0.06] pb-3 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
@@ -594,7 +679,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 02: END-TO-END OPERATIONAL FLOW PIPELINE
                 ========================================================================= */}
-            <section id="flow" className="relative z-20 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D]">
+            <section id="flow" className="relative z-20 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -619,7 +704,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                                 <div
                                     key={step.num}
                                     onClick={() => setActiveFlowStep(idx)}
-                                    className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-200 select-none flex flex-col justify-between min-h-[260px] ${
+                                    className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-300 select-none flex flex-col justify-between min-h-[260px] hover:-translate-y-1 ${
                                         isSelected
                                             ? 'bg-white dark:bg-[#0B0D13] border-indigo-400/60 ring-2 ring-indigo-400/20 shadow-md'
                                             : 'bg-white/70 dark:bg-[#08090D] border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] hover:bg-white dark:hover:bg-[#0B0D13]'
@@ -701,7 +786,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 03: CORE TECHNICAL FEATURES (BENTO GRID)
                 ========================================================================= */}
-            <section id="features" className="relative z-30 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06]">
+            <section id="features" className="relative z-30 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -721,7 +806,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                     {/* Bento Grid: 4 Core Features */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         {/* Feature 1: Dual-Mode Barcode Scanner */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 ease-out">
+                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -745,7 +830,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 2: Smart Payment & Underpayment Guard */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 ease-out">
+                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -769,7 +854,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 3: Auto-Lock Menu Habis */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 ease-out">
+                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -796,7 +881,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 4: Real-Time Profit & Loss (Laba Rugi) */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-0.5 transition-all duration-300 ease-out">
+                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -825,7 +910,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 04: ROLE & ACCESS CONTROL MATRIX
                 ========================================================================= */}
-            <section id="roles" className="relative z-40 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D]">
+            <section id="roles" className="relative z-40 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -938,7 +1023,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
             {/* =========================================================================
                 SECTION 05: QUICK ROLE LAUNCHER & ARCHITECTURAL FOOTER
                 ========================================================================= */}
-            <section className="relative z-50 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300">
+            <section id="portal" className="relative z-50 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300 scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-12">
                     {/* Section Header */}
                     <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -959,7 +1044,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 1: Admin */}
                         <Link
                             href="/admin"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-indigo-400/50 transition-all duration-200 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md"
+                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-indigo-400/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -981,7 +1066,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 2: Kasir POS */}
                         <Link
                             href="/pos"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-emerald-500/50 transition-all duration-200 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md"
+                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -1003,7 +1088,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 3: Kitchen KDS */}
                         <Link
                             href="/kitchen"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-amber-500/50 transition-all duration-200 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md"
+                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -1025,7 +1110,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 4: QR Meja */}
                         <Link
                             href={sample_table_token ? `/table/${sample_table_token}` : '/table/demo'}
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 transition-all duration-200 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md"
+                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
