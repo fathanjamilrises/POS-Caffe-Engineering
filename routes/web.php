@@ -51,6 +51,10 @@ Route::get('/welcome', function () {
     ]);
 })->name('welcome.preview');
 
+// Public Interactive Demo POS Cashier (Accessible Without Auth)
+Route::get('/demo/pos', [CashierPosController::class, 'demo'])->name('pos.demo');
+Route::get('/pos/demo', fn () => redirect()->route('pos.demo'));
+
 // Authentication Routes (Guest Only)
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'create'])->name('login');

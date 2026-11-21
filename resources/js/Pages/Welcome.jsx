@@ -336,7 +336,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
         kasir: {
             title: 'Kasir POS Terminal',
             tagline: 'Terminal Transaksi Cepat, Hardware Barcode Scanner dan Validasi Pembayaran',
-            portal: '/pos',
+            portal: '/demo/pos',
             badgeColor: 'border-emerald-500/30 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10',
             capabilities: [
                 'Manajemen Sesi Shift: Input modal kas awal laci dan pencatatan kas aktual saat penutupan shift.',
@@ -523,7 +523,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         <ThemeToggle />
 
                         <Link
-                            href="/pos"
+                            href="/demo/pos"
                             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-white/[0.04] hover:bg-slate-200 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/[0.08] transition-colors"
                         >
                             <UtensilsCrossed className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -572,11 +572,11 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Primary CTAs */}
                         <div className="flex items-center justify-center gap-3 pt-3 flex-wrap">
                             <Link
-                                href="/pos"
+                                href="/demo/pos"
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-b from-[#4338CA] to-[#312E81] hover:from-[#4F46E5] hover:to-[#3730A3] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.18),0_2px_8px_rgba(30,27,75,0.25)] border border-indigo-500/30 transition-all active:scale-[0.98]"
                             >
                                 <UtensilsCrossed className="w-4 h-4" />
-                                <span>Buka Terminal Kasir</span>
+                                <span>Coba Demo Kasir POS</span>
                             </Link>
 
                             {sample_table_token ? (
@@ -1126,7 +1126,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
                         {/* Card 2: Kasir POS */}
                         <Link
-                            href="/pos"
+                            href="/demo/pos"
                             className="p-5 rounded-2xl bg-white/70 dark:bg-[#0B0D13]/70 backdrop-blur-xl hover:bg-white/95 dark:hover:bg-[#121524] border border-slate-200/80 dark:border-white/[0.08] hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-lg shadow-[inset_0_1px_0_0_rgba(255,255,255,0.7)] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:-translate-y-1"
                         >
                             <div>
@@ -1134,14 +1134,14 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                                     <UtensilsCrossed className="w-4 h-4" />
                                 </div>
                                 <h4 className="text-sm font-bold text-slate-900 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-white transition-colors">
-                                    Terminal Kasir POS
+                                    Demo Terminal Kasir
                                 </h4>
                                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                                    Input pesanan cepat, barcode scanner dan cetak struk
+                                    Input pesanan cepat, barcode scanner, hitung kembalian dan cetak struk
                                 </p>
                             </div>
                             <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 flex items-center gap-1 pt-3 font-semibold">
-                                <span>Buka /pos</span>
+                                <span>Coba Demo POS</span>
                                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </Link>

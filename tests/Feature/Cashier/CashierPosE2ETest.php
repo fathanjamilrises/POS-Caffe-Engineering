@@ -112,6 +112,25 @@ class CashierPosE2ETest extends TestCase
     }
 
     /**
+     * Test 1b: Halaman Demo POS (/demo/pos) dapat diakses publik tanpa autentikasi.
+     */
+    public function test_public_demo_pos_accessible_without_authentication(): void
+    {
+        $response = $this->get('/demo/pos');
+
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Cashier/DemoPos')
+                ->has('products')
+                ->has('categories')
+                ->has('dining_tables')
+            );
+
+        $redirect = $this->get('/pos/demo');
+        $redirect->assertRedirect(route('pos.demo'));
+    }
+
+    /**
      * Test 2: Admin dan Koki diblokir dari /pos dan diarahkan ke layar masing-masing.
      */
     public function test_admin_and_chef_cannot_access_pos_and_are_redirected(): void
