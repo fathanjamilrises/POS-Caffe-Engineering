@@ -25,8 +25,18 @@ import {
     ExternalLink,
     Play,
     Volume2,
-    ChevronDown,
 } from 'lucide-react';
+
+// --- ANIMATION START: Lenis & GSAP Imports ---
+import 'lenis/dist/lenis.css';
+import Lenis from 'lenis';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+if (typeof window !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+}
+// --- ANIMATION END: Lenis & GSAP Imports ---
 
 /* =========================================================================
    ARCHITECTURAL CONTOUR & SUBTLE MESH BACKGROUND (CANVAS)
@@ -159,23 +169,51 @@ export default function Welcome({ sample_table_token = null, sample_table_number
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
 
-    // Global Scroll & Parallax Tracking
+    // Global Scroll & State Tracking
     const [scrollY, setScrollY] = useState(0);
     const [scrollPercent, setScrollPercent] = useState(0);
     const [isScrolled, setIsScrolled] = useState(false);
     const [activeSection, setActiveSection] = useState('hero');
 
+    // DOM Refs for Animations
+    const lenisRef = useRef(null);
+    const heroSchematicRef = useRef(null);
+
+    // --- ANIMATION START: Lenis Smooth Scroll, GSAP Ticker & ScrollTrigger Setup ---
     useEffect(() => {
-        const handleScroll = () => {
-            const currentY = window.scrollY;
-            setScrollY(currentY);
-            setIsScrolled(currentY > 20);
+        if (typeof window === 'undefined') return;
 
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = docHeight > 0 ? (currentY / docHeight) * 100 : 0;
-            setScrollPercent(Math.min(100, Math.max(0, progress)));
+        // 1. Initialize Lenis Smooth Momentum Scrolling
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            touchMultiplier: 2,
+            infinite: false,
+        });
 
-            // Snap indicator tracking
+        lenisRef.current = lenis;
+
+        // 2. Synchronize Lenis with GSAP ScrollTrigger
+        lenis.on('scroll', ScrollTrigger.update);
+
+        // 3. Connect GSAP Ticker to Lenis RAF
+        const tickerCallback = (time) => {
+            lenis.raf(time * 1000);
+        };
+        gsap.ticker.add(tickerCallback);
+        gsap.ticker.lagSmoothing(0);
+
+        // 4. Update UI State & Velocity-Based Interactive Micro-Skew
+        lenis.on('scroll', ({ scroll, velocity, progress }) => {
+            setScrollY(scroll);
+            setIsScrolled(scroll > 20);
+            setScrollPercent(Math.min(100, Math.max(0, progress * 100)));
+
+            // Update active section indicator
             const sections = ['hero', 'flow', 'features', 'roles', 'portal'];
             for (const sec of sections) {
                 const el = document.getElementById(sec);
@@ -187,10 +225,98 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                     }
                 }
             }
-        };
 
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
+            // Velocity-based subtle dynamic tilt (skewY) that springs back smoothly on scroll stop
+            const clampedSkew = Math.max(-1.8, Math.min(1.8, velocity * 0.08));
+            gsap.to('.velocity-skew-card', {
+                skewY: clampedSkew,
+                duration: 0.35,
+                ease: 'power3.out',
+                overwrite: 'auto',
+            });
+        });
+
+        // 5. Scroll-Linked Zoom / Scale Effect on Hero Schematic Preview Card
+        if (heroSchematicRef.current) {
+            gsap.fromTo(
+                heroSchematicRef.current,
+                { scale: 0.94, opacity: 0.92, y: 20 },
+                {
+                    scale: 1,
+                    opacity: 1,
+                    y: 0,
+                    ease: 'power2.out',
+                    scrollTrigger: {
+                        trigger: heroSchematicRef.current,
+                        start: 'top 85%',
+                        end: 'top 40%',
+                        scrub: 1.2,
+                    },
+                }
+            );
+        }
+
+        // 6. Smooth ScrollTrigger Stagger Reveals for Section Content
+        // A. Flow Pipeline Cards
+        gsap.from('.stagger-flow-card', {
+            y: 30,
+            opacity: 0,
+            duration: 0.7,
+            stagger: 0.12,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: '#flow',
+                start: 'top 75%',
+                once: true,
+            },
+        });
+
+        // B. Bento Grid Technical Feature Cards
+        gsap.from('.stagger-feature-card', {
+            y: 30,
+            opacity: 0,
+            duration: 0.7,
+            stagger: 0.12,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: '#features',
+                start: 'top 75%',
+                once: true,
+            },
+        });
+
+        // C. Quick Portal Cards
+        gsap.from('.stagger-portal-card', {
+            y: 25,
+            opacity: 0,
+            duration: 0.65,
+            stagger: 0.1,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: '#portal',
+                start: 'top 80%',
+                once: true,
+            },
+        });
+
+        // Cleanup animations and instance on unmount
+        return () => {
+            gsap.ticker.remove(tickerCallback);
+            lenis.destroy();
+            ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+        };
+    }, []);
+    // --- ANIMATION END: Lenis Smooth Scroll, GSAP Ticker & ScrollTrigger Setup ---
+
+    // Smooth navigation click handler using Lenis scrollTo
+    const scrollToSection = useCallback((e, sectionId) => {
+        e.preventDefault();
+        if (lenisRef.current) {
+            lenisRef.current.scrollTo(`#${sectionId}`, { offset: -70, duration: 1.2 });
+        } else {
+            const el = document.getElementById(sectionId);
+            el?.scrollIntoView({ behavior: 'smooth' });
+        }
     }, []);
 
     // Interactive Real-Time Flow Simulation State
@@ -345,7 +471,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
     };
 
     return (
-        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#06070A] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300 scroll-smooth">
+        <div className="relative min-h-screen bg-[#F8FAFC] dark:bg-[#06070A] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/20 selection:text-indigo-900 dark:selection:text-indigo-200 antialiased overflow-x-hidden transition-colors duration-300">
             <Head title="Kasir App - Sistem POS Kasir, Dapur KDS & QR Meja Kantin" />
 
             {/* Top Global Animated Scroll Progress Bar */}
@@ -375,10 +501,11 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         <a
                             key={item.id}
                             href={`#${item.id}`}
+                            onClick={(e) => scrollToSection(e, item.id)}
                             className="group relative flex items-center justify-center p-1.5 focus:outline-hidden"
                             aria-label={`Pindah ke ${item.label}`}
                         >
-                            <span className="absolute right-8 px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold text-white bg-slate-900 dark:bg-slate-800 border border-white/10 shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            <span className="absolute right-9 px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold text-white bg-slate-900 dark:bg-slate-800 border border-white/10 shadow-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                 {item.label}
                             </span>
                             <span
@@ -429,28 +556,32 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
                     </div>
 
-                    {/* Navigation Anchors with Clean Snap Target */}
+                    {/* Navigation Anchors with Lenis Smooth Scroll */}
                     <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600 dark:text-slate-400">
                         <a
                             href="#hero"
+                            onClick={(e) => scrollToSection(e, 'hero')}
                             className={`transition-colors ${activeSection === 'hero' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
                         >
                             Ringkasan
                         </a>
                         <a
                             href="#flow"
+                            onClick={(e) => scrollToSection(e, 'flow')}
                             className={`transition-colors ${activeSection === 'flow' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
                         >
                             Alur Sistem
                         </a>
                         <a
                             href="#features"
+                            onClick={(e) => scrollToSection(e, 'features')}
                             className={`transition-colors ${activeSection === 'features' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
                         >
                             Fitur Utama
                         </a>
                         <a
                             href="#roles"
+                            onClick={(e) => scrollToSection(e, 'roles')}
                             className={`transition-colors ${activeSection === 'roles' ? 'text-indigo-600 dark:text-white font-bold' : 'hover:text-indigo-600 dark:hover:text-white'}`}
                         >
                             Hak Akses
@@ -540,11 +671,11 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
                     {/* =========================================================================
                         INTERACTIVE OPERATIONAL PIPELINE SCHEMATIC (SMOOTH & INTEGRATED)
-                        With gentle parallax translation
+                        With GSAP ScrollTrigger Scroll-Linked Zoom / Scale Effect
                         ========================================================================= */}
                     <div
-                        className="mt-12 max-w-5xl mx-auto transition-transform duration-200 ease-out"
-                        style={{ transform: `translate3d(0, ${Math.min(scrollY * 0.04, 25)}px, 0)` }}
+                        ref={heroSchematicRef}
+                        className="mt-12 max-w-5xl mx-auto will-change-transform"
                     >
                         <div className="p-5 sm:p-6 rounded-2xl bg-white/90 dark:bg-[#0B0D13]/90 backdrop-blur-md border border-slate-200 dark:border-white/[0.08] shadow-md shadow-slate-900/5 space-y-5">
                             {/* Card Header & Simulation Trigger Button */}
@@ -678,6 +809,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
             {/* =========================================================================
                 SECTION 02: END-TO-END OPERATIONAL FLOW PIPELINE
+                With Lenis Velocity-Based Skew & Stagger Reveal
                 ========================================================================= */}
             <section id="flow" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] bg-slate-50/50 dark:bg-[#07080D] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
@@ -696,7 +828,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </p>
                     </div>
 
-                    {/* Stepped Pipeline 4-Cards Grid */}
+                    {/* Stepped Pipeline 4-Cards Grid with Stagger & Velocity Skew */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                         {flowSteps.map((step, idx) => {
                             const isSelected = activeFlowStep === idx;
@@ -704,7 +836,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                                 <div
                                     key={step.num}
                                     onClick={() => setActiveFlowStep(idx)}
-                                    className={`p-5 rounded-2xl border text-left cursor-pointer transition-all duration-300 select-none flex flex-col justify-between min-h-[260px] hover:-translate-y-1 ${
+                                    className={`stagger-flow-card velocity-skew-card p-5 rounded-2xl border text-left cursor-pointer transition-all duration-300 select-none flex flex-col justify-between min-h-[260px] hover:-translate-y-1 ${
                                         isSelected
                                             ? 'bg-white dark:bg-[#0B0D13] border-indigo-400/60 ring-2 ring-indigo-400/20 shadow-md'
                                             : 'bg-white/70 dark:bg-[#08090D] border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] hover:bg-white dark:hover:bg-[#0B0D13]'
@@ -785,6 +917,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
             {/* =========================================================================
                 SECTION 03: CORE TECHNICAL FEATURES (BENTO GRID)
+                With Lenis Velocity-Based Skew & Stagger Reveal
                 ========================================================================= */}
             <section id="features" className="relative z-10 py-20 sm:py-24 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.06] scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-10">
@@ -803,10 +936,10 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </p>
                     </div>
 
-                    {/* Bento Grid: 4 Core Features */}
+                    {/* Bento Grid: 4 Core Features with Stagger & Velocity Tilt */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                         {/* Feature 1: Dual-Mode Barcode Scanner */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+                        <div className="stagger-feature-card velocity-skew-card p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -830,7 +963,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 2: Smart Payment & Underpayment Guard */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+                        <div className="stagger-feature-card velocity-skew-card p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -854,7 +987,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 3: Auto-Lock Menu Habis */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+                        <div className="stagger-feature-card velocity-skew-card p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -881,7 +1014,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </div>
 
                         {/* Feature 4: Real-Time Profit & Loss (Laba Rugi) */}
-                        <div className="p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
+                        <div className="stagger-feature-card velocity-skew-card p-6 rounded-2xl bg-white dark:bg-[#0B0D13] border border-slate-200 dark:border-white/[0.08] shadow-xs space-y-4 flex flex-col justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-300 ease-out">
                             <div className="space-y-2.5">
                                 <div className="flex items-center justify-between text-xs font-mono">
                                     <span className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200 text-sm">
@@ -1022,6 +1155,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
 
             {/* =========================================================================
                 SECTION 05: QUICK ROLE LAUNCHER & ARCHITECTURAL FOOTER
+                With Stagger Reveal & Lenis Velocity Tilt
                 ========================================================================= */}
             <section id="portal" className="relative z-10 pt-20 pb-14 px-4 sm:px-8 lg:px-12 border-t border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#06070A] transition-colors duration-300 scroll-mt-24">
                 <div className="max-w-7xl mx-auto w-full space-y-12">
@@ -1039,12 +1173,12 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         </p>
                     </div>
 
-                    {/* 4 Quick Launch Cards */}
+                    {/* 4 Quick Launch Cards with Stagger & Velocity Tilt */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-left">
                         {/* Card 1: Admin */}
                         <Link
                             href="/admin"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-indigo-400/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
+                            className="stagger-portal-card velocity-skew-card p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-indigo-400/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -1066,7 +1200,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 2: Kasir POS */}
                         <Link
                             href="/pos"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
+                            className="stagger-portal-card velocity-skew-card p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-emerald-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -1088,7 +1222,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 3: Kitchen KDS */}
                         <Link
                             href="/kitchen"
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
+                            className="stagger-portal-card velocity-skew-card p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-amber-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
@@ -1110,7 +1244,7 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                         {/* Card 4: QR Meja */}
                         <Link
                             href={sample_table_token ? `/table/${sample_table_token}` : '/table/demo'}
-                            className="p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
+                            className="stagger-portal-card velocity-skew-card p-5 rounded-2xl bg-slate-50/70 dark:bg-[#0B0D13] hover:bg-white dark:hover:bg-[#121524] border border-slate-200 dark:border-white/[0.08] hover:border-blue-500/50 transition-all duration-300 flex flex-col justify-between min-h-[190px] group shadow-xs hover:shadow-md hover:-translate-y-1"
                         >
                             <div>
                                 <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-3.5 group-hover:scale-105 transition-transform duration-200">
