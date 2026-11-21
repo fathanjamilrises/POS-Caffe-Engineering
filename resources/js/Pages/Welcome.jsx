@@ -413,22 +413,15 @@ export default function Welcome({ sample_table_token = null, sample_table_number
                 </div>
             </div>
 
-            {/* 1. VIBRANT ARCHITECTURAL BLUE GRADIENT GLOWS */}
+            {/* 1. SINGLE FOCUSED CIRCULAR BLUE GRADIENT GLOW (HANYA DI KANAN BULAT) */}
             <div
-                className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+                className="pointer-events-none fixed top-12 -right-16 sm:right-[-40px] md:right-[2%] w-[480px] sm:w-[620px] lg:w-[700px] h-[480px] sm:h-[620px] lg:h-[700px] rounded-full z-0 transition-transform duration-300"
                 style={{
                     background: isDark
-                        ? `
-                            radial-gradient(circle 950px at 50% -10%, rgba(67, 56, 202, 0.45) 0%, rgba(30, 27, 75, 0.38) 42%, transparent 80%),
-                            radial-gradient(circle 800px at 85% 35%, rgba(59, 130, 246, 0.30) 0%, rgba(30, 58, 138, 0.22) 45%, transparent 75%),
-                            radial-gradient(circle 850px at 15% 70%, rgba(79, 70, 229, 0.35) 0%, rgba(30, 27, 75, 0.28) 50%, transparent 80%)
-                          `
-                        : `
-                            radial-gradient(circle 950px at 50% -10%, rgba(99, 102, 241, 0.22) 0%, rgba(224, 231, 255, 0.5) 45%, transparent 80%),
-                            radial-gradient(circle 800px at 85% 35%, rgba(59, 130, 246, 0.16) 0%, rgba(219, 234, 254, 0.4) 45%, transparent 75%),
-                            radial-gradient(circle 850px at 15% 70%, rgba(129, 140, 248, 0.18) 0%, rgba(224, 231, 255, 0.4) 50%, transparent 80%)
-                          `,
-                    transform: `translate3d(0, ${scrollY * -0.02}px, 0)`,
+                        ? 'radial-gradient(circle, rgba(59, 130, 246, 0.45) 0%, rgba(67, 56, 202, 0.32) 36%, rgba(30, 27, 75, 0.18) 56%, transparent 72%)'
+                        : 'radial-gradient(circle, rgba(99, 102, 241, 0.26) 0%, rgba(59, 130, 246, 0.18) 36%, rgba(219, 234, 254, 0.25) 56%, transparent 72%)',
+                    filter: 'blur(50px)',
+                    transform: `translate3d(0, ${scrollY * -0.04}px, 0)`,
                 }}
                 aria-hidden="true"
             />
