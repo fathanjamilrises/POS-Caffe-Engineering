@@ -771,7 +771,7 @@ export default function DemoPos({
                                         className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                             serviceMode === 'dine_in'
                                                 ? 'bg-indigo-600 text-white shadow-xs'
-                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                     >
                                         <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -784,7 +784,7 @@ export default function DemoPos({
                                         className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                             serviceMode === 'takeaway'
                                                 ? 'bg-indigo-600 text-white shadow-xs'
-                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                     >
                                         <ShoppingBag className="w-3.5 h-3.5" />
@@ -929,7 +929,7 @@ export default function DemoPos({
                                         className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                             paymentMethod === 'tunai'
                                                 ? 'bg-emerald-600 text-white shadow-xs'
-                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400'
+                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                     >
                                         <Banknote className="w-4 h-4" />
@@ -945,7 +945,7 @@ export default function DemoPos({
                                         className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                                             paymentMethod === 'qris'
                                                 ? 'bg-indigo-600 text-white shadow-xs'
-                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400'
+                                                : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                     >
                                         <QrCode className="w-4 h-4" />
@@ -976,7 +976,7 @@ export default function DemoPos({
                                             <button
                                                 type="button"
                                                 onClick={setExactCash}
-                                                className="px-2 py-1 rounded text-[10px] font-mono font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 cursor-pointer"
+                                                className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 transition-colors cursor-pointer"
                                             >
                                                 Uang Pas
                                             </button>
@@ -985,7 +985,7 @@ export default function DemoPos({
                                                     key={preset}
                                                     type="button"
                                                     onClick={() => setPresetCash(preset)}
-                                                    className="px-2 py-1 rounded text-[10px] font-mono text-slate-600 dark:text-slate-300 bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 cursor-pointer"
+                                                    className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] hover:bg-slate-100 dark:hover:bg-white/[0.14] hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                                                 >
                                                     {formatRupiah(preset)}
                                                 </button>
@@ -1031,7 +1031,7 @@ export default function DemoPos({
                                             className={`w-full py-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
                                                 qrisPaid
                                                     ? 'bg-emerald-600 text-white font-bold'
-                                                    : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100'
+                                                    : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/25'
                                             }`}
                                         >
                                             {qrisPaid
@@ -1088,16 +1088,16 @@ export default function DemoPos({
 
                         {/* Paper Selector (58mm vs 80mm) */}
                         <div className="flex items-center justify-center gap-2">
-                            <span className="text-xs text-slate-500 font-mono">Lebar Kertas:</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Lebar Kertas:</span>
                             {['58mm', '80mm'].map((size) => (
                                 <button
                                     key={size}
                                     type="button"
                                     onClick={() => setReceiptPaperWidth(size)}
-                                    className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold cursor-pointer ${
+                                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                                         receiptPaperWidth === size
-                                            ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                                            : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400'
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/[0.12] hover:text-slate-900 dark:hover:text-white'
                                     }`}
                                 >
                                     {size}
@@ -1198,7 +1198,7 @@ export default function DemoPos({
                                     playScannerBeep();
                                     window.print();
                                 }}
-                                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                                className="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                             >
                                 <Printer className="w-3.5 h-3.5" />
                                 <span>Cetak Struk Thermal</span>
@@ -1210,7 +1210,7 @@ export default function DemoPos({
                                     clearCart();
                                     setShowReceiptModal(false);
                                 }}
-                                className="py-2 px-3 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 cursor-pointer"
+                                className="py-2 px-3 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/25 cursor-pointer transition-colors"
                             >
                                 Transaksi Baru
                             </button>
@@ -1260,7 +1260,7 @@ export default function DemoPos({
                                     key={item.key}
                                     className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#121524]/60 border border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between gap-3"
                                 >
-                                    <span className="px-2 py-0.5 rounded-md bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold font-mono text-[11px]">
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-900 dark:bg-white/10 text-white dark:text-indigo-300 border border-transparent dark:border-white/10 font-bold font-mono text-[11px]">
                                         {item.key}
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300 text-right flex-1">
@@ -1273,7 +1273,7 @@ export default function DemoPos({
                         <button
                             type="button"
                             onClick={() => setShowHelpModal(false)}
-                            className="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 cursor-pointer"
+                            className="w-full py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/[0.12] hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
                         >
                             Tutup Panduan (Esc)
                         </button>
